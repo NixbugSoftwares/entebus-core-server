@@ -11,3 +11,10 @@ class GenderType(IntEnum):
     FEMALE = 2
     MALE = 3
     TRANSGENDER = 4
+
+
+class PlatformType(IntEnum):
+    OTHER = 1
+    WEB = 2
+    NATIVE = 3
+    SERVER = 4
