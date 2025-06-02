@@ -1,10 +1,9 @@
 from traceback import format_exception
 from logging import getLogger
 from fastapi import status, HTTPException
-from sqlalchemy.exc import IntegrityError, DatabaseError
+from sqlalchemy.exc import IntegrityError
 from psycopg2.errorcodes import UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION
 from pydantic import ValidationError
-from app.src.constants import IMMUTABLE_ROW_ERROR
 
 
 # Function to format DB integrity log error
@@ -46,9 +45,6 @@ def handle(e: Exception):
             raise UniqueViolation(formatIntegrityError(e))
         if e.orig.diag.sqlstate == FOREIGN_KEY_VIOLATION:
             raise ForeignKeyViolation(formatIntegrityError(e))
-    if isinstance(e, DatabaseError):
-        if e.orig.diag.sqlstate == IMMUTABLE_ROW_ERROR:
-            raise ImmutableRowData(detail=e.orig.diag.message_primary)
     if isinstance(e, ValidationError):
         raise PydanticError(detail=e.errors())
     if isinstance(e, APIException):
@@ -61,14 +57,6 @@ def handle(e: Exception):
 class PydanticError(APIException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     headers = {"X-Error": "PydanticError"}
-
-    def __init__(self, detail: str):
-        super().__init__(detail=detail)
-
-
-class ImmutableRowData(APIException):
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-    headers = {"X-Error": "ImmutableRowData"}
 
     def __init__(self, detail: str):
         super().__init__(detail=detail)
@@ -88,3 +76,15 @@ class ForeignKeyViolation(APIException):
 
     def __init__(self, detail: str):
         super().__init__(detail=detail)
+
+
+class InvalidCredentials(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Invalid username or password"
+    headers = {"X-Error": "InvalidCredentials"}
+
+
+class InactiveAccount(APIException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    detail = "The account is not in active status"
+    headers = {"X-Error": "InactiveAccount"}
