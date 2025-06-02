@@ -10,6 +10,7 @@ from app.src import schemas
 from app.src.db import sessionMaker, Executive, ExecutiveToken
 from app.src import argon2, exceptions
 from app.src.functions import getRequestInfo, logExecutiveEvent, makeExceptionResponses
+from datetime import datetime, timedelta, timezone
 
 route_executive = APIRouter()
 
@@ -70,9 +71,11 @@ async def create_token(
             session.flush()
 
         # Create a new token
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=MAX_TOKEN_VALIDITY)
         token = ExecutiveToken(
             executive_id=executive.id,
             expires_in=MAX_TOKEN_VALIDITY,
+            expires_at=expires_at,
             platform_type=data.platform_type,
             client_details=data.client_details,
         )

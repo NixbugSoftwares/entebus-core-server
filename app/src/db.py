@@ -225,6 +225,10 @@ class ExecutiveToken(ORMbase):
             Token expiration time in minutes.
             Defines the duration after which the token becomes invalid.
 
+        expires_at (DateTime):
+            Token expiration date and time.
+            Defines the date and time after which the token becomes invalid.
+
         platform_type (Integer):
             Enum value indicating the client platform type.
             Defaults to `PlatformType.OTHER`.
@@ -255,6 +259,7 @@ class ExecutiveToken(ORMbase):
         String(64), unique=True, nullable=False, default=lambda: token_hex(32)
     )
     expires_in = Column(Integer, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     # Device related details
     platform_type = Column(Integer, default=PlatformType.OTHER)
     client_details = Column(TEXT)
