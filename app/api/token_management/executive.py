@@ -35,7 +35,7 @@ route_executive = APIRouter()
     - This endpoint performs authentication using username and password submitted as form data. 
     - If the credentials are valid and the executive account is active, a new token is generated and returned.
     - Limits active tokens using MAX_EXECUTIVE_TOKENS (token rotation).
-    - Sets expiration with MAX_TOKEN_VALIDITY.
+    - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
     - Logs the authentication event for audit tracking.
     """,
 )
