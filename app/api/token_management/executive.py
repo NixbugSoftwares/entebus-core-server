@@ -15,14 +15,6 @@ from datetime import datetime, timedelta, timezone
 route_executive = APIRouter()
 
 
-## Input schemas
-class OAuth2Form(BaseModel):
-    username: str = Field(..., max_length=32)
-    password: str = Field(..., max_length=32)
-    platform_type: PlatformType = Field(default=PlatformType.OTHER)
-    client_details: str | None = Field(default=None, max_length=1024)
-
-
 ## API endpoints
 @route_executive.post(
     "/entebus/account/token",
@@ -43,17 +35,21 @@ class OAuth2Form(BaseModel):
     """,
 )
 async def create_token(
-    data: Annotated[OAuth2Form, Form()], request_info=Depends(getRequestInfo)
+    username: Annotated[str, Form(..., max_length=32)],
+    password: Annotated[str, Form(..., max_length=32)],
+    platform_type: Annotated[PlatformType | None, Form()] = PlatformType.OTHER,
+    client_details: Annotated[str | None, Form(max_length=1024)] = None,
+    request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
         executive = (
-            session.query(Executive).filter(Executive.username == data.username).first()
+            session.query(Executive).filter(Executive.username == username).first()
         )
         if executive is None:
             raise exceptions.InvalidCredentials()
 
-        if not argon2.checkPassword(data.password, executive.password):
+        if not argon2.checkPassword(password, executive.password):
             raise exceptions.InvalidCredentials()
         if executive.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveAccount()
@@ -76,8 +72,8 @@ async def create_token(
             executive_id=executive.id,
             expires_in=MAX_TOKEN_VALIDITY,
             expires_at=expires_at,
-            platform_type=data.platform_type,
-            client_details=data.client_details,
+            platform_type=platform_type,
+            client_details=client_details,
         )
         session.add(token)
         session.commit()
