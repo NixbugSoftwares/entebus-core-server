@@ -1,6 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
+from datetime import datetime, timedelta, timezone
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
@@ -8,8 +9,13 @@ from app.src.enums import AccountStatus, PlatformType
 from app.src import schemas
 from app.src.db import sessionMaker, Executive, ExecutiveToken
 from app.src import argon2, exceptions
-from app.src.functions import getRequestInfo, logExecutiveEvent, makeExceptionResponses
-from datetime import datetime, timedelta, timezone
+from app.src.functions import (
+    enumStr,
+    getRequestInfo,
+    logExecutiveEvent,
+    makeExceptionResponses,
+)
+
 
 route_executive = APIRouter()
 
@@ -34,9 +40,11 @@ route_executive = APIRouter()
     """,
 )
 async def create_token(
-    username: Annotated[str, Form(..., max_length=32)],
-    password: Annotated[str, Form(..., max_length=32)],
-    platform_type: Annotated[PlatformType | None, Form()] = PlatformType.OTHER,
+    username: Annotated[str, Form(max_length=32)],
+    password: Annotated[str, Form(max_length=32)],
+    platform_type: Annotated[
+        PlatformType, Form(description=enumStr(PlatformType))
+    ] = PlatformType.OTHER,
     client_details: Annotated[str | None, Form(max_length=1024)] = None,
     request_info=Depends(getRequestInfo),
 ):

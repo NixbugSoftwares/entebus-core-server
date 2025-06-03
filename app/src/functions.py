@@ -29,3 +29,7 @@ def makeExceptionResponses(exceptions: List[Any]):
             "content": {"application/json": {"example": {"detail": exception.detail}}},
         }
     return responses
+
+
+def enumStr(enumClass):
+    return ", ".join(f"{x.name}: {x.value}" for x in enumClass)
