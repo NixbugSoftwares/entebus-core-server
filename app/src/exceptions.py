@@ -88,3 +88,9 @@ class InactiveAccount(APIException):
     status_code = status.HTTP_412_PRECONDITION_FAILED
     detail = "The account is not in active status"
     headers = {"X-Error": "InactiveAccount"}
+
+
+class InvalidToken(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Invalid token"
+    headers = {"X-Error": "InvalidToken"}
