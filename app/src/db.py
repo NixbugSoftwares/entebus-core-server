@@ -50,6 +50,15 @@ class ExecutiveRole(ORMbase):
         delete_executive (Boolean):
             Whether this role permits deletion of executive accounts.
 
+        manage_ex_token (Boolean):
+            Whether this role permits listing and deletion of executive tokens.
+
+        manage_op_token (Boolean):
+            Whether this role permits listing and deletion of operator tokens.
+
+        manage_ve_token (Boolean):
+            Whether this role permits listing and deletion of vendor tokens.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -62,6 +71,9 @@ class ExecutiveRole(ORMbase):
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False, unique=True)
     # Permissions
+    manage_ex_token = Column(Boolean, nullable=False, default=False)
+    manage_op_token = Column(Boolean, nullable=False, default=False)
+    manage_ve_token = Column(Boolean, nullable=False, default=False)
     create_executive = Column(Boolean, nullable=False, default=False)
     update_executive = Column(Boolean, nullable=False, default=False)
     delete_executive = Column(Boolean, nullable=False, default=False)
