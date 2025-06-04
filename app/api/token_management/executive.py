@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Form, status
+from fastapi import APIRouter, Depends, Form, status, Query
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 
@@ -14,6 +14,9 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
+    verifyExecutiveToken,
+    getExecutiveRole,
+    checkExecutivePermission,
 )
 
 
@@ -99,9 +102,65 @@ async def update_token(credential=Depends(bearer_executive)):
     pass
 
 
-@route_executive.get("/entebus/account/token", tags=["Token"])
-async def fetch_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.get(
+    "/entebus/account/token",
+    tags=["Token"],
+    response_model=schemas.MaskedExecutiveToken,
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description=""" ------ """,
+)
+async def fetch_tokens(
+    id: Annotated[int, Query()] = None,
+    id_ge: Annotated[int, Query()] = None,
+    id_le: Annotated[int, Query()] = None,
+    executive_id: Annotated[int, Query()] = None,
+    platform_type: Annotated[PlatformType, Query()] = None,
+    client_details: Annotated[str, Query()] = None,
+    created_before: Annotated[datetime, Query()] = None,
+    created_after: Annotated[datetime, Query()] = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(gt=0, le=100)] = 20,
+    order_by: Annotated[str, Query()] = None,
+    order_in: Annotated[str, Query()] = None,
+    credential=Depends(bearer_executive),
+):
+    try:
+        session = sessionMaker()
+        token = verifyExecutiveToken(credential.credentials, session)
+        role = getExecutiveRole(token, session)
+
+        havePermission = False
+        if role is not None and role.manage_ex_token is True:
+            havePermission = True
+
+        query = session.query(ExecutiveToken)
+        if executive_id is not None:
+            query = query.filter(ExecutiveToken.executive_id == executive_id)
+        if not havePermission:
+            query = query.filter(ExecutiveToken.executive_id == token.executive_id)
+        if id is not None:
+            query = query.filter(ExecutiveToken.id == id)
+        if id_ge is not None:
+            query = query.filter(ExecutiveToken.id >= id_ge)
+        if id_le is not None:
+            query = query.filter(ExecutiveToken.id <= id_le)
+        if platform_type is not None:
+            query = query.filter(ExecutiveToken.platform_type == platform_type)
+        if client_details is not None:
+            query = query.filter(
+                ExecutiveToken.client_details.ilike(f"%{client_details}%")
+            )
+        if created_before is not None:
+            query = query.filter(ExecutiveToken.created_on < created_before)
+        if created_after is not None:
+            query = query.filter(ExecutiveToken.created_on > created_after)
+        query = query.order_by(ExecutiveToken.id.desc())
+        tokens = query.limit(limit).offset(offset).all()
+        return tokens
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.delete("/entebus/account/token", tags=["Token"])
