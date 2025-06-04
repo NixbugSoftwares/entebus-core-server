@@ -1,6 +1,7 @@
 import argparse
 
-from app.src.db import sessionMaker, engine, ORMbase
+from app.src import argon2
+from app.src.db import Executive, sessionMaker, engine, ORMbase
 
 
 # ----------------------------------- Project Setup -------------------------------------------#
@@ -9,6 +10,7 @@ def removeTables():
     ORMbase.metadata.drop_all(engine)
     session.commit()
     print("* All tables deleted")
+    session.close()
 
 
 def createTables():
@@ -16,10 +18,28 @@ def createTables():
     ORMbase.metadata.create_all(engine)
     session.commit()
     print("* All tables created")
+    session.close()
 
 
 def initDB():
+    session = sessionMaker()
+    password = argon2.makePassword("password")
+    admin = Executive(
+        username="admin",
+        password=password,
+        full_name="Entebus admin",
+        designation="Administrator",
+    )
+    guest = Executive(
+        username="guest",
+        password=password,
+        full_name="Entebus guest",
+        designation="Guest",
+    )
+    session.add_all([admin, guest])
+    session.commit()
     print("* Initialization completed")
+    session.close()
 
 
 def testDB():

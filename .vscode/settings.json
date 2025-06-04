@@ -3,6 +3,7 @@
         "entebus",
         "geoalchemy",
         "ifsc",
+        "jsonable",
         "nixbug",
         "OPENOBSERVE",
         "sessionmaker",
