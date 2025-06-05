@@ -43,36 +43,29 @@ def enumStr(enumClass):
     return ", ".join(f"{x.name}: {x.value}" for x in enumClass)
 
 
-def verifyExecutiveToken(access_token: str, session: Session) -> ExecutiveToken:
-    token = (
+def getExecutiveToken(access_token: str, session: Session) -> ExecutiveToken | None:
+    current_time = datetime.now(timezone.utc)
+    return (
         session.query(ExecutiveToken)
-        .filter(ExecutiveToken.access_token == access_token)
+        .filter(
+            ExecutiveToken.access_token == access_token,
+            ExecutiveToken.expires_at > current_time,
+        )
         .first()
     )
-    if token is None:
-        raise exceptions.InvalidToken()
-    tokenExpiresOn = token.created_on + timedelta(seconds=token.expires_in)
-    currentTime = datetime.now(timezone.utc)
-    if tokenExpiresOn < currentTime:
-        raise exceptions.InvalidToken()
-    return token
 
 
-def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole:
-    map = (
-        session.query(ExecutiveRoleMap)
+def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole | None:
+    return (
+        session.query(ExecutiveRole)
+        .join(ExecutiveRoleMap, ExecutiveRole.id == ExecutiveRoleMap.role_id)
         .filter(ExecutiveRoleMap.executive_id == token.executive_id)
         .first()
     )
-    if map is not None:
-        return (
-            session.query(ExecutiveRole).filter(ExecutiveRole.id == map.role_id).first()
-        )
-    return None
 
 
-def checkExecutivePermission(role: ExecutiveRole, permission_name: Column) -> bool:
-    if role is None or getattr(role, permission_name.name) is False:
+def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
+    if role is None or getattr(role, permission.name) is False:
         raise False
     else:
         return True

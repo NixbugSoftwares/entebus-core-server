@@ -94,3 +94,9 @@ class InvalidToken(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "Invalid token"
     headers = {"X-Error": "InvalidToken"}
+
+
+class NoPermission(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "This user has no permission to perform this action"
+    headers = {"X-Error": "NoPermission"}
