@@ -1,11 +1,12 @@
-from typing import Annotated
+from typing import Annotated, List
 from fastapi import APIRouter, Depends, Form, status, Query
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
+from enum import IntEnum
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.enums import AccountStatus, PlatformType
+from app.src.enums import AccountStatus, PlatformType, OrderIn
 from app.src import schemas
 from app.src.db import sessionMaker, Executive, ExecutiveToken
 from app.src import argon2, exceptions
@@ -14,9 +15,8 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
-    verifyExecutiveToken,
+    getExecutiveToken,
     getExecutiveRole,
-    checkExecutivePermission,
 )
 
 
@@ -102,10 +102,15 @@ async def update_token(credential=Depends(bearer_executive)):
     pass
 
 
+## schemas
+class OrderBy(IntEnum):
+    id = 1
+    created_on = 2
+    
 @route_executive.get(
     "/entebus/account/token",
     tags=["Token"],
-    response_model=schemas.MaskedExecutiveToken,
+    response_model=List[schemas.MaskedExecutiveToken],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description=""" ------ """,
 )
@@ -116,17 +121,20 @@ async def fetch_tokens(
     executive_id: Annotated[int, Query()] = None,
     platform_type: Annotated[PlatformType, Query()] = None,
     client_details: Annotated[str, Query()] = None,
-    created_before: Annotated[datetime, Query()] = None,
-    created_after: Annotated[datetime, Query()] = None,
+    created_on: Annotated[datetime, Query()] = None,
+    created_on_ge: Annotated[datetime, Query()] = None,
+    created_on_le: Annotated[datetime, Query()] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(gt=0, le=100)] = 20,
-    order_by: Annotated[str, Query()] = None,
-    order_in: Annotated[str, Query()] = None,
-    credential=Depends(bearer_executive),
+    order_by: Annotated[OrderBy, Query()] = OrderBy.id,
+    order_in: Annotated[OrderIn, Query()] = OrderIn.DESC,
+    access_token=Depends(bearer_executive),
 ):
     try:
         session = sessionMaker()
-        token = verifyExecutiveToken(credential.credentials, session)
+        token = getExecutiveToken(access_token.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
 
         havePermission = False
@@ -141,20 +149,26 @@ async def fetch_tokens(
         if id is not None:
             query = query.filter(ExecutiveToken.id == id)
         if id_ge is not None:
-            query = query.filter(ExecutiveToken.id >= id_ge)
+            query = query.filter(ExecutiveToken.id > id_ge)
         if id_le is not None:
-            query = query.filter(ExecutiveToken.id <= id_le)
+            query = query.filter(ExecutiveToken.id < id_le)
         if platform_type is not None:
             query = query.filter(ExecutiveToken.platform_type == platform_type)
         if client_details is not None:
-            query = query.filter(
-                ExecutiveToken.client_details.ilike(f"%{client_details}%")
-            )
-        if created_before is not None:
-            query = query.filter(ExecutiveToken.created_on < created_before)
-        if created_after is not None:
-            query = query.filter(ExecutiveToken.created_on > created_after)
-        query = query.order_by(ExecutiveToken.id.desc())
+            query = query.filter(ExecutiveToken.client_details.ilike(f"%{client_details}%"))
+        if created_on is not None:
+            query = query.filter(ExecutiveToken.created_on == created_on)
+        if created_on_ge is not None:
+            query = query.filter(ExecutiveToken.created_on > created_on_ge)
+        if created_on_le is not None:
+            query = query.filter(ExecutiveToken.created_on < created_on_le)
+        
+        # Apply ordering
+        order_attr = getattr(ExecutiveToken, order_by.name)
+        if order_in == OrderIn.ASC:
+            query = query.order_by(order_attr.asc())
+        query = query.order_by(order_attr.desc())
+
         tokens = query.limit(limit).offset(offset).all()
         return tokens
     except Exception as e:
