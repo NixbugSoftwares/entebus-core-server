@@ -102,32 +102,45 @@ async def update_token(credential=Depends(bearer_executive)):
     pass
 
 
-## schemas
+## Schemas
 class OrderBy(IntEnum):
     id = 1
     created_on = 2
-    
+
+
 @route_executive.get(
     "/entebus/account/token",
     tags=["Token"],
     response_model=List[schemas.MaskedExecutiveToken],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description=""" ------ """,
+    description="""  
+    Retrieves access tokens associated with executive accounts.
+
+    - This endpoint allows filtering tokens using below mentioned parameters.
+    - If the authenticated user has the manage_ex_token permission, all tokens from the ExecutiveToken table are returned.
+    - If the authenticated user don't have manage_ex_token permission, only their own tokens are returned.
+    - Supports pagination with `offset` and `limit` query parameters.
+    - Supports ordering by `id` or `created_on`, in ascending or descending order.
+    - Returns a list of masked token data, excluding access token content.
+    - Useful for reviewing active or historical token usage management.
+    """,
 )
 async def fetch_tokens(
     id: Annotated[int, Query()] = None,
     id_ge: Annotated[int, Query()] = None,
     id_le: Annotated[int, Query()] = None,
     executive_id: Annotated[int, Query()] = None,
-    platform_type: Annotated[PlatformType, Query()] = None,
+    platform_type: Annotated[
+        PlatformType, Query(description=enumStr(PlatformType))
+    ] = None,
     client_details: Annotated[str, Query()] = None,
     created_on: Annotated[datetime, Query()] = None,
     created_on_ge: Annotated[datetime, Query()] = None,
     created_on_le: Annotated[datetime, Query()] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(gt=0, le=100)] = 20,
-    order_by: Annotated[OrderBy, Query()] = OrderBy.id,
-    order_in: Annotated[OrderIn, Query()] = OrderIn.DESC,
+    order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
+    order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
     access_token=Depends(bearer_executive),
 ):
     try:
@@ -149,25 +162,27 @@ async def fetch_tokens(
         if id is not None:
             query = query.filter(ExecutiveToken.id == id)
         if id_ge is not None:
-            query = query.filter(ExecutiveToken.id > id_ge)
+            query = query.filter(ExecutiveToken.id >= id_ge)
         if id_le is not None:
-            query = query.filter(ExecutiveToken.id < id_le)
+            query = query.filter(ExecutiveToken.id <= id_le)
         if platform_type is not None:
             query = query.filter(ExecutiveToken.platform_type == platform_type)
         if client_details is not None:
-            query = query.filter(ExecutiveToken.client_details.ilike(f"%{client_details}%"))
+            query = query.filter(
+                ExecutiveToken.client_details.ilike(f"%{client_details}%")
+            )
         if created_on is not None:
             query = query.filter(ExecutiveToken.created_on == created_on)
         if created_on_ge is not None:
-            query = query.filter(ExecutiveToken.created_on > created_on_ge)
+            query = query.filter(ExecutiveToken.created_on >= created_on_ge)
         if created_on_le is not None:
-            query = query.filter(ExecutiveToken.created_on < created_on_le)
-        
+            query = query.filter(ExecutiveToken.created_on <= created_on_le)
+
         # Apply ordering
-        order_attr = getattr(ExecutiveToken, order_by.name)
+        order_query = getattr(ExecutiveToken, OrderBy(order_by).name)
         if order_in == OrderIn.ASC:
-            query = query.order_by(order_attr.asc())
-        query = query.order_by(order_attr.desc())
+            query = query.order_by(order_query.asc())
+        query = query.order_by(order_query.desc())
 
         tokens = query.limit(limit).offset(offset).all()
         return tokens
