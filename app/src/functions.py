@@ -2,7 +2,7 @@ from typing import Any, List
 from fastapi import Request
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
-from datetime import timedelta, timezone, datetime
+from datetime import timezone, datetime
 
 from app.src import openobserve, schemas
 from app.src.db import (
@@ -10,7 +10,6 @@ from app.src.db import (
     ExecutiveRole,
     ExecutiveRoleMap,
 )
-from app.src import exceptions
 
 
 def getRequestInfo(request: Request):
