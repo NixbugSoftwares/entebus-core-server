@@ -8,13 +8,15 @@ from sqlalchemy import (
     String,
     create_engine,
     func,
+    Geometry,
+    token_hex,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
-from app.src.enums import AccountStatus, GenderType
+from app.src.enums import AccountStatus, GenderType, CompanyStatus, CompanyType
 
 
 # Global DBMS variables
@@ -190,6 +192,330 @@ class ExecutiveRoleMap(ORMbase):
     )
     executive_id = Column(
         Integer, ForeignKey("executive.id", ondelete="CASCADE"), nullable=False
+    )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Company(ORMbase):
+    """
+    Represents a company registered in the system, along with its status,
+    type, contact information, and geographical location.
+
+    This table stores core organizational data and is linked to other entities
+    such as operators, roles, and tokens. It supports categorization, status tracking,
+    and location-based operations.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the company.
+
+        name (String):
+            Name of the company.
+            Must be unique and is required.
+
+        status (Integer):
+            Enum representing the verification status of the company
+            Defaults to `CompanyStatus.UNDER_VERIFICATION`.
+
+        type (Integer):
+            Enum representing the type/category of the company.
+            Defaults to `CompanyType.OTHER`.
+
+        address (TEXT):
+            Optional physical or mailing address of the company.
+
+        contact_person (TEXT):
+            Optional name of the primary contact person for the company.
+
+        phone_number (TEXT):
+            Optional phone number associated with the company.
+
+        email_id (TEXT):
+            Optional email address for company-related communication.
+
+        location (Geometry):
+            Geographical location of the company represented as a `POINT`
+            geometry with SRID 4326. Required for location-based features.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the company record is modified.
+            Useful for tracking updates and synchronization.
+
+        created_on (DateTime):
+            Timestamp indicating when the company record was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "company"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False, unique=True)
+    status = Column(Integer, nullable=False, default=CompanyStatus.UNDER_VERIFICATION)
+    type = Column(Integer, nullable=False, default=CompanyType.OTHER)
+    # Contact details
+    address = Column(TEXT)
+    contact_person = Column(TEXT)
+    phone_number = Column(TEXT)
+    email_id = Column(TEXT)
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Operator(ORMbase):
+    """
+    Represents an operator account within a company, containing authentication
+    credentials, contact information, and status metadata.
+
+    This table defines the core user profile for operators who perform
+    various operational tasks in the system. Each operator is associated
+    with a company and may be assigned one or more roles for access control.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the operator.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Identifies the company to which the operator belongs.
+            Cascades on delete — if the company is removed, related operators are deleted.
+
+        username (String):
+            Unique username used for operator login.
+            Must be unique across all operators.
+
+        password (TEXT):
+            Hashed password used for authentication.
+            Stored securely (should not be stored in plain text).
+
+        gender (Integer):
+            Enum representing the operator's gender.
+            Defaults to `GenderType.OTHER`.
+
+        full_name (TEXT):
+            Full name of the operator.
+
+        status (Integer):
+            Enum representing the current status of the operator account
+            Defaults to `AccountStatus.ACTIVE`.
+
+        phone_number (TEXT):
+            Optional contact phone number for the operator.
+
+        email_id (TEXT):
+            Optional email address for the operator.
+
+        created_on (DateTime):
+            Timestamp indicating when the operator account was created.
+            Defaults to the current timestamp at insertion.
+    """
+
+    __tablename__ = "operator"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    username = Column(String(32), nullable=False, unique=True)
+    password = Column(TEXT, nullable=False)
+    gender = Column(Integer, nullable=False, default=GenderType.OTHER)
+    full_name = Column(TEXT)
+    status = Column(Integer, nullable=False, default=AccountStatus.ACTIVE)
+    # Contact details
+    phone_number = Column(TEXT)
+    email_id = Column(TEXT)
+    # Metadata
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class OperatorToken(ORMbase):
+    """
+    Represents an access token issued to an operator for authentication and session management.
+
+    This table tracks active sessions and access tokens for operators, linking them to their
+    respective company and device information. It is essential for enforcing secure access
+    and managing token expiration within the system.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for this token record.
+
+        operator_id (Integer):
+            Foreign key referencing `operator.id`.
+            Identifies the operator to whom the token belongs.
+            Cascades on delete — if the operator is removed, related tokens are deleted.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Associates the token with the operator's company.
+            Cascades on delete — if the company is removed, related tokens are deleted.
+
+        access_token (String):
+            Unique string used for authenticating the operator's requests.
+            Automatically generated as a 64-character hexadecimal string.
+
+        platform_type (TEXT):
+            Optional. Describes the platform or device type (e.g., Android, iOS, Web)
+            from which the operator accessed the system.
+
+        client_version (TEXT):
+            Optional. Version of the client application used during authentication.
+            Useful for debugging or enforcing version control.
+
+        created_on (DateTime):
+            Timestamp indicating when the token was created.
+            Defaults to the current timestamp at insertion.
+
+        expires_in (DateTime):
+            Timestamp indicating when the token will expire.
+            Required to enforce session timeout and token validity.
+    """
+
+    __tablename__ = "operator_token"
+
+    id = Column(Integer, primary_key=True)
+    operator_id = Column(
+        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
+    )
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    access_token = Column(
+        String(64), unique=True, nullable=False, default=lambda: token_hex(32)
+    )
+    # Device related details
+    platform_type = Column(TEXT)
+    client_version = Column(TEXT)
+    # Metadata
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    expires_in = Column(DateTime(timezone=True), nullable=False)
+
+
+class OperatorRole(ORMbase):
+    """
+    Represents the role definitions assigned to operators within a company,
+    providing fine-grained permissions for various operational areas.
+
+    Each role is associated with a specific company and defines access controls
+    for key management features such as buses, routes, schedules, and more.
+    This structure supports a flexible Role-Based Access Control (RBAC) system.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the role.
+
+        name (String):
+            Name of the role. Must be unique within the system.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Indicates the company to which the role belongs.
+            Cascades on delete — if the company is removed, related roles are deleted.
+
+        manage_bus (Boolean):
+            Determines whether the role allows managing buses.
+
+        manage_route (Boolean):
+            Determines whether the role allows managing routes.
+
+        manage_schedule (Boolean):
+            Determines whether the role allows managing schedules.
+
+        manage_role (Boolean):
+            Determines whether the role allows managing other roles.
+
+        manage_operator (Boolean):
+            Determines whether the role allows managing operators.
+
+        manage_company (Boolean):
+            Determines whether the role allows managing company details.
+
+        manage_fare (Boolean):
+            Determines whether the role allows managing fare information.
+
+        manage_duty (Boolean):
+            Determines whether the role allows managing duties or shifts.
+
+        manage_service (Boolean):
+            Determines whether the role allows managing services.
+
+        manage_statement (Boolean):
+            Determines whether the role allows access to financial or operational statements.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the role record is modified.
+            Useful for auditing or synchronization.
+
+        created_on (DateTime):
+            Timestamp indicating when this role was created.
+            Defaults to the current timestamp at insertion.
+    """
+
+    __tablename__ = "operator_role"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False, unique=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    manage_bus = Column(Boolean, nullable=False, default=False)
+    manage_route = Column(Boolean, nullable=False, default=False)
+    manage_schedule = Column(Boolean, nullable=False, default=False)
+    manage_role = Column(Boolean, nullable=False, default=False)
+    manage_operator = Column(Boolean, nullable=False, default=False)
+    manage_company = Column(Boolean, nullable=False, default=False)
+    manage_fare = Column(Boolean, nullable=False, default=False)
+    manage_duty = Column(Boolean, nullable=False, default=False)
+    manage_service = Column(Boolean, nullable=False, default=False)
+    manage_statement = Column(Boolean, nullable=False, default=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class OperatorRoleMap(ORMbase):
+    """
+    Represents the mapping between operators and their assigned roles,
+    enabling a many-to-many relationship between `operator` and `operator_role`.
+
+    This table allows an operator to be assigned multiple roles and a role
+    to be assigned to multiple operators. Useful for implementing a flexible
+    Role-Based Access Control (RBAC) system.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for this role mapping record.
+
+        role_id (Integer):
+            Foreign key referencing `operator_role.id`.
+            Specifies the role assigned to the operator.
+            Cascades on delete — if the role is removed, related mappings are deleted.
+
+        operator_id (Integer):
+            Foreign key referencing `operator.id`.
+            Identifies the operator receiving the role.
+            Cascades on delete — if the operator is removed, related mappings are deleted.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the mapping record is modified.
+            Useful for auditing or synchronization.
+
+        created_on (DateTime):
+            Timestamp indicating when this mapping was created.
+            Defaults to the current timestamp at insertion.
+    """
+
+    __tablename__ = "operator_role_map"
+
+    id = Column(Integer, primary_key=True)
+    role_id = Column(
+        Integer, ForeignKey("operator_role.id", ondelete="CASCADE"), nullable=False
+    )
+    operator_id = Column(
+        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
