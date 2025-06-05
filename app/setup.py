@@ -1,7 +1,14 @@
 import argparse
 
 from app.src import argon2
-from app.src.db import Executive, sessionMaker, engine, ORMbase
+from app.src.db import (
+    Executive,
+    ExecutiveRole,
+    ExecutiveRoleMap,
+    sessionMaker,
+    engine,
+    ORMbase,
+)
 
 
 # ----------------------------------- Project Setup -------------------------------------------#
@@ -36,7 +43,29 @@ def initDB():
         full_name="Entebus guest",
         designation="Guest",
     )
-    session.add_all([admin, guest])
+    adminRole = ExecutiveRole(
+        name="Admin",
+        manage_ex_token=True,
+        manage_op_token=True,
+        manage_ve_token=True,
+        create_executive=True,
+        update_executive=True,
+        delete_executive=True,
+    )
+    guestRole = ExecutiveRole(
+        name="Guest",
+        manage_ex_token=False,
+        manage_op_token=False,
+        manage_ve_token=False,
+        create_executive=False,
+        update_executive=False,
+        delete_executive=False,
+    )
+    session.add_all([admin, guest, adminRole, guestRole])
+    session.flush()
+    adminToRoleMapping = ExecutiveRoleMap(executive_id=admin.id, role_id=adminRole.id)
+    guestToRoleMapping = ExecutiveRoleMap(executive_id=guest.id, role_id=guestRole.id)
+    session.add_all([adminToRoleMapping, guestToRoleMapping])
     session.commit()
     print("* Initialization completed")
     session.close()

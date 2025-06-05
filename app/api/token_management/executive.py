@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Form, status
+from fastapi import APIRouter, Depends, Form, Response, status
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 
@@ -11,6 +11,8 @@ from app.src.db import sessionMaker, Executive, ExecutiveToken
 from app.src import argon2, exceptions
 from app.src.functions import (
     enumStr,
+    getExecutiveRole,
+    getExecutiveToken,
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
@@ -104,6 +106,64 @@ async def fetch_tokens(credential=Depends(bearer_executive)):
     pass
 
 
-@route_executive.delete("/entebus/account/token", tags=["Token"])
-async def delete_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.delete(
+    "/entebus/account/token",
+    tags=["Token"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Revokes an active access token associated with an executive account.
+
+    - This endpoint deletes an access token based on the token ID (optional).
+    - If no ID is provided, it deletes the token used in the request (self-revocation).
+    - If an ID is provided, the caller must either: 
+        Own the token being deleted, or have a role with `manage_ex_token` permission.
+    - If the token ID is invalid or already deleted, the operation is silently ignored.
+    - Returns 204 No Content upon success.
+    - Logs the token revocation event for audit tracking.
+    """,
+)
+async def delete_token(
+    id: Annotated[int, Form()] = None,
+    access_token=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(access_token.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+
+        if id is None:
+            tokenToDelete = token
+        else:
+            tokenToDelete = (
+                session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
+            )
+            if tokenToDelete is not None:
+                forSelf = False
+                havePermission = False
+                if token.executive_id == tokenToDelete.executive_id:
+                    forSelf = True
+                if role is not None and role.manage_ex_token is True:
+                    havePermission = True
+                if not forSelf and not havePermission:
+                    raise exceptions.NoPermission()
+            else:
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        session.delete(tokenToDelete)
+        session.commit()
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+        )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()

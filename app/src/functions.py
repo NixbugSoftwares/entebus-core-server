@@ -1,8 +1,15 @@
 from typing import Any, List
 from fastapi import Request
+from sqlalchemy.orm.session import Session
+from sqlalchemy import Column
+from datetime import timezone, datetime
 
 from app.src import openobserve, schemas
-from app.src.db import ExecutiveToken
+from app.src.db import (
+    ExecutiveToken,
+    ExecutiveRole,
+    ExecutiveRoleMap,
+)
 
 
 def getRequestInfo(request: Request):
@@ -33,3 +40,31 @@ def makeExceptionResponses(exceptions: List[Any]):
 
 def enumStr(enumClass):
     return ", ".join(f"{x.name}: {x.value}" for x in enumClass)
+
+
+def getExecutiveToken(access_token: str, session: Session) -> ExecutiveToken | None:
+    current_time = datetime.now(timezone.utc)
+    return (
+        session.query(ExecutiveToken)
+        .filter(
+            ExecutiveToken.access_token == access_token,
+            ExecutiveToken.expires_at > current_time,
+        )
+        .first()
+    )
+
+
+def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole | None:
+    return (
+        session.query(ExecutiveRole)
+        .join(ExecutiveRoleMap, ExecutiveRole.id == ExecutiveRoleMap.role_id)
+        .filter(ExecutiveRoleMap.executive_id == token.executive_id)
+        .first()
+    )
+
+
+def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
+    if role is None or getattr(role, permission.name) is False:
+        raise False
+    else:
+        return True
