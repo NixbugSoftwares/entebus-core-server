@@ -117,8 +117,8 @@ class OrderBy(IntEnum):
     Retrieves access tokens associated with executive accounts.
 
     - This endpoint allows filtering tokens using below mentioned parameters.
-    - If the authenticated user has the manage_ex_token permission, all tokens from the ExecutiveToken table are returned.
-    - If the authenticated user don't have manage_ex_token permission, only their own tokens are returned.
+    - If the authenticated user has the manage_ex_token permission, all masked tokens from the ExecutiveToken table are returned.
+    - If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.
     - Supports pagination with `offset` and `limit` query parameters.
     - Supports ordering by `id` or `created_on`, in ascending or descending order.
     - Returns a list of masked token data, excluding access token content.
