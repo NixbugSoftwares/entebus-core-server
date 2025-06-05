@@ -179,10 +179,10 @@ async def fetch_tokens(
             query = query.filter(ExecutiveToken.created_on <= created_on_le)
 
         # Apply ordering
-        order_query = getattr(ExecutiveToken, OrderBy(order_by).name)
+        orderQuery = getattr(ExecutiveToken, OrderBy(order_by).name)
         if order_in == OrderIn.ASC:
-            query = query.order_by(order_query.asc())
-        query = query.order_by(order_query.desc())
+            query = query.order_by(orderQuery.asc())
+        query = query.order_by(orderQuery.desc())
 
         tokens = query.limit(limit).offset(offset).all()
         return tokens
