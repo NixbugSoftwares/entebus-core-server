@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    UniqueConstraint,
     create_engine,
     func,
 )
@@ -404,12 +405,13 @@ class Operator(ORMbase):
     """
 
     __tablename__ = "operator"
+    __table_args__ = (UniqueConstraint("username", "company_id"),)
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
         Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
     )
-    username = Column(String(32), nullable=False, unique=True)
+    username = Column(String(32), nullable=False)
     password = Column(TEXT, nullable=False)
     gender = Column(Integer, nullable=False, default=GenderType.OTHER)
     full_name = Column(TEXT)
