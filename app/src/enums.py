@@ -27,6 +27,6 @@ class CompanyStatus(IntEnum):
 
 
 class CompanyType(IntEnum):
-    PRIVATE = 1
-    GOVERNMENT = 2
-    OTHER = 3
+    OTHER = 1
+    PRIVATE = 2
+    GOVERNMENT = 3
