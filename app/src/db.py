@@ -9,8 +9,8 @@ from sqlalchemy import (
     String,
     create_engine,
     func,
-    token_hex,
 )
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import Geometry
