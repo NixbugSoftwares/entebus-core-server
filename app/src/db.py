@@ -349,6 +349,7 @@ class Business(ORMbase):
             Timestamp indicating when the business record was initially created.
             Automatically set during insertion.
     """
+
     __tablename__ = "business"
 
     id = Column(Integer, primary_key=True)
@@ -436,6 +437,7 @@ class Vendor(ORMbase):
             Timestamp indicating when the vendor account was created.
             Automatically set at the time of account creation.
     """
+
     __tablename__ = "vendor"
 
     id = Column(Integer, primary_key=True)
@@ -587,6 +589,7 @@ class VendorRole(ORMbase):
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
     """
+
     __tablename__ = "vendor_role"
 
     id = Column(Integer, primary_key=True)
@@ -653,6 +656,7 @@ class VendorRoleMap(ORMbase):
             Timestamp indicating when this mapping was created.
             Defaults to the current timestamp at insertion.
     """
+
     __tablename__ = "vendor_role_map"
 
     id = Column(Integer, primary_key=True)
