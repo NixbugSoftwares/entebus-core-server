@@ -109,7 +109,6 @@ def testDB():
         password=password,
         full_name="Entebus Conductor",
     )
-    
     adminRole = OperatorRole(
         company_id=company.id,
         name="Admin",
