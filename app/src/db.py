@@ -9,11 +9,11 @@ from sqlalchemy import (
     String,
     create_engine,
     func,
-    Geometry,
     token_hex,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from geoalchemy2 import Geometry
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
