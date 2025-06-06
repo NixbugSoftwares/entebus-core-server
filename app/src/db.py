@@ -364,7 +364,7 @@ class Business(ORMbase):
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
     address = Column(TEXT)
-    contact_person = Column(TEXT,  nullable=False)
+    contact_person = Column(TEXT, nullable=False)
     phone_number = Column(TEXT, nullable=False, unique=True)
     email_id = Column(TEXT, nullable=False, unique=True)
     website = Column(TEXT)
