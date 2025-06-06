@@ -326,13 +326,15 @@ class Business(ORMbase):
             Optional name of a primary contact person at the business.
 
         phone_number (TEXT):
-            Optional contact number for the business.
-            Should follow RFC3966 format, beginning with a plus sign and country code.
+            Contact number for the business, must be non-null and unique.
             Maximum 32 characters long
+            Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
+            Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
             Email address for the business, must be non-null and unique.
             Maximum length is 256 characters.
+            Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
 
         website (TEXT):
             Optional URL to the business's website or landing page.
