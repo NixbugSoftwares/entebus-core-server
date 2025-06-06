@@ -18,3 +18,15 @@ class PlatformType(IntEnum):
     WEB = 2
     NATIVE = 3
     SERVER = 4
+
+
+class BusinessStatus(IntEnum):
+    ACTIVE = 1
+    SUSPENDED = 2
+    BLOCKED = 3
+
+
+class BusinessType(IntEnum):
+    OTHER = 1
+    ORGANIZATION = 2
+    INDIVIDUAL = 3
