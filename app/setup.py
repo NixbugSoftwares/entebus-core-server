@@ -81,6 +81,8 @@ def testDB():
     business = Business(
         name="Test Business",
         contact_person="John Doe",
+        phone="+911234567890",
+        email="testbusiness@gmail.com",
     )
     session.add(business)
     session.flush()
@@ -98,6 +100,13 @@ def testDB():
     guestRole = VendorRole(
         name="Guest",
         business_id=business.id,
+        manage_token=False,
+        create_vendor=False,
+        update_vendor=False,
+        delete_vendor=False,
+        create_role=False,
+        update_role=False,
+        delete_role=False,
     )
     adminVendor = Vendor(
         business_id=business.id,
