@@ -8,7 +8,7 @@ from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
 from app.src.enums import AccountStatus, PlatformType, OrderIn
 from app.src import schemas
-from app.src.db import sessionMaker, Executive, ExecutiveToken
+from app.src.db import sessionMaker, Executive, ExecutiveToken, ExecutiveRole
 from app.src import argon2, exceptions
 from app.src.functions import (
     enumStr,
@@ -17,6 +17,7 @@ from app.src.functions import (
     makeExceptionResponses,
     getExecutiveToken,
     getExecutiveRole,
+    checkExecutivePermission,
 )
 
 
@@ -150,14 +151,12 @@ async def fetch_tokens(
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
 
-        havePermission = False
-        if role is not None and role.manage_ex_token is True:
-            havePermission = True
+        canManageToken = checkExecutivePermission(role, ExecutiveRole.manage_ex_token)
 
         query = session.query(ExecutiveToken)
         if executive_id is not None:
             query = query.filter(ExecutiveToken.executive_id == executive_id)
-        if not havePermission:
+        if not canManageToken:
             query = query.filter(ExecutiveToken.executive_id == token.executive_id)
         if id is not None:
             query = query.filter(ExecutiveToken.id == id)
