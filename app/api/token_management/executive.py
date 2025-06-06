@@ -23,6 +23,12 @@ from app.src.functions import (
 route_executive = APIRouter()
 
 
+## Schemas
+class OrderBy(IntEnum):
+    id = 1
+    created_on = 2
+
+
 ## API endpoints
 @route_executive.post(
     "/entebus/account/token",
@@ -100,12 +106,6 @@ async def create_token(
 @route_executive.patch("/entebus/account/token", tags=["Token"])
 async def update_token(credential=Depends(bearer_executive)):
     pass
-
-
-## Schemas
-class OrderBy(IntEnum):
-    id = 1
-    created_on = 2
 
 
 @route_executive.get(
