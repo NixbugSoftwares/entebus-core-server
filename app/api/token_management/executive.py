@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Response, status
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
+from secrets import token_hex
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
@@ -17,8 +18,6 @@ from app.src.functions import (
     logExecutiveEvent,
     makeExceptionResponses,
 )
-from secrets import token_hex
-from datetime import timedelta, timezone, datetime, date, time
 
 route_executive = APIRouter()
 
@@ -139,15 +138,21 @@ async def update_token(
                 raise exceptions.NoPermission()
 
         tokenToUpdate.expires_in = tokenToUpdate.expires_in + MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=tokenToUpdate.expires_in
+        )
         tokenToUpdate.access_token = token_hex(32)
-        # session.commit()
+
+        session.commit()
+        session.refresh(tokenToUpdate)
+
         logExecutiveEvent(
             token,
             request_info,
-            jsonable_encoder(token, exclude={"access_token"}),
+            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
         )
-        session.expunge(token)
-        return token
+        session.expunge(tokenToUpdate)
+        return tokenToUpdate
     except Exception as e:
         exceptions.handle(e)
     finally:
