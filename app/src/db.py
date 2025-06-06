@@ -323,6 +323,7 @@ class Business(ORMbase):
             Used for communication, billing, or geolocation purposes.
 
         contact_person (TEXT):
+            Name of the contact person for the business.
             Must be non-null.
             Maximum 32 characters long.
 
