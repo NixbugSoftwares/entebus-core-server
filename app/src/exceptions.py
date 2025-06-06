@@ -100,3 +100,9 @@ class NoPermission(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = "This user has no permission to perform this action"
     headers = {"X-Error": "NoPermission"}
+
+
+class InvalidIdentifier(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    detail = "Invalid ID provided"
+    headers = {"X-Error": "InvalidIdentifier"}

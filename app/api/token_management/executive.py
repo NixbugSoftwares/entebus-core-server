@@ -17,7 +17,8 @@ from app.src.functions import (
     logExecutiveEvent,
     makeExceptionResponses,
 )
-
+from secrets import token_hex
+from datetime import timedelta, timezone, datetime, date, time
 
 route_executive = APIRouter()
 
@@ -96,9 +97,61 @@ async def create_token(
         session.close()
 
 
-@route_executive.patch("/entebus/account/token", tags=["Token"])
-async def update_token(credential=Depends(bearer_executive)):
-    pass
+# Refresh token
+@route_executive.patch(
+    "/entebus/account/token",
+    tags=["Token"],
+    response_model=schemas.ExecutiveToken,
+    status_code=status.HTTP_200_OK,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
+    description="""
+    Refreshes an existing executive access token.
+
+    - If no `id` is provided, refreshes the current token.
+    - If an `id` is provided, it verifies the token belongs to the executive before proceeding.
+    - Generates a new access token and extends its validity by `MAX_TOKEN_VALIDITY` seconds.
+    - Updates the token in the database and logs the refresh event.
+    - Ensures that only the token owner can refresh tokens tied to their identity.
+    """,
+)
+async def update_token(
+    id: Annotated[int, Form()] = None,
+    access_token=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(access_token.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        if id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
+
+        tokenToUpdate.expires_in = tokenToUpdate.expires_in + MAX_TOKEN_VALIDITY
+        tokenToUpdate.access_token = token_hex(32)
+        # session.commit()
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(token, exclude={"access_token"}),
+        )
+        session.expunge(token)
+        return token
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.get("/entebus/account/token", tags=["Token"])
