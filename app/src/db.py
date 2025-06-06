@@ -308,11 +308,11 @@ class Business(ORMbase):
 
         status (Integer):
             Indicates the current status of the business.
-            Mapped from the `BusinessStatus` enum (e.g., ACTIVE, INACTIVE).
+            Mapped from the `BusinessStatus`.
             Defaults to `BusinessStatus.ACTIVE`.
 
         type (Integer):
-            Classifies the nature of the business (e.g., E-commerce, Transportation).
+            Classifies the nature of the business.
             Mapped from the `BusinessType` enum.
             Defaults to `BusinessType.OTHER`.
 
@@ -337,7 +337,7 @@ class Business(ORMbase):
             Should be a valid HTTP(S) address if provided.
 
         location (Geometry(Point)):
-            Optional geographic coordinates (latitude/longitude) of the business.
+            Represents the geographic location of the business in (latitude/longitude).
             Stored as a POINT geometry with SRID 4326 (WGS 84).
             Useful for spatial queries, mapping, and proximity-based operations.
 
