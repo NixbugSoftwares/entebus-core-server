@@ -323,7 +323,8 @@ class Business(ORMbase):
             Used for communication, billing, or geolocation purposes.
 
         contact_person (TEXT):
-            Optional name of a primary contact person at the business.
+            Must be non-null.
+            Maximum 32 characters long.
 
         phone_number (TEXT):
             Contact number for the business, must be non-null and unique.
@@ -362,7 +363,7 @@ class Business(ORMbase):
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
     address = Column(TEXT)
-    contact_person = Column(TEXT)
+    contact_person = Column(TEXT,  nullable=False)
     phone_number = Column(TEXT, nullable=False, unique=True)
     email_id = Column(TEXT, nullable=False, unique=True)
     website = Column(TEXT)
