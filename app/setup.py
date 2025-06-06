@@ -99,13 +99,13 @@ def testDB():
     password = argon2.makePassword("password")
     admin_Operator = Operator(
         company_id=company.id,
-        admin="operator",
+        username="admin",
         password=password,
         full_name="Entebus Operator",
     )
     guest_Operator = Operator(
         company_id=company.id,
-        guest="conductor",
+        username="guest",
         password=password,
         full_name="Entebus Conductor",
     )
