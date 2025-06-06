@@ -87,7 +87,7 @@ def initDB():
 def testDB():
     session = sessionMaker()
     company = Company(
-        name="Company A",
+        name="Test company",
         status=CompanyStatus.VERIFIED,
         contact_person="Bismilla Motors(Edava)",
         phone_number="+911212121212",
