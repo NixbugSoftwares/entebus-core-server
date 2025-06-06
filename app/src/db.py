@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     create_engine,
     func,
+    UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -303,7 +304,8 @@ class Business(ORMbase):
 
         name (String(32)):
             Name of the business.
-            Must be unique and non-null.
+            Must be non-null.
+            Maximum 32 characters long
             Used for identification and display across the platform.
 
         status (Integer):
@@ -326,10 +328,10 @@ class Business(ORMbase):
         phone_number (TEXT):
             Optional contact number for the business.
             Should follow RFC3966 format, beginning with a plus sign and country code.
+            Maximum 32 characters long
 
         email_id (TEXT):
-            Optional email address for the business.
-            Must follow the RFC 5322 standard for valid email formats.
+            Email address for the business, must be non-null and unique.
             Maximum length is 256 characters.
 
         website (TEXT):
@@ -353,14 +355,14 @@ class Business(ORMbase):
     __tablename__ = "business"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False, unique=True)
+    name = Column(String(32), nullable=False)
     status = Column(Integer, nullable=False, default=BusinessStatus.ACTIVE)
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
     address = Column(TEXT)
     contact_person = Column(TEXT)
-    phone_number = Column(TEXT)
-    email_id = Column(TEXT)
+    phone_number = Column(TEXT, nullable=False, unique=True)
+    email_id = Column(TEXT, nullable=False, unique=True)
     website = Column(TEXT)
     location = Column(Geometry(geometry_type="POINT", srid=4326))
     # Metadata
@@ -439,12 +441,13 @@ class Vendor(ORMbase):
     """
 
     __tablename__ = "vendor"
+    __table_args__ = (UniqueConstraint("business_id", "username"),)
 
     id = Column(Integer, primary_key=True)
     business_id = Column(
         Integer, ForeignKey("business.id", ondelete="CASCADE"), nullable=False
     )
-    username = Column(String(32), nullable=False, unique=True)
+    username = Column(String(32), nullable=False)
     password = Column(TEXT, nullable=False)
     gender = Column(Integer, nullable=False, default=GenderType.OTHER)
     full_name = Column(TEXT)
