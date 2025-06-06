@@ -8,7 +8,12 @@ from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
 from app.src.enums import AccountStatus, PlatformType, OrderIn
 from app.src import schemas
-from app.src.db import sessionMaker, Executive, ExecutiveToken, ExecutiveRole
+from app.src.db import (
+    sessionMaker,
+    Executive,
+    ExecutiveToken,
+    ExecutiveRole,
+)
 from app.src import argon2, exceptions
 from app.src.functions import (
     enumStr,
