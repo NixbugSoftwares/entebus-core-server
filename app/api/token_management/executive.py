@@ -181,7 +181,8 @@ async def fetch_tokens(
         orderQuery = getattr(ExecutiveToken, OrderBy(order_by).name)
         if order_in == OrderIn.ASC:
             query = query.order_by(orderQuery.asc())
-        query = query.order_by(orderQuery.desc())
+        else:
+            query = query.order_by(orderQuery.desc())
 
         tokens = query.limit(limit).offset(offset).all()
         return tokens
