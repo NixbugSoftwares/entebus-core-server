@@ -36,7 +36,7 @@ def createTables():
 def initDB():
     session = sessionMaker()
     nixbug_Company = Company(
-        name="Company A",
+        name="Nixbug Company",
         status=CompanyStatus.VERIFIED,
         contact_person="Managing Director",
         phone_number="+919496801157",
