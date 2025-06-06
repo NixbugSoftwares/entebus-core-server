@@ -305,7 +305,7 @@ class Business(ORMbase):
         name (String(32)):
             Name of the business.
             Must be non-null.
-            Maximum 32 characters long
+            Maximum 32 characters long.
             Used for identification and display across the platform.
 
         status (Integer):
@@ -327,7 +327,7 @@ class Business(ORMbase):
 
         phone_number (TEXT):
             Contact number for the business, must be non-null and unique.
-            Maximum 32 characters long
+            Maximum 32 characters long.
             Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
             Phone number start with a plus sign followed by country code and local number.
 
@@ -506,6 +506,7 @@ class VendorToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
+            Maximum 32 characters long.
 
         updated_on (DateTime):
             Timestamp automatically updated when the token record is modified.
@@ -513,7 +514,8 @@ class VendorToken(ORMbase):
 
         created_on (DateTime):
             Timestamp indicating when the token was initially created.
-            Automatically set to the current time at insertion."""
+            Automatically set to the current time at insertion.
+    """
 
     __tablename__ = "vendor_token"
 
@@ -552,6 +554,7 @@ class VendorRole(ORMbase):
         name (String(32)):
             Name of the role.
             Must be unique within the business and non-null.
+            Maximum 32 characters long.
 
         business_id (Integer):
             Foreign key referencing `business.id`.
