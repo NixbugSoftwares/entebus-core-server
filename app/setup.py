@@ -82,7 +82,7 @@ def initDB():
     session.add_all([adminToRoleMapping, guestToRoleMapping])
     session.commit()
     print("* Initialization completed")
-
+    session.close()
 
 def testDB():
     session = sessionMaker()
