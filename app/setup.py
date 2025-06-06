@@ -81,8 +81,8 @@ def testDB():
     business = Business(
         name="Test Business",
         contact_person="John Doe",
-        phone="+911234567890",
-        email="testbusiness@gmail.com",
+        phone_number="+911234567890",
+        email_id="testbusiness@gmail.com",
     )
     session.add(business)
     session.flush()
