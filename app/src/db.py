@@ -487,62 +487,35 @@ class OperatorToken(ORMbase):
 
 class OperatorRole(ORMbase):
     """
-    Represents the role definitions assigned to operators within a company,
-    providing fine-grained permissions for various operational areas.
+    Represents the role assigned to operators within a company for token management and
+    access control functionality.
 
-    Each role is associated with a specific company and defines access controls
-    for key management features such as buses, routes, schedules, and more.
-    This structure supports a flexible Role-Based Access Control (RBAC) system.
+    Defines a simplified role schema focused on permission to manage operator tokens.
+    This structure contributes to a modular Role-Based Access Control (RBAC) system
+    that can evolve with future expansions.
 
     Columns:
         id (Integer):
-            Primary key. Unique identifier for the role.
+            Primary key. Unique identifier for the operator role.
 
         name (String):
-            Name of the role. Must be unique within the system.
+            Name of the role. Must be unique across the system.
 
         company_id (Integer):
             Foreign key referencing `company.id`.
-            Indicates the company to which the role belongs.
-            Cascades on delete — if the company is removed, related roles are deleted.
+            Indicates the company to which this role is assigned.
+            Cascades on delete — deleting the company removes related roles.
 
-        manage_bus (Boolean):
-            Determines whether the role allows managing buses.
-
-        manage_route (Boolean):
-            Determines whether the role allows managing routes.
-
-        manage_schedule (Boolean):
-            Determines whether the role allows managing schedules.
-
-        manage_role (Boolean):
-            Determines whether the role allows managing other roles.
-
-        manage_operator (Boolean):
-            Determines whether the role allows managing operators.
-
-        manage_company (Boolean):
-            Determines whether the role allows managing company details.
-
-        manage_fare (Boolean):
-            Determines whether the role allows managing fare information.
-
-        manage_duty (Boolean):
-            Determines whether the role allows managing duties or shifts.
-
-        manage_service (Boolean):
-            Determines whether the role allows managing services.
-
-        manage_statement (Boolean):
-            Determines whether the role allows access to financial or operational statements.
+        manage_op_token (Boolean):
+            Determines whether the role grants permission to manage operator tokens.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
-            Useful for auditing or synchronization.
+            Useful for audit logging and synchronization.
 
         created_on (DateTime):
             Timestamp indicating when this role was created.
-            Defaults to the current timestamp at insertion.
+            Defaults to the current timestamp at the time of insertion.
     """
 
     __tablename__ = "operator_role"
@@ -552,16 +525,8 @@ class OperatorRole(ORMbase):
     company_id = Column(
         Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
     )
-    manage_bus = Column(Boolean, nullable=False, default=False)
-    manage_route = Column(Boolean, nullable=False, default=False)
-    manage_schedule = Column(Boolean, nullable=False, default=False)
-    manage_role = Column(Boolean, nullable=False, default=False)
-    manage_operator = Column(Boolean, nullable=False, default=False)
-    manage_company = Column(Boolean, nullable=False, default=False)
-    manage_fare = Column(Boolean, nullable=False, default=False)
-    manage_duty = Column(Boolean, nullable=False, default=False)
-    manage_service = Column(Boolean, nullable=False, default=False)
-    manage_statement = Column(Boolean, nullable=False, default=False)
+    # Token management permission
+    manage_op_token = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
