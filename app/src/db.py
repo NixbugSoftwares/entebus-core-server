@@ -359,49 +359,59 @@ class Company(ORMbase):
 class Operator(ORMbase):
     """
     Represents an operator account within a company, containing authentication
-    credentials, contact information, and status metadata.
+    credentials, contact information, and metadata related to account status.
 
-    This table defines the core user profile for operators who perform
-    various operational tasks in the system. Each operator is associated
-    with a company and may be assigned one or more roles for access control.
+    This table defines the core identity and login profile for operators who
+    perform various operational tasks in a multi-tenant system. Each operator
+    is linked to a specific company and can be uniquely identified by a
+    username within that company.
+
+    The design supports reuse of usernames across different companies while
+    enforcing uniqueness within each company to maintain account separation
+    and security in multi-organization deployments.
 
     Columns:
         id (Integer):
-            Primary key. Unique identifier for the operator.
+            Primary key. Unique identifier for the operator account.
 
         company_id (Integer):
             Foreign key referencing `company.id`.
             Identifies the company to which the operator belongs.
-            Cascades on delete — if the company is removed, related operators are deleted.
+            Cascades on delete — if the company is deleted, all its operators are removed.
 
         username (String):
-            Unique username used for operator login.
-            Must be unique across all operators.
+            The operator's login username.
+            Must be unique within the same company.
 
         password (TEXT):
             Hashed password used for authentication.
-            Stored securely (should not be stored in plain text).
+            Stored securely; should never be stored in plain text.
 
         gender (Integer):
-            Enum representing the operator's gender.
+            Enum representing the operator’s gender.
             Defaults to `GenderType.OTHER`.
 
         full_name (TEXT):
-            Full name of the operator.
+            The full name of the operator (optional).
 
         status (Integer):
-            Enum representing the current status of the operator account
+            Enum representing the account's current status.
             Defaults to `AccountStatus.ACTIVE`.
 
         phone_number (TEXT):
             Optional contact phone number for the operator.
 
         email_id (TEXT):
-            Optional email address for the operator.
+            Optional contact email address for the operator.
 
         created_on (DateTime):
-            Timestamp indicating when the operator account was created.
-            Defaults to the current timestamp at insertion.
+            Timestamp of when the operator account was created.
+            Automatically set to the current time during insertion.
+
+    Constraints:
+        UniqueConstraint (username, company_id):
+            Ensures that usernames are unique within each company.
+            The same username may exist in different companies.
     """
 
     __tablename__ = "operator"
