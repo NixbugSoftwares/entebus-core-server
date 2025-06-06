@@ -64,7 +64,7 @@ def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole |
 
 
 def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
-    if role is None or getattr(role, permission.name) is False:
-        raise False
-    else:
+    if role and getattr(role, permission.name, False):
         return True
+    else:
+        return False

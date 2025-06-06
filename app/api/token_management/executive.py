@@ -150,13 +150,12 @@ async def fetch_tokens(
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-
         canManageToken = checkExecutivePermission(role, ExecutiveRole.manage_ex_token)
 
         query = session.query(ExecutiveToken)
         if executive_id is not None:
             query = query.filter(ExecutiveToken.executive_id == executive_id)
-        if not canManageToken:
+        if canManageToken is False:
             query = query.filter(ExecutiveToken.executive_id == token.executive_id)
         if id is not None:
             query = query.filter(ExecutiveToken.id == id)
