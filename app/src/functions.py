@@ -3,8 +3,16 @@ from fastapi import Request
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
 from datetime import timezone, datetime
+from sqlalchemy.orm.session import Session
+from sqlalchemy import Column
+from datetime import timezone, datetime
 
 from app.src import openobserve, schemas
+from app.src.db import (
+    ExecutiveToken,
+    ExecutiveRole,
+    ExecutiveRoleMap,
+)
 from app.src.db import (
     ExecutiveToken,
     ExecutiveRole,
@@ -64,7 +72,7 @@ def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole |
 
 
 def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
-    if role is None or getattr(role, permission.name) is False:
-        raise False
-    else:
+    if role and getattr(role, permission.name, False):
         return True
+    else:
+        return False
