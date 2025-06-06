@@ -488,12 +488,14 @@ class OperatorToken(ORMbase):
     access_token = Column(
         String(64), unique=True, nullable=False, default=lambda: token_hex(32)
     )
+    expires_in = Column(Integer, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     # Device related details
-    platform_type = Column(TEXT)
+    platform_type = Column(Integer, default=PlatformType.OTHER)
     client_version = Column(TEXT)
     # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
-    expires_in = Column(DateTime(timezone=True), nullable=False)
 
 
 class OperatorRole(ORMbase):
