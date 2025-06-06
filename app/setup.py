@@ -97,13 +97,13 @@ def testDB():
     session.add(company)
     session.flush()
     password = argon2.makePassword("password")
-    operator = Operator(
+    admin_Operator = Operator(
         company_id=company.id,
         username="operator",
         password=password,
         full_name="Entebus Operator",
     )
-    conductor = Operator(
+    guest_Operator = Operator(
         company_id=company.id,
         username="conductor",
         password=password,
@@ -123,13 +123,13 @@ def testDB():
         manage_service=True,
     )
     guestRole = OperatorRole(company_id=company.id, name="Guest")
-    session.add_all([operator, conductor, adminRole, guestRole])
+    session.add_all([admin_Operator, guest_Operator, adminRole, guestRole])
     session.flush()
     adminMapping = OperatorRoleMap(
-        company_id=company.id, operator_id=operator.id, role_id=adminRole.id
+        company_id=company.id, operator_id=admin_Operator.id, role_id=adminRole.id
     )
     guestMapping = OperatorRoleMap(
-        company_id=company.id, operator_id=conductor.id, role_id=guestRole.id
+        company_id=company.id, operator_id=guest_Operator.id, role_id=guestRole.id
     )
     session.add_all([adminMapping, guestMapping])
     session.commit()
