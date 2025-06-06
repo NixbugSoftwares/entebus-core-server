@@ -137,10 +137,8 @@ async def update_token(
             if tokenToUpdate.access_token != token.access_token:
                 raise exceptions.NoPermission()
 
-        tokenToUpdate.expires_in = tokenToUpdate.expires_in + MAX_TOKEN_VALIDITY
-        tokenToUpdate.expires_at = datetime.now(timezone.utc) + timedelta(
-            seconds=tokenToUpdate.expires_in
-        )
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
         tokenToUpdate.access_token = token_hex(32)
 
         session.commit()
@@ -153,6 +151,7 @@ async def update_token(
         )
         session.expunge(tokenToUpdate)
         return tokenToUpdate
+
     except Exception as e:
         exceptions.handle(e)
     finally:
