@@ -35,15 +35,15 @@ def createTables():
 
 def initDB():
     session = sessionMaker()
-    nixbug_Company = Company(
-        name="Nixbug Company",
+    company = Company(
+        name="Nixbug company",
         status=CompanyStatus.VERIFIED,
-        contact_person="Managing Director",
+        contact_person="Managing director",
         phone_number="+919496801157",
-        address="Edava, TVM, Kerala",
+        address="Edava, Thiruvananthapuram, Kerala",
         location="POINT(76.68899711264336 8.761725176790257)",
     )
-    session.add(nixbug_Company)
+    session.add(company)
     password = argon2.makePassword("password")
     admin = Executive(
         username="admin",
