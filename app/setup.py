@@ -1,17 +1,20 @@
 import argparse
 
 from app.src import argon2
+from app.src.enums import CompanyStatus
 from app.src.db import (
     Executive,
     ExecutiveRole,
     ExecutiveRoleMap,
+    Company,
+    Operator,
+    OperatorRole,
+    OperatorRoleMap,
     sessionMaker,
     engine,
     ORMbase,
 )
 
-from app.src.enums import *
-from app.api.bearer import bearer_operator
 
 # ----------------------------------- Project Setup -------------------------------------------#
 def removeTables():
@@ -32,6 +35,15 @@ def createTables():
 
 def initDB():
     session = sessionMaker()
+    nixbug_company = Company(
+        name="Nixbug Softwares",
+        status=CompanyStatus.VERIFIED,
+        contact_person="Managing Director",
+        phone_number="+919496801157",
+        address="Edava, Trivandrum, Kerala",
+        location="POINT(76.68899711264336 8.761725176790257)",
+    )
+    session.add(nixbug_company)
     password = argon2.makePassword("password")
     admin = Executive(
         username="admin",
@@ -70,31 +82,55 @@ def initDB():
     session.add_all([adminToRoleMapping, guestToRoleMapping])
     session.commit()
     print("* Initialization completed")
-    session.close()
+
 
 def testDB():
-    session  = sessionMaker()
-    company  = Company(name='Company A', status=CompanyStatus.VERIFIED,
-                       contact_person="Bismilla Motors(Edava)", phone_number="+911212121212",
-                       address="Edava, TVM", location="POINT(76.68899711264336 8.761725176790257)")
+    session = sessionMaker()
+    company = Company(
+        name="Company A",
+        status=CompanyStatus.VERIFIED,
+        contact_person="Bismilla Motors(Edava)",
+        phone_number="+911212121212",
+        address="Edava, TVM",
+        location="POINT(76.68899711264336 8.761725176790257)",
+    )
     session.add(company)
     session.flush()
-    password  = "password"
-    operator  = Operator(company_id=company.id ,username="operator",
-                         password=password, full_name="Entebus Operator")
-    conductor = Operator(company_id=company.id ,username="conductor",
-                         password=password, full_name="Entebus Conductor")
-    adminRole = OperatorRole(company_id=company.id, name="Admin", manage_bus=True,
-                             manage_role=True, manage_operator=True, manage_company=True,
-                             manage_route=True, manage_schedule=True, manage_fare=True,
-                             manage_duty=True, manage_service=True)
+    password = argon2.makePassword("password")
+    operator = Operator(
+        company_id=company.id,
+        username="operator",
+        password=password,
+        full_name="Entebus Operator",
+    )
+    conductor = Operator(
+        company_id=company.id,
+        username="conductor",
+        password=password,
+        full_name="Entebus Conductor",
+    )
+    adminRole = OperatorRole(
+        company_id=company.id,
+        name="Admin",
+        manage_bus=True,
+        manage_role=True,
+        manage_operator=True,
+        manage_company=True,
+        manage_route=True,
+        manage_schedule=True,
+        manage_fare=True,
+        manage_duty=True,
+        manage_service=True,
+    )
     guestRole = OperatorRole(company_id=company.id, name="Guest")
     session.add_all([operator, conductor, adminRole, guestRole])
     session.flush()
-    adminMapping = OperatorRoleMap(company_id=company.id, operator_id=operator.id,
-                                   role_id=adminRole.id)
-    guestMapping = OperatorRoleMap(company_id=company.id, operator_id=conductor.id,
-                                   role_id=guestRole.id)
+    adminMapping = OperatorRoleMap(
+        company_id=company.id, operator_id=operator.id, role_id=adminRole.id
+    )
+    guestMapping = OperatorRoleMap(
+        company_id=company.id, operator_id=conductor.id, role_id=guestRole.id
+    )
     session.add_all([adminMapping, guestMapping])
     session.commit()
     print("* Test population completed")

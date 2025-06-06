@@ -17,7 +17,13 @@ from sqlalchemy.orm import sessionmaker
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
-from app.src.enums import AccountStatus, GenderType, PlatformType, CompanyStatus, CompanyType
+from app.src.enums import (
+    AccountStatus,
+    GenderType,
+    PlatformType,
+    CompanyStatus,
+    CompanyType,
+)
 
 
 # Global DBMS variables
