@@ -18,3 +18,8 @@ class PlatformType(IntEnum):
     WEB = 2
     NATIVE = 3
     SERVER = 4
+
+
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
