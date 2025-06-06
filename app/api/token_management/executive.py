@@ -29,8 +29,6 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
-    getExecutiveToken,
-    getExecutiveRole,
     checkExecutivePermission,
 )
 

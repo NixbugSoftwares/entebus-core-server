@@ -13,11 +13,6 @@ from app.src.db import (
     ExecutiveRole,
     ExecutiveRoleMap,
 )
-from app.src.db import (
-    ExecutiveToken,
-    ExecutiveRole,
-    ExecutiveRoleMap,
-)
 
 
 def getRequestInfo(request: Request):
