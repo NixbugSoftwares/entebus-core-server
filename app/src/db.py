@@ -597,15 +597,15 @@ class VendorRole(ORMbase):
         index=True,
     )
     # Vendor token management permission
-    manage_token = Column(Boolean, nullable=False, default=False)
+    manage_token = Column(Boolean, nullable=False)
     # Vendor management permission
-    create_vendor = Column(Boolean, nullable=False, default=False)
-    update_vendor = Column(Boolean, nullable=False, default=False)
-    delete_vendor = Column(Boolean, nullable=False, default=False)
+    create_vendor = Column(Boolean, nullable=False)
+    update_vendor = Column(Boolean, nullable=False)
+    delete_vendor = Column(Boolean, nullable=False)
     # Vendor role management permission
-    create_role = Column(Boolean, nullable=False, default=False)
-    update_role = Column(Boolean, nullable=False, default=False)
-    delete_role = Column(Boolean, nullable=False, default=False)
+    create_role = Column(Boolean, nullable=False)
+    update_role = Column(Boolean, nullable=False)
+    delete_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
