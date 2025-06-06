@@ -1,3 +1,4 @@
+from secrets import token_hex
 from sqlalchemy import (
     TEXT,
     Boolean,
@@ -16,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
-from app.src.enums import AccountStatus, GenderType, CompanyStatus, CompanyType
+from app.src.enums import AccountStatus, GenderType, PlatformType, CompanyStatus, CompanyType
 
 
 # Global DBMS variables
@@ -51,6 +52,15 @@ class ExecutiveRole(ORMbase):
         delete_executive (Boolean):
             Whether this role permits deletion of executive accounts.
 
+        manage_ex_token (Boolean):
+            Whether this role permits listing and deletion of executive tokens.
+
+        manage_op_token (Boolean):
+            Whether this role permits listing and deletion of operator tokens.
+
+        manage_ve_token (Boolean):
+            Whether this role permits listing and deletion of vendor tokens.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -62,10 +72,14 @@ class ExecutiveRole(ORMbase):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False, unique=True)
-    # Permissions
-    create_executive = Column(Boolean, nullable=False, default=False)
-    update_executive = Column(Boolean, nullable=False, default=False)
-    delete_executive = Column(Boolean, nullable=False, default=False)
+    # Token management permission
+    manage_ex_token = Column(Boolean, nullable=False)
+    manage_op_token = Column(Boolean, nullable=False)
+    manage_ve_token = Column(Boolean, nullable=False)
+    # Executive management permission
+    create_executive = Column(Boolean, nullable=False)
+    update_executive = Column(Boolean, nullable=False)
+    delete_executive = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -193,6 +207,77 @@ class ExecutiveRoleMap(ORMbase):
     executive_id = Column(
         Integer, ForeignKey("executive.id", ondelete="CASCADE"), nullable=False
     )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class ExecutiveToken(ORMbase):
+    """
+    Represents an authentication token issued to an executive,
+    enabling secure access to the platform with support for token expiration
+    and client metadata tracking.
+
+    This table stores unique access tokens mapped to executives along with
+    details about the device or client used and timestamps for auditing.
+    Useful for session management, device tracking, and implementing token-based authentication.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for this token record.
+
+        executive_id (Integer):
+            Foreign key referencing `executive.id`.
+            Identifies the executive associated with this token.
+            Cascades on delete — if the executive is removed, related tokens are deleted.
+
+        access_token (String):
+            Unique, securely generated 64-character hexadecimal access token.
+            Automatically generated using a secure random function.
+            Used to authenticate the executive on subsequent requests.
+
+        expires_in (Integer):
+            Token expiration time in minutes.
+            Defines the duration after which the token becomes invalid.
+
+        expires_at (DateTime):
+            Token expiration date and time.
+            Defines the date and time after which the token becomes invalid.
+
+        platform_type (Integer):
+            Enum value indicating the client platform type.
+            Defaults to `PlatformType.OTHER`.
+
+        client_details (TEXT):
+            Optional description of the client device or environment.
+            May include user agent, app version, IP address, etc.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the token record is modified.
+            Useful for auditing or tracking last usage.
+
+        created_on (DateTime):
+            Timestamp indicating when this token was created.
+            Defaults to the current timestamp at insertion.
+    """
+
+    __tablename__ = "executive_token"
+
+    id = Column(Integer, primary_key=True)
+    executive_id = Column(
+        Integer,
+        ForeignKey("executive.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    access_token = Column(
+        String(64), unique=True, nullable=False, default=lambda: token_hex(32)
+    )
+    expires_in = Column(Integer, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    # Device related details
+    platform_type = Column(Integer, default=PlatformType.OTHER)
+    client_details = Column(TEXT)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

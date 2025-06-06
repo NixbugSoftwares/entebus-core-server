@@ -34,7 +34,7 @@ BUS_STOP_PICTURES = "bus-stop-pictures"
 
 # Resource upper limits
 MAX_EXECUTIVE_TOKENS = 5  # Maximum tokens per executive
-MAX_TOKEN_VALIDITY = 7 * 24 * 60  # Number of minutes in a week (7 days)
+MAX_TOKEN_VALIDITY = 7 * 24 * 60 * 60  # Number of seconds in a week
 MAX_OPERATOR_TOKENS = 5  # Maximum tokens per operator
 MAX_VENDOR_TOKENS = 1  # Maximum tokens per vendor
 
