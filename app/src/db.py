@@ -574,15 +574,6 @@ class VendorRole(ORMbase):
         delete_role (Boolean):
             Whether this role permits deletion of vendor roles.
 
-        create_map (Boolean):
-            Whether this role permits creating role mappings (assigning roles to vendors).
-
-        update_map (Boolean):
-            Whether this role permits updating existing role mappings.
-
-        delete_map (Boolean):
-            Whether this role permits deleting role mappings.
-
         updated_on (DateTime):
             Timestamp automatically updated when the role record is modified.
 
@@ -601,7 +592,7 @@ class VendorRole(ORMbase):
         index=True,
     )
     # Vendor token management permission
-    manage_token = Column(Boolean, nullable=False)
+    manage_token = Column(Boolean, nullable=False, default=False)
     # Vendor management permission
     create_vendor = Column(Boolean, nullable=False, default=False)
     update_vendor = Column(Boolean, nullable=False, default=False)
@@ -610,10 +601,6 @@ class VendorRole(ORMbase):
     create_role = Column(Boolean, nullable=False, default=False)
     update_role = Column(Boolean, nullable=False, default=False)
     delete_role = Column(Boolean, nullable=False, default=False)
-    # Vendor role map management permission
-    create_map = Column(Boolean, nullable=False, default=False)
-    update_map = Column(Boolean, nullable=False, default=False)
-    delete_map = Column(Boolean, nullable=False, default=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
