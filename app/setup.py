@@ -43,7 +43,6 @@ def initDB():
         full_name="Entebus guest",
         designation="Guest",
     )
-    session.add_all([admin, guest])
     adminRole = ExecutiveRole(
         name="Admin",
         manage_ex_token=True,

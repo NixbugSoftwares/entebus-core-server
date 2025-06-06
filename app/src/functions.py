@@ -3,8 +3,16 @@ from fastapi import Request
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
 from datetime import timezone, datetime
+from sqlalchemy.orm.session import Session
+from sqlalchemy import Column
+from datetime import timezone, datetime
 
 from app.src import openobserve, schemas
+from app.src.db import (
+    ExecutiveToken,
+    ExecutiveRole,
+    ExecutiveRoleMap,
+)
 from app.src.db import (
     ExecutiveToken,
     ExecutiveRole,
