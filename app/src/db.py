@@ -235,7 +235,7 @@ class ExecutiveToken(ORMbase):
             Used to authenticate the executive on subsequent requests.
 
         expires_in (Integer):
-            Token expiration time in minutes.
+            Token expiration time in seconds.
             Defines the duration after which the token becomes invalid.
 
         expires_at (DateTime):
