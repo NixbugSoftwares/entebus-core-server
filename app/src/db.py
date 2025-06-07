@@ -1,4 +1,5 @@
 from secrets import token_hex
+from geoalchemy2 import Geometry
 from sqlalchemy import (
     TEXT,
     Boolean,
@@ -15,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
-from app.src.enums import AccountStatus, GenderType, PlatformType
+from app.src.enums import AccountStatus, GenderType, LandmarkType, PlatformType
 
 
 # Global DBMS variables
@@ -198,6 +199,7 @@ class ExecutiveRoleMap(ORMbase):
     """
 
     __tablename__ = "executive_role_map"
+
     id = Column(Integer, primary_key=True)
     role_id = Column(
         Integer, ForeignKey("executive_role.id", ondelete="CASCADE"), nullable=False
@@ -276,6 +278,64 @@ class ExecutiveToken(ORMbase):
     # Device related details
     platform_type = Column(Integer, default=PlatformType.OTHER)
     client_details = Column(TEXT)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Landmark(ORMbase):
+    """
+    Represents a geo-spatial landmark used for mapping, zoning, or location-aware operations.
+
+    Landmarks are stored as named polygonal areas with versioning and type categorization,
+    allowing for geographic indexing, change tracking, and spatial queries (containment,
+    overlap, proximity).
+    
+    Frontend-Backend Note:
+        Although circles are shown and drawn on the frontend UI, they are **converted to
+        axis-aligned bounding box (AABB) polygons** before being send to the backend.
+        This simplifies spatial operations and indexing in the backend.
+        The AABB polygon is a square bounding box tightly enclosing the circle.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the landmark record.
+
+        name (String(32)):
+            Human-readable name of the landmark.
+            Used for identification in user interfaces or spatial queries.
+
+        version (Integer):
+            An integer version number that can be incremented on updates.
+            Useful for tracking changes or syncing updated landmark boundaries.
+
+        boundary (Geometry):
+            Geo-spatial boundary defined as a PostGIS `POLYGON` with SRID 4326 (WGS 84).
+            Represents the physical area covered by the landmark.
+            Must be unique — no two landmarks can share the same geometry.
+
+        type (Integer):
+            Enum value indicating the type of landmark.
+            Defaults to `LandmarkType.LOCAL`.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the record was first created.
+            Defaults to the current time on insertion.
+    """
+
+    __tablename__ = "landmark"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False, index=True)
+    version = Column(Integer, nullable=False, default=1)
+    boundary = Column(
+        Geometry(geometry_type="POLYGON", srid=4326), nullable=False, unique=True
+    )
+    type = Column(Integer, nullable=False, default=LandmarkType.LOCAL)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
