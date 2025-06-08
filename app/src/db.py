@@ -60,6 +60,15 @@ class ExecutiveRole(ORMbase):
         manage_ve_token (Boolean):
             Whether this role permits listing and deletion of vendor tokens.
 
+        create_landmark (Boolean):
+            Whether this role permits the creation of a new landmark.
+
+        update_landmark (Boolean):
+            Whether this role permits editing existing the landmark.
+
+        delete_landmark (Boolean):
+            Whether this role permits deletion of a landmark.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -79,6 +88,10 @@ class ExecutiveRole(ORMbase):
     create_executive = Column(Boolean, nullable=False)
     update_executive = Column(Boolean, nullable=False)
     delete_executive = Column(Boolean, nullable=False)
+    # Landmark management permission
+    create_landmark = Column(Boolean, nullable=False)
+    update_landmark = Column(Boolean, nullable=False)
+    delete_landmark = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -290,7 +303,7 @@ class Landmark(ORMbase):
     Landmarks are stored as named polygonal areas with versioning and type categorization,
     allowing for geographic indexing, change tracking, and spatial queries (containment,
     overlap, proximity).
-    
+
     Frontend-Backend Note:
         Although circles are shown and drawn on the frontend UI, they are **converted to
         axis-aligned bounding box (AABB) polygons** before being send to the backend.
