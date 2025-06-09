@@ -102,6 +102,12 @@ class NoPermission(APIException):
     headers = {"X-Error": "NoPermission"}
 
 
+class InvalidIdentifier(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    detail = "Invalid ID provided"
+    headers = {"X-Error": "InvalidIdentifier"}
+
+
 class InvalidWKTStringOrType(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Invalid WKT string or type"
