@@ -672,7 +672,6 @@ class VendorRoleMap(ORMbase):
         Integer,
         ForeignKey("vendor.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
