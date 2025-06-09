@@ -64,12 +64,12 @@ async def create_landmark(
     type: Annotated[
         LandmarkType, Form(description=enumStr(LandmarkType))
     ] = LandmarkType.LOCAL,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)

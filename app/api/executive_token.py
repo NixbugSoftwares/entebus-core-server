@@ -137,12 +137,12 @@ async def create_token(
 )
 async def refresh_token(
     id: Annotated[int, Form()] = None,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
 
@@ -208,11 +208,11 @@ async def fetch_tokens(
     limit: Annotated[int, Query(gt=0, le=100)] = 20,
     order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
     order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
@@ -278,12 +278,12 @@ async def fetch_tokens(
 )
 async def delete_token(
     id: Annotated[int, Form()] = None,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
