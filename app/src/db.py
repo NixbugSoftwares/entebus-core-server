@@ -387,7 +387,7 @@ class Vendor(ORMbase):
             Primary key. Unique identifier for the vendor.
 
         business_id (Integer):
-            Foreign key referencing the associated business entity.
+            Foreign key referencing the associated business entity, its indexed.
             Links the vendor to a parent business account.
             Must be non-null. Cascading deletion is applied when the business is deleted.
 
@@ -449,7 +449,10 @@ class Vendor(ORMbase):
 
     id = Column(Integer, primary_key=True)
     business_id = Column(
-        Integer, ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("business.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     username = Column(String(32), nullable=False)
     password = Column(TEXT, nullable=False)
@@ -559,7 +562,7 @@ class VendorRole(ORMbase):
             Maximum 32 characters long.
 
         business_id (Integer):
-            Foreign key referencing `business.id`.
+            Foreign key referencing the associated business entity, its indexed.
             Identifies the business this role belongs to.
             Enforces cascading delete — if the business is deleted, the role is also removed.
 
@@ -630,7 +633,7 @@ class VendorRoleMap(ORMbase):
             Primary key. Unique identifier for this role mapping record.
 
         business_id (Integer):
-            Foreign key referencing `business.id`.
+            Foreign key referencing the associated business entity, its indexed.
             Identifies the business under which the vendor-role mapping exists.
             Cascades on delete — if the business is deleted, related mappings are also deleted.
 
