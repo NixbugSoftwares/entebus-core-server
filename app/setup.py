@@ -11,6 +11,10 @@ from app.src.db import (
     OperatorRole,
     OperatorRoleMap,
     Landmark,
+    Business,
+    Vendor,
+    VendorRole,
+    VendorRoleMap,
     sessionMaker,
     engine,
     ORMbase,
@@ -154,6 +158,69 @@ def testDB():
                            76.6962373 8.7642725))",
     )
     session.add_all([landmark1, landmark2])
+    session.flush()
+    business = Business(
+        name="Test Business",
+        contact_person="John Doe",
+        phone_number="+911234567890",
+        email_id="testbusiness@gmail.com",
+    )
+    session.add(business)
+    session.flush()
+    adminRole = VendorRole(
+        name="Admin",
+        business_id=business.id,
+        manage_token=True,
+        create_vendor=True,
+        update_vendor=True,
+        delete_vendor=True,
+        create_role=True,
+        update_role=True,
+        delete_role=True,
+    )
+    guestRole = VendorRole(
+        name="Guest",
+        business_id=business.id,
+        manage_token=False,
+        create_vendor=False,
+        update_vendor=False,
+        delete_vendor=False,
+        create_role=False,
+        update_role=False,
+        delete_role=False,
+    )
+    adminVendor = Vendor(
+        business_id=business.id,
+        username="admin",
+        password=password,
+        full_name="Admin Vendor",
+    )
+    guestVendor = Vendor(
+        business_id=business.id,
+        username="guest",
+        password=password,
+        full_name="Guest Vendor",
+    )
+    session.add_all(
+        [
+            adminRole,
+            guestRole,
+            adminVendor,
+            guestVendor,
+        ]
+    )
+    session.flush()
+    adminRoleMap = VendorRoleMap(
+        business_id=business.id,
+        role_id=adminRole.id,
+        vendor_id=adminVendor.id,
+    )
+    guestRoleMap = VendorRoleMap(
+        business_id=business.id,
+        role_id=guestRole.id,
+        vendor_id=guestVendor.id,
+    )
+    session.add_all([adminRoleMap, guestRoleMap])
     session.commit()
     print("* Test population completed")
     session.close()

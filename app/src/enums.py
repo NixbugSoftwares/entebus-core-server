@@ -33,6 +33,18 @@ class OrderIn(IntEnum):
     DESC = 2
 
 
+class BusinessStatus(IntEnum):
+    ACTIVE = 1
+    SUSPENDED = 2
+    BLOCKED = 3
+
+
+class BusinessType(IntEnum):
+    OTHER = 1
+    ORGANIZATION = 2
+    INDIVIDUAL = 3
+
+
 class CompanyStatus(IntEnum):
     UNDER_VERIFICATION = 1
     VERIFIED = 2
