@@ -34,7 +34,6 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
-    checkExecutivePermission,
 )
 
 
@@ -217,7 +216,7 @@ async def fetch_tokens(
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        canManageToken = checkExecutivePermission(role, ExecutiveRole.manage_ex_token)
+        canManageToken = bool(role and role.manage_ex_token)
 
         query = session.query(ExecutiveToken)
         if executive_id is not None:
@@ -297,10 +296,8 @@ async def delete_token(
             )
             if tokenToDelete is not None:
                 forSelf = token.executive_id == tokenToDelete.executive_id
-                havePermission = checkExecutivePermission(
-                    role, ExecutiveRole.manage_ex_token
-                )
-                if not forSelf and not havePermission:
+                canManageToken = bool(role and role.manage_ex_token)
+                if not forSelf and not canManageToken:
                     raise exceptions.NoPermission()
             else:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
