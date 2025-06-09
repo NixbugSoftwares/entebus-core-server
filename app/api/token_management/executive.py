@@ -7,7 +7,6 @@ from fastapi import (
     status,
     Query,
 )
-from typing import Annotated
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
@@ -35,6 +34,7 @@ from app.src.functions import (
     getExecutiveRole,
     checkExecutivePermission,
 )
+
 
 route_executive = APIRouter()
 
