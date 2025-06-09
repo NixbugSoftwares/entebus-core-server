@@ -11,6 +11,7 @@ from app.src.db import (
     OperatorRole,
     OperatorRoleMap,
     Landmark,
+    BusStop,
     sessionMaker,
     engine,
     ORMbase,
@@ -149,6 +150,11 @@ def testDB():
                            76.7225906 8.7410323, \
                            76.7234906 8.7410323))",
     )
+    busStop1 = BusStop(
+        name="Varkala",
+        landmark_id=landmark1.id,
+        location="POINT(76.72531799929881 8.73426896053255)",
+    )
     landmark2 = Landmark(
         name="Edava",
         boundary="POLYGON((76.6962373 8.7642725, \
@@ -157,7 +163,12 @@ def testDB():
                            76.6953373 8.7642725, \
                            76.6962373 8.7642725))",
     )
-    session.add_all([landmark1, landmark2])
+    busStop2 = BusStop(
+        name="Edava",
+        landmark_id=landmark2.id,
+        location="POINT(76.69694177590647 8.763503492804466)",
+    )
+    session.add_all([landmark1, landmark2, busStop1, busStop2])
     session.commit()
     print("* Test population completed")
     session.close()

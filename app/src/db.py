@@ -688,3 +688,57 @@ class Landmark(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class BusStop(ORMbase):
+    """
+    Represents a public bus stop, tied to a specific geographic location and a nearby landmark.
+
+    Bus stops are stored as named geospatial `POINT`s with landmark association and uniqueness
+    constraints. This enables precise mapping, spatial querying, and logical grouping of stops
+    under broader landmarks.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bus stop record.
+
+        name (TEXT):
+            Human-readable name of the bus stop.
+            Commonly used in maps, navigation systems, and user-facing interfaces.
+
+        landmark_id (Integer):
+            Foreign key to the `landmark` table.
+            Indicates the associated landmark for this bus stop.
+            Cascading delete behavior ensures cleanup if the landmark is removed.
+
+        location (Geometry):
+            Geographic position of the bus stop defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
+            Represents latitude/longitude coordinates.
+            Combined with `landmark_id`, must be unique — prevents duplicate stops at the same place.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Useful for tracking recent updates or syncing changes across systems.
+
+        created_on (DateTime):
+            Timestamp indicating when the bus stop was first created.
+            Automatically set on record insertion.
+
+    Constraints:
+        Unique Constraint:
+            Combination of `location` and `landmark_id` must be unique.
+            Ensures spatial and contextual uniqueness of each bus stop relative to its landmark.
+    """
+
+    __tablename__ = "bus_stop"
+    __table_args__ = (UniqueConstraint("location", "landmark_id"),)
+
+    id = Column(Integer, primary_key=True)
+    name = Column(TEXT, nullable=False)
+    landmark_id = Column(
+        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+    )
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
