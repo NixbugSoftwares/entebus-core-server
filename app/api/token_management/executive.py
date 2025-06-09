@@ -108,14 +108,16 @@ async def create_token(
     description="""
     Refreshes an existing executive access token.
 
-    - If no `id` is provided, refreshes the current token.
-    - If an `id` is provided, it verifies the token belongs to the executive before proceeding.
-    - Generates a new access token and extends its validity by `MAX_TOKEN_VALIDITY` seconds.
-    - Updates the token in the database and logs the refresh event.
-    - Ensures that only the token owner can refresh tokens tied to their identity.
+    - If no `id` is provided, refreshes only the current token (used in this request).
+    - If an `id` is provided: Must match the current token's `access_token` (prevents
+      unauthorized refreshes, even by the same executive).
+    - Raises `InvalidIdentifier` if the token does not exist (avoids ID probing).
+    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
+    - Rotates the `access_token` value (invalidates the old token immediately).
+    - Logs the refresh event for auditability.
     """,
 )
-async def update_token(
+async def refresh_token(
     id: Annotated[int, Form()] = None,
     access_token=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
@@ -140,7 +142,6 @@ async def update_token(
         tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
         tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
         tokenToUpdate.access_token = token_hex(32)
-
         session.commit()
         session.refresh(tokenToUpdate)
 
@@ -151,7 +152,6 @@ async def update_token(
         )
         session.expunge(tokenToUpdate)
         return tokenToUpdate
-
     except Exception as e:
         exceptions.handle(e)
     finally:

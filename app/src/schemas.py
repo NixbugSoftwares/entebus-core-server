@@ -20,7 +20,6 @@ class MaskedExecutiveToken(BaseModel):
     client_details: Optional[str]
     created_on: datetime
     updated_on: Optional[datetime]
-    expires_at: datetime
 
 
 class ExecutiveToken(MaskedExecutiveToken):
