@@ -25,3 +25,13 @@ class MaskedExecutiveToken(BaseModel):
 class ExecutiveToken(MaskedExecutiveToken):
     access_token: str
     token_type: Optional[str] = "bearer"
+
+
+class Landmark(BaseModel):
+    id: int
+    name: str
+    version: int
+    boundary: str
+    type: str
+    updated_on: Optional[datetime]
+    created_on: datetime
