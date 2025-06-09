@@ -126,7 +126,11 @@ def testDB():
         name="Admin",
         manage_op_token=True,
     )
-    guestRole = OperatorRole(company_id=company.id, name="Guest", manage_op_token=False)
+    guestRole = OperatorRole(
+        company_id=company.id,
+        name="Guest",
+        manage_op_token=False,
+    )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
     adminMapping = OperatorRoleMap(
@@ -155,7 +159,6 @@ def testDB():
     )
     session.add_all([landmark1, landmark2])
     session.flush()
-    password = argon2.makePassword("password")
     business = Business(
         name="Test Business",
         contact_person="John Doe",
@@ -220,7 +223,6 @@ def testDB():
     session.add_all([adminRoleMap, guestRoleMap])
     session.commit()
     print("* Test population completed")
-    session.close()
     session.close()
 
 
