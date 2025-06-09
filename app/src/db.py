@@ -473,7 +473,7 @@ class OperatorToken(ORMbase):
             Useful for device-aware authentication and access logging.
 
         client_version (TEXT):
-            Optional field for storing the version of the client application (e.g., mobile or web app).
+            Optional field for storing the version of the client application.
             Helps in enforcing version constraints and debugging issues related to client behavior.
 
         updated_on (DateTime):
