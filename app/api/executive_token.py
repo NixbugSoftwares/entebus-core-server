@@ -9,12 +9,16 @@ from fastapi import (
 )
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
-from enum import IntEnum
 from secrets import token_hex
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.enums import AccountStatus, PlatformType, OrderIn
+from app.src.enums import (
+    AccountStatus,
+    PlatformType,
+    OrderIn,
+    OrderBy,
+)
 from app.src import schemas
 from app.src.db import (
     sessionMaker,
@@ -35,12 +39,6 @@ from app.src.functions import (
 
 
 route_executive = APIRouter()
-
-
-## Schemas
-class OrderBy(IntEnum):
-    id = 1
-    created_on = 2
 
 
 ## API endpoints
