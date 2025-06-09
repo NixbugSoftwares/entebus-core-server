@@ -319,8 +319,8 @@ class Business(ORMbase):
             Defaults to `BusinessType.OTHER`.
 
         address (TEXT):
-            Optional physical or mailing address of the business.
-            Used for communication, billing, or geolocation purposes.
+            Optional physical address of the business.
+            Used for communication or billing purposes.
 
         contact_person (TEXT):
             Name of the contact person for the business.
@@ -482,12 +482,12 @@ class VendorToken(ORMbase):
             Primary key. Unique identifier for this token record.
 
         business_id (Integer):
-            Foreign key referencing `business.id`.
+            Foreign key referencing the associated business entity.
             Identifies the business associated with the vendor.
             Enforces cascading delete — if the business is deleted, related vendor tokens are also removed.
 
         vendor_id (Integer):
-            Foreign key referencing `vendor.id`.
+            Foreign key referencing the associated vendor entity, its indexed.
             Identifies the vendor who owns this token.
             Cascades on delete — if the vendor is removed, associated tokens are deleted.
 
@@ -526,10 +526,15 @@ class VendorToken(ORMbase):
 
     id = Column(Integer, primary_key=True)
     business_id = Column(
-        Integer, ForeignKey("business.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("business.id", ondelete="CASCADE"),
+        nullable=False,
     )
     vendor_id = Column(
-        Integer, ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("vendor.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     access_token = Column(
         String(64), unique=True, nullable=False, default=lambda: token_hex(32)
@@ -666,7 +671,9 @@ class VendorRoleMap(ORMbase):
         index=True,
     )
     role_id = Column(
-        Integer, ForeignKey("vendor_role.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("vendor_role.id", ondelete="CASCADE"),
+        nullable=False,
     )
     vendor_id = Column(
         Integer,
