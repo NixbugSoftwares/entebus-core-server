@@ -47,7 +47,7 @@ class ExecutiveRole(ORMbase):
 
         name (String(32)):
             Name of the role.
-            Must be unique and not-null.
+            Must be unique and not be null.
 
         create_executive (Boolean):
             Whether this role permits the creation of new executive accounts.
@@ -110,7 +110,7 @@ class Executive(ORMbase):
             It can contain uppercase and lowercase letters, as well as digits from 0 to 9.
             It should be 4-32 characters long.
             May include hyphen (-), period (.), at symbol (@), and underscore (_).
-            Must be not-null and unique.
+            Must not be null and unique.
 
         password (TEXT):
             Hashed password used for authentication.
@@ -304,7 +304,7 @@ class Business(ORMbase):
 
         name (String(32)):
             Name of the business.
-            Must be not-null.
+            Must not be null.
             Maximum 32 characters long.
             Used for identification and display across the platform.
 
@@ -324,17 +324,17 @@ class Business(ORMbase):
 
         contact_person (TEXT):
             Name of the contact person for the business.
-            Must be not-null.
+            Must not be null.
             Maximum 32 characters long.
 
         phone_number (TEXT):
-            Contact number for the business, must be not-null and unique.
+            Contact number for the business, must not be null and unique.
             Maximum 32 characters long.
             Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
             Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
-            Email address for the business, must be not-null and unique.
+            Email address for the business, must not be null and unique.
             Maximum length is 256 characters.
             Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
 
@@ -389,7 +389,7 @@ class Vendor(ORMbase):
         business_id (Integer):
             Foreign key referencing the associated business entity, its indexed.
             Links the vendor to a parent business account.
-            Must be not-null. Cascading deletion is applied when the business is deleted.
+            Must not be null, Cascading deletion is applied when the business is deleted.
 
         username (String(32)):
             Unique username used for login or identification within the business entity.
@@ -398,7 +398,7 @@ class Vendor(ORMbase):
             Can include uppercase and lowercase letters, digits (0 to 9),
             and symbols like hyphen (-), period (.), at symbol (@), and underscore (_).
             Must be 4-32 characters long.
-            Must be not-null, and unique against business.
+            Must not be null, and unique against business.
 
         password (TEXT):
             Hashed password used for secure authentication.
@@ -563,7 +563,7 @@ class VendorRole(ORMbase):
 
         name (String(32)):
             Name of the role.
-             Must be not-null, and unique against business.
+            Must not be null, and unique against business.
             Maximum 32 characters long.
 
         business_id (Integer):
