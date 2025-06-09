@@ -3,6 +3,13 @@ from fastapi import Request
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
 from datetime import timezone, datetime
+from sqlalchemy.orm.session import Session
+from sqlalchemy import Column
+from datetime import timezone, datetime
+from shapely import Polygon, wkt
+from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
+from typing import Optional
 
 from app.src import openobserve, schemas
 from app.src.db import (
@@ -64,7 +71,7 @@ def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole |
 
 
 def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
-    if role is None or getattr(role, permission.name) is False:
-        raise False
-    else:
+    if role and getattr(role, permission.name, False):
         return True
+    else:
+        return False

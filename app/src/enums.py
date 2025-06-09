@@ -18,3 +18,16 @@ class PlatformType(IntEnum):
     WEB = 2
     NATIVE = 3
     SERVER = 4
+
+
+class LandmarkType(IntEnum):
+    LOCAL = 1
+    VILLAGE = 2
+    DISTRICT = 3
+    STATE = 4
+    NATIONAL = 5
+
+
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
