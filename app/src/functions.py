@@ -170,6 +170,8 @@ def checkVendorPermission(role: VendorRole, permission: Column) -> bool:
         return True
     else:
         return False
+
+
 def toWKTgeometry(wktString: str, type) -> Optional[BaseGeometry]:
     try:
         geom = wkt.loads(wktString)
