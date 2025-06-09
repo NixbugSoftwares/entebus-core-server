@@ -84,6 +84,7 @@ def initDB():
     print("* Initialization completed")
     session.close()
 
+
 def testDB():
     session = sessionMaker()
     company = Company(
@@ -97,13 +98,13 @@ def testDB():
     session.add(company)
     session.flush()
     password = argon2.makePassword("password")
-    admin_Operator = Operator(
+    admin = Operator(
         company_id=company.id,
         username="admin",
         password=password,
         full_name="Entebus Operator",
     )
-    guest_Operator = Operator(
+    guest = Operator(
         company_id=company.id,
         username="guest",
         password=password,
@@ -123,13 +124,13 @@ def testDB():
         manage_service=True,
     )
     guestRole = OperatorRole(company_id=company.id, name="Guest")
-    session.add_all([admin_Operator, guest_Operator, adminRole, guestRole])
+    session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
     adminMapping = OperatorRoleMap(
-        company_id=company.id, operator_id=admin_Operator.id, role_id=adminRole.id
+        company_id=company.id, operator_id=admin.id, role_id=adminRole.id
     )
     guestMapping = OperatorRoleMap(
-        company_id=company.id, operator_id=guest_Operator.id, role_id=guestRole.id
+        company_id=company.id, operator_id=guest.id, role_id=guestRole.id
     )
     session.add_all([adminMapping, guestMapping])
     session.commit()
