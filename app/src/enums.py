@@ -1,6 +1,11 @@
 from enum import IntEnum
 
 
+class OrderBy(IntEnum):
+    id = 1
+    created_on = 2
+
+
 class AccountStatus(IntEnum):
     ACTIVE = 1
     SUSPENDED = 2
