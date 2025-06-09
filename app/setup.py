@@ -120,17 +120,13 @@ def testDB():
     adminRole = OperatorRole(
         company_id=company.id,
         name="Admin",
-        manage_bus=True,
-        manage_role=True,
-        manage_operator=True,
-        manage_company=True,
-        manage_route=True,
-        manage_schedule=True,
-        manage_fare=True,
-        manage_duty=True,
-        manage_service=True,
+        manage_op_token=True,
     )
-    guestRole = OperatorRole(company_id=company.id, name="Guest")
+    guestRole = OperatorRole(
+        company_id=company.id,
+        name="Guest",
+        manage_op_token=False,
+    )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
     adminMapping = OperatorRoleMap(
