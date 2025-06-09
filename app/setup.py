@@ -5,6 +5,7 @@ from app.src.db import (
     Executive,
     ExecutiveRole,
     ExecutiveRoleMap,
+    Landmark,
     sessionMaker,
     engine,
     ORMbase,
@@ -72,7 +73,27 @@ def initDB():
 
 
 def testDB():
+    session = sessionMaker()
+    landmark1 = Landmark(
+        name="Varkala",
+        boundary="POLYGON((76.7234906 8.7410323, \
+                           76.7234906 8.7401323, \
+                           76.7225906 8.7401323, \
+                           76.7225906 8.7410323, \
+                           76.7234906 8.7410323))",
+    )
+    landmark2 = Landmark(
+        name="Edava",
+        boundary="POLYGON((76.6962373 8.7642725, \
+                           76.6962373 8.7633725, \
+                           76.6953373 8.7633725, \
+                           76.6953373 8.7642725, \
+                           76.6962373 8.7642725))",
+    )
+    session.add_all([landmark1, landmark2])
+    session.commit()
     print("* Test population completed")
+    session.close()
 
 
 # Setup database
