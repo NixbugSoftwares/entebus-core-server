@@ -31,3 +31,15 @@ class LandmarkType(IntEnum):
 class OrderIn(IntEnum):
     ASC = 1
     DESC = 2
+
+
+class CompanyStatus(IntEnum):
+    UNDER_VERIFICATION = 1
+    VERIFIED = 2
+    SUSPENDED = 3
+
+
+class CompanyType(IntEnum):
+    OTHER = 1
+    PRIVATE = 2
+    GOVERNMENT = 3

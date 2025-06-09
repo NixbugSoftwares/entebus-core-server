@@ -36,12 +36,26 @@ def logExecutiveEvent(token: ExecutiveToken, request: dict, data: dict):
 
 def makeExceptionResponses(exceptions: List[Any]):
     responses = {}
+
     for exception in exceptions:
-        responses[exception.status_code] = {
-            "model": schemas.ErrorResponse,
-            "description": exception.detail,
-            "content": {"application/json": {"example": {"detail": exception.detail}}},
+        status_code = exception.status_code
+        example_key = exception.__name__
+        example_value = {
+            "summary": str(exception.headers),
+            "value": {"detail": exception.detail},
         }
+
+        if status_code not in responses:
+            responses[status_code] = {
+                "model": schemas.ErrorResponse,
+                "content": {
+                    "application/json": {"examples": {example_key: example_value}}
+                },
+            }
+        else:
+            responses[status_code]["content"]["application/json"]["examples"][
+                example_key
+            ] = example_value
     return responses
 
 
@@ -75,3 +89,42 @@ def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
         return True
     else:
         return False
+
+
+def toWKTgeometry(wktString: str, type) -> Optional[BaseGeometry]:
+    try:
+        geom = wkt.loads(wktString)
+        if not isinstance(geom, type):
+            return None
+        return geom
+    except Exception as e:
+        return None
+
+
+def isSRID4326(wktGeom: BaseGeometry) -> bool:
+    if isinstance(wktGeom, Point):
+        coords = [(wktGeom.x, wktGeom.y)]
+    else:
+        coords = wktGeom.exterior.coords
+    for longitude, latitude in coords:
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return False
+    return True
+
+
+def isAABB(wktGeom: BaseGeometry) -> bool:
+    if not isinstance(wktGeom, Polygon):
+        return False
+
+    coords = list(wktGeom.exterior.coords)
+    if len(coords) != 5:
+        return False
+    # Remove the duplicate last point
+    coords = coords[:-1]
+    # Check all sides are either horizontal or vertical
+    for i in range(4):
+        x1, y1 = coords[i]
+        x2, y2 = coords[(i + 1) % 4]
+        if not (x1 == x2 or y1 == y2):
+            return False
+    return True

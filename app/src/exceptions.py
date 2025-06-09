@@ -102,7 +102,31 @@ class NoPermission(APIException):
     headers = {"X-Error": "NoPermission"}
 
 
-class InvalidIdentifier(APIException):
-    status_code = status.HTTP_404_NOT_FOUND
-    detail = "Invalid ID provided"
-    headers = {"X-Error": "InvalidIdentifier"}
+class InvalidWKTStringOrType(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Invalid WKT string or type"
+    headers = {"X-Error": "InvalidWKTStringOrType"}
+
+
+class InvalidSRID4326(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "The SRID of the geometry is not 4326"
+    headers = {"X-Error": "InvalidSRID4326"}
+
+
+class InvalidAABB(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "The geometry is not a valid Axis-Aligned Bounding Box"
+    headers = {"X-Error": "InvalidAABB"}
+
+
+class OverlappingLandmarkBoundary(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Boundary overlapping with other landmarks boundary"
+    headers = {"X-Error": "OverlappingLandmarkBoundary"}
+
+
+class InvalidLandmarkBoundaryArea(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Boundary area not within the prescribed limits"
+    headers = {"X-Error": "InvalidLandmarkBoundaryArea"}
