@@ -435,52 +435,64 @@ class Operator(ORMbase):
 
 class OperatorToken(ORMbase):
     """
-    Represents an access token issued to an operator for authentication and session management.
-
-    This table tracks active sessions and access tokens for operators, linking them to their
-    respective company and device information. It is essential for enforcing secure access
-    and managing token expiration within the system.
+    Represents authentication tokens issued to operators, enabling secure access and session management
+    within a specific company context. This table supports device-level tracking, token expiration,
+    and audit metadata for robust token-based authentication systems.
 
     Columns:
         id (Integer):
-            Primary key. Unique identifier for this token record.
+            Primary key. A unique identifier for each operator token record.
 
         operator_id (Integer):
             Foreign key referencing `operator.id`.
-            Identifies the operator to whom the token belongs.
-            Cascades on delete — if the operator is removed, related tokens are deleted.
+            Identifies the operator to whom the token is issued.
+            Indexed to improve lookup speed for operator-based queries.
+            Cascades on delete — removing an operator deletes associated tokens.
 
         company_id (Integer):
             Foreign key referencing `company.id`.
-            Associates the token with the operator's company.
-            Cascades on delete — if the company is removed, related tokens are deleted.
+            Specifies the company context in which the token is valid.
+            Cascades on delete — removing the company deletes related tokens.
 
-        access_token (String):
-            Unique string used for authenticating the operator's requests.
-            Automatically generated as a 64-character hexadecimal string.
+        access_token (String(64)):
+            Secure token string used for authentication.
+            Must be unique and non-null.
+            Default is a 64-character random hexadecimal string generated using `token_hex(32)`.
 
-        platform_type (TEXT):
-            Optional. Describes the platform or device type (e.g., Android, iOS, Web)
-            from which the operator accessed the system.
+        expires_in (Integer):
+            Duration (in seconds) for which the token remains valid from the time of creation.
+            Used for calculating token expiry dynamically.
+
+        expires_at (DateTime):
+            Absolute timestamp indicating when the token becomes invalid.
+            Typically derived from `created_on + expires_in`.
+
+        platform_type (Integer):
+            Indicates the type of device or platform from which the token was issued.
+            Defaults to `PlatformType.OTHER`.
+            Useful for device-aware authentication and access logging.
 
         client_version (TEXT):
-            Optional. Version of the client application used during authentication.
-            Useful for debugging or enforcing version control.
+            Optional field for storing the version of the client application (e.g., mobile or web app).
+            Helps in enforcing version constraints and debugging issues related to client behavior.
+
+        updated_on (DateTime):
+            Timestamp that updates automatically whenever the record is modified.
+            Useful for tracking changes to token details over time.
 
         created_on (DateTime):
-            Timestamp indicating when the token was created.
-            Defaults to the current timestamp at insertion.
-
-        expires_in (DateTime):
-            Timestamp indicating when the token will expire.
-            Required to enforce session timeout and token validity.
+            Timestamp marking when the token was created.
+            Automatically set to the current time at the point of insertion.
     """
 
     __tablename__ = "operator_token"
 
     id = Column(Integer, primary_key=True)
     operator_id = Column(
-        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("operator.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     company_id = Column(
         Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
