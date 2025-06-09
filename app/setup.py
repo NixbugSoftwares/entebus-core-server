@@ -134,7 +134,7 @@ def testDB():
         company_id=company.id, operator_id=guest.id, role_id=guestRole.id
     )
     session.add_all([adminMapping, guestMapping])
-    session.commit()
+    session.flush()
     landmark1 = Landmark(
         name="Varkala",
         boundary="POLYGON((76.7234906 8.7410323, \
