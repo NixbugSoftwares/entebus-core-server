@@ -20,6 +20,11 @@ class PlatformType(IntEnum):
     SERVER = 4
 
 
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
+
+
 class CompanyStatus(IntEnum):
     UNDER_VERIFICATION = 1
     VERIFIED = 2
