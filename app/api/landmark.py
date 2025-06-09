@@ -6,11 +6,15 @@ from sqlalchemy import func
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
-from app.src.constants import EPSG_3857, EPSG_4326, MAX_LANDMARK_AREA, MIN_LANDMARK_AREA
+from app.src.constants import (
+    EPSG_3857,
+    EPSG_4326,
+    MAX_LANDMARK_AREA,
+    MIN_LANDMARK_AREA,
+)
 from app.src.db import ExecutiveRole, sessionMaker, Landmark
 from app.src.enums import LandmarkType
 from app.src.functions import (
-    checkExecutivePermission,
     enumStr,
     getExecutiveRole,
     getExecutiveToken,
@@ -69,9 +73,7 @@ async def create_landmark(
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        canCreateLandmark = checkExecutivePermission(
-            role, ExecutiveRole.create_landmark
-        )
+        canCreateLandmark = bool(role and role.create_landmark)
         if not canCreateLandmark:
             raise exceptions.NoPermission()
 
