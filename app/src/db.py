@@ -21,7 +21,8 @@ from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
 from app.src.enums import (
     AccountStatus,
     GenderType,
-    LandmarkType, PlatformType,
+    LandmarkType,
+    PlatformType,
     CompanyStatus,
     CompanyType,
 )
@@ -625,7 +626,7 @@ class Landmark(ORMbase):
     Landmarks are stored as named polygonal areas with versioning and type categorization,
     allowing for geographic indexing, change tracking, and spatial queries (containment,
     overlap, proximity).
-    
+
     Frontend-Backend Note:
         Although circles are shown and drawn on the frontend UI, they are **converted to
         axis-aligned bounding box (AABB) polygons** before being send to the backend.
