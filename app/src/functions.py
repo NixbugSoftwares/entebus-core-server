@@ -118,6 +118,17 @@ def checkOperatorPermission(role: OperatorRole, permission: Column) -> bool:
         return False
 
 
+def logVendorEvent(token: VendorToken, request: dict, data: dict):
+    logDetails = {
+        "_method": request["method"],
+        "_path": request["path"],
+        "_vendor_id": token.vendor_id,
+        "_app": "Vendor",
+    }
+    logDetails.update(data)
+    openobserve.logEvent(logDetails)
+
+
 def getVendorToken(access_token: str, session: Session) -> VendorToken | None:
     current_time = datetime.now(timezone.utc)
     return (
@@ -144,14 +155,3 @@ def checkVendorPermission(role: VendorRole, permission: Column) -> bool:
         return True
     else:
         return False
-
-
-def logVendorEvent(token: VendorToken, request: dict, data: dict):
-    logDetails = {
-        "_method": request["method"],
-        "_path": request["path"],
-        "_vendor_id": token.vendor_id,
-        "_app": "Vendor",
-    }
-    logDetails.update(data)
-    openobserve.logEvent(logDetails)
