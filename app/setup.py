@@ -161,6 +161,8 @@ def testDB():
                            76.6953373 8.7642725, \
                            76.6962373 8.7642725))",
     )
+    session.add_all([landmark1, landmark2])
+    session.flush()
     password = argon2.makePassword("password")
     business = Business(
         name="Test Business",
@@ -168,7 +170,7 @@ def testDB():
         phone_number="+911234567890",
         email_id="testbusiness@gmail.com",
     )
-    session.add_all([landmark1, landmark2, business])
+    session.add(business)
     session.flush()
     adminRole = VendorRole(
         name="Admin",
