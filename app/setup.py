@@ -5,6 +5,7 @@ from app.src.db import (
     Executive,
     ExecutiveRole,
     ExecutiveRoleMap,
+    Landmark,
     Business,
     Vendor,
     VendorRole,
@@ -77,6 +78,22 @@ def initDB():
 
 def testDB():
     session = sessionMaker()
+    landmark1 = Landmark(
+        name="Varkala",
+        boundary="POLYGON((76.7234906 8.7410323, \
+                           76.7234906 8.7401323, \
+                           76.7225906 8.7401323, \
+                           76.7225906 8.7410323, \
+                           76.7234906 8.7410323))",
+    )
+    landmark2 = Landmark(
+        name="Edava",
+        boundary="POLYGON((76.6962373 8.7642725, \
+                           76.6962373 8.7633725, \
+                           76.6953373 8.7633725, \
+                           76.6953373 8.7642725, \
+                           76.6962373 8.7642725))",
+    )
     password = argon2.makePassword("password")
     business = Business(
         name="Test Business",
@@ -84,7 +101,7 @@ def testDB():
         phone_number="+911234567890",
         email_id="testbusiness@gmail.com",
     )
-    session.add(business)
+    session.add_all([landmark1, landmark2, business])
     session.flush()
     adminRole = VendorRole(
         name="Admin",
@@ -142,6 +159,7 @@ def testDB():
     session.add_all([adminRoleMap, guestRoleMap])
     session.commit()
     print("* Test population completed")
+    session.close()
     session.close()
 
 
