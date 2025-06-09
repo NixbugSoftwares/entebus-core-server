@@ -142,6 +142,7 @@ def testDB():
     session.add_all([adminRoleMap, guestRoleMap])
     session.commit()
     print("* Test population completed")
+    session.close()
 
 
 # Setup database
