@@ -50,7 +50,7 @@ route_vendor = APIRouter()
     - Accepts a WKT polygon representing the landmark boundary. Only **AABB (axis-aligned bounding box)** geometries are allowed.
     - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
     - Ensures the boundary does not **overlap with existing landmarks** in the database.
-    - Only executives with the required permission (`manage_landmark`) can access this endpoint.
+    - Only executives with the required permission (`create_landmark`) can access this endpoint.
     - Logs the landmark creation activity with the associated token.
     """,
 )
