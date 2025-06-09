@@ -688,3 +688,23 @@ class Landmark(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Fare(ORMbase):
+    __tablename__ = "fare"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"))
+    version = Column(Integer, nullable=False)
+    name = Column(String(32), nullable=False, index=True)
+    attributes = Column(JSONB,      nullable=False)
+    function = Column(Text,       nullable=False)
+    scope               = Column(Integer,    nullable=False, default=FareScope.GLOBAL)
+    starts_at           = Column(DateTime(timezone=True))
+    expires_on          = Column(DateTime(timezone=True))    
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
