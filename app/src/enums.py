@@ -43,3 +43,8 @@ class CompanyType(IntEnum):
     OTHER = 1
     PRIVATE = 2
     GOVERNMENT = 3
+
+
+class FareScope(IntEnum):
+    GLOBAL = 1
+    LOCAL = 2

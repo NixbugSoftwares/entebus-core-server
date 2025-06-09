@@ -15,6 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import Geometry
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
 from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
@@ -25,6 +26,7 @@ from app.src.enums import (
     PlatformType,
     CompanyStatus,
     CompanyType,
+    FareScope,
 )
 
 
@@ -691,20 +693,70 @@ class Landmark(ORMbase):
 
 
 class Fare(ORMbase):
+    """
+    Represents a fare configuration used for pricing, rules, or fare computation logic.
+    Fares are defined per company and versioned for consistency. Each fare may contain
+    custom attributes and a logic function, and is scoped as either global or local.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the fare record.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`. Indicates the company this fare belongs to.
+            On company deletion, associated fares are also deleted (CASCADE).
+
+        version (Integer):
+            Integer version number used for versioning fare definitions.
+            Helps manage and track updates to fare logic or structure.
+
+        name (String(32)):
+            Name of the fare, used for display and identification.
+            Must be unique per company (enforced with a unique constraint on name + company_id).
+
+        attributes (JSONB):
+            JSON-formatted attributes for flexible storage of fare-related parameters.
+            Schema-free design allows dynamic addition of custom fields without migrations.
+
+        function (TEXT):
+            Text field for storing fare calculation logic.
+            Used in runtime fare processing or pricing evaluation.
+
+        scope (Integer):
+            Enum value defined by `FareScope`, indicating the scope of the fare:
+                - `FareScope.globalScope` (1): Fare applies globally across contexts.
+                - `FareScope.localScope` (2): Fare is context-specific.
+            Defaults to `FareScope.globalScope`.
+
+        starts_at (DateTime):
+            Optional start time for fare validity.
+            Defines when the fare becomes active.
+
+        expires_on (DateTime):
+            Optional end time for fare validity.
+            Defines when the fare becomes inactive or expired.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the fare record is modified.
+            Useful for tracking changes and syncing.
+
+        created_on (DateTime):
+            Timestamp set when the fare record is first created.
+            Defaults to the current time on insertion.
+    """
+
     __tablename__ = "fare"
     __table_args__ = (UniqueConstraint("name", "company_id"),)
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(
-        Integer,
-        ForeignKey("company.id", ondelete="CASCADE"))
+    company_id = Column(Integer, ForeignKey("company.id", ondelete="CASCADE"))
     version = Column(Integer, nullable=False)
     name = Column(String(32), nullable=False, index=True)
-    attributes = Column(JSONB,      nullable=False)
-    function = Column(Text,       nullable=False)
-    scope               = Column(Integer,    nullable=False, default=FareScope.GLOBAL)
-    starts_at           = Column(DateTime(timezone=True))
-    expires_on          = Column(DateTime(timezone=True))    
+    attributes = Column(JSONB, nullable=False)
+    function = Column(TEXT, nullable=False)
+    scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
+    starts_at = Column(DateTime(timezone=True))
+    expires_on = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
