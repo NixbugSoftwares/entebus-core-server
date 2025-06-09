@@ -555,7 +555,7 @@ class VendorRole(ORMbase):
 
         name (String(32)):
             Name of the role.
-            Must be unique within the business and non-null.
+            Must be non-null.
             Maximum 32 characters long.
 
         business_id (Integer):
@@ -594,7 +594,7 @@ class VendorRole(ORMbase):
     __tablename__ = "vendor_role"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False, unique=True)
+    name = Column(String(32), nullable=False)
     business_id = Column(
         Integer,
         ForeignKey("business.id", ondelete="CASCADE"),
