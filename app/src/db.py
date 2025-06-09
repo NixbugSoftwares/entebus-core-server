@@ -494,7 +494,7 @@ class VendorToken(ORMbase):
             Used to authenticate the executive on subsequent requests.
 
         expires_in (Integer):
-            Token expiration time in minutes.
+            Token expiration time in seconds.
             Defines the duration after which the token becomes invalid.
 
         expires_at (DateTime):
@@ -570,7 +570,7 @@ class VendorRole(ORMbase):
             Whether this role allows creation of new vendor accounts.
 
         update_vendor (Boolean):
-            Whether this role allows editing or deactivation existing vendor accounts.
+            Whether this role allows editing existing vendor accounts.
 
         delete_vendor (Boolean):
             Whether this role allows deletion of vendor accounts.
@@ -621,9 +621,9 @@ class VendorRoleMap(ORMbase):
     Represents the mapping between vendors and their assigned roles,
     enabling a many-to-one relationship between `vendor` and `vendor_role`.
 
-    Each vendor is associated with exactly one role, while a role can be assigned
-    to multiple vendors. This mapping supports Role-Based Access Control (RBAC)
-    for vendors within a specific business context.
+    This table allows an vendor to be assigned multiple roles and a role
+    to be assigned to multiple vendor. Useful for implementing a flexible
+    Role-Based Access Control (RBAC) system.
 
     Columns:
         id (Integer):
@@ -642,7 +642,6 @@ class VendorRoleMap(ORMbase):
         vendor_id (Integer):
             Foreign key referencing `vendor.id`.
             Identifies the vendor receiving the role.
-            Each vendor can have only one role mapping.
             Cascades on delete — if the vendor is removed, the mapping is deleted.
 
         updated_on (DateTime):
