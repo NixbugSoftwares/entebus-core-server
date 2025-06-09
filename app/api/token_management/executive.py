@@ -144,7 +144,6 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
-
         logExecutiveEvent(
             token,
             request_info,
