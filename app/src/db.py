@@ -547,16 +547,23 @@ class OperatorRole(ORMbase):
 
 class OperatorRoleMap(ORMbase):
     """
-    Represents the mapping between operators and their assigned roles,
-    enabling a many-to-many relationship between `operator` and `operator_role`.
+    Represents the mapping between operators and their assigned roles within a company,
+    enabling a many-to-many relationship between `operator` and `operator_role` scoped by `company`.
 
-    This table allows an operator to be assigned multiple roles and a role
-    to be assigned to multiple operators. Useful for implementing a flexible
-    Role-Based Access Control (RBAC) system.
+    This table allows:
+    - An operator to be assigned multiple roles within a company.
+    - A role to be assigned to multiple operators.
+    - Support for multi-tenant Role-Based Access Control (RBAC) systems through the `company_id` field.
 
     Columns:
         id (Integer):
-            Primary key. Unique identifier for this role mapping record.
+            Primary key. Unique identifier for this operator-role mapping record.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Indicates which company the role-operator mapping belongs to.
+            Indexed for efficient querying.
+            Cascades on delete — if the company is removed, related mappings are deleted.
 
         role_id (Integer):
             Foreign key referencing `operator_role.id`.
@@ -570,16 +577,22 @@ class OperatorRoleMap(ORMbase):
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
-            Useful for auditing or synchronization.
+            Useful for auditing or synchronization purposes.
 
         created_on (DateTime):
             Timestamp indicating when this mapping was created.
-            Defaults to the current timestamp at insertion.
+            Automatically set to the current time at insertion.
     """
 
     __tablename__ = "operator_role_map"
 
     id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     role_id = Column(
         Integer, ForeignKey("operator_role.id", ondelete="CASCADE"), nullable=False
     )
