@@ -51,7 +51,7 @@ class ExecutiveRole(ORMbase):
 
         name (String(32)):
             Name of the role.
-            Must be unique and not be null.
+            Must be unique and not null.
 
         create_executive (Boolean):
             Whether this role permits the creation of new executive accounts.
