@@ -243,12 +243,10 @@ async def delete_token(
                 session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
             )
             if tokenToDelete is not None:
-                forSelf = False
-                havePermission = False
-                if token.executive_id == tokenToDelete.executive_id:
-                    forSelf = True
-                if role is not None and role.manage_ex_token is True:
-                    havePermission = True
+                forSelf = token.executive_id == tokenToDelete.executive_id
+                havePermission = checkExecutivePermission(
+                    role, ExecutiveRole.manage_ex_token
+                )
                 if not forSelf and not havePermission:
                     raise exceptions.NoPermission()
             else:
