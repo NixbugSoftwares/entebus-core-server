@@ -60,3 +60,10 @@ class CompanyType(IntEnum):
 class FareScope(IntEnum):
     GLOBAL = 1
     LOCAL = 2
+
+
+class BankAccountType(IntEnum):
+    OTHER = 1
+    SAVINGS_ACCOUNT = 2
+    CURRENT_ACCOUNT = 3
+    SALARY_ACCOUNT = 4
