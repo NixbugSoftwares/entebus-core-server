@@ -822,7 +822,7 @@ class Business(ORMbase):
     __tablename__ = "business"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(128), nullable=False)
     status = Column(Integer, nullable=False, default=BusinessStatus.ACTIVE)
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
