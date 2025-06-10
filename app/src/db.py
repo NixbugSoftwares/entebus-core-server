@@ -694,55 +694,65 @@ class Landmark(ORMbase):
 
 class Fare(ORMbase):
     """
-    Represents a fare configuration used for pricing, rules, or fare computation logic.
-    Fares are defined per company and versioned for consistency. Each fare may contain
-    custom attributes and a logic function, and is scoped as either global or local.
+    Represents a fare configuration used by a transport company to determine ticket pricing.
+
+    Each fare defines pricing logic and metadata, optionally scoped by time or applicability.
+    Fares are versioned and uniquely named per company, supporting fare updates, seasonal changes,
+    or experimental pricing models. The fare logic is stored as text, and attributes define input
+    parameters or configuration details.
+
+    Table Constraints:
+        - UniqueConstraint(name, company_id):
+            Ensures that a fare with the same name cannot exist more than once per company.
+            Enables companies to version or replace fares by name without duplication.
 
     Columns:
         id (Integer):
-            Primary key. Unique identifier for the fare record.
+            Primary key. Auto-incremented unique identifier for the fare record.
 
-        company_id (Integer):
-            Foreign key referencing `company.id`. Indicates the company this fare belongs to.
-            On company deletion, associated fares are also deleted (CASCADE).
+        company_id (Integer, ForeignKey, Nullable):
+            References the `company.id` column.
+            Indicates which company owns the fare configuration.
+            Uses cascading delete — fares are deleted if the associated company is removed.
 
-        version (Integer):
-            Integer version number used for versioning fare definitions.
-            Helps manage and track updates to fare logic or structure.
+        version (Integer, NOT NULL):
+            Numerical version of the fare.
+            Used to track changes or revisions to fare logic.
 
-        name (String(32)):
-            Name of the fare, used for display and identification.
-            Must be unique per company (enforced with a unique constraint on name + company_id).
+        name (String(32), NOT NULL, Indexed):
+            Human-readable name of the fare.
+            Max length is 32 characters.
+            Indexed to support fast lookup by name.
 
-        attributes (JSONB):
-            JSON-formatted attributes for flexible storage of fare-related parameters.
-            Schema-free design allows dynamic addition of custom fields without migrations.
+        attributes (JSONB, NOT NULL):
+            A structured set of parameters that define how the fare behaves.
+            Stored as binary JSON for efficient querying and indexing in PostgreSQL.
 
-        function (TEXT):
-            Text field for storing fare calculation logic.
-            Used in runtime fare processing or pricing evaluation.
+        function (TEXT, NOT NULL):
+            The implementation logic for the fare, often expressed as a code block or formula.
+            This function interprets the `attributes` to calculate fares dynamically.
+            Unlimited size (`TEXT`), but should be validated for security/syntax at the application layer.
 
-        scope (Integer):
-            Enum value defined by `FareScope`, indicating the scope of the fare:
-                - `FareScope.globalScope` (1): Fare applies globally across contexts.
-                - `FareScope.localScope` (2): Fare is context-specific.
-            Defaults to `FareScope.globalScope`.
+        scope (Integer, NOT NULL):
+            Indicates where or how the fare applies.
+            Typically mapped to an enum like `FareScope.GLOBAL`.
+            Defaults to global scope.
 
-        starts_at (DateTime):
-            Optional start time for fare validity.
-            Defines when the fare becomes active.
+        starts_at (DateTime(timezone=True), Nullable):
+            The start datetime when this fare becomes active.
+            Can be null if the fare is immediately active on creation.
 
-        expires_on (DateTime):
-            Optional end time for fare validity.
-            Defines when the fare becomes inactive or expired.
+        expires_on (DateTime(timezone=True), Nullable):
+            Optional datetime when this fare expires.
+            Null means the fare is valid indefinitely unless replaced or removed.
 
-        updated_on (DateTime):
-            Timestamp automatically updated whenever the fare record is modified.
-            Useful for tracking changes and syncing.
+        updated_on (DateTime(timezone=True), NOT NULL):
+            Timestamp that is automatically updated when the record changes.
+            Used for auditing and cache invalidation.
 
-        created_on (DateTime):
-            Timestamp set when the fare record is first created.
-            Defaults to the current time on insertion.
+        created_on (DateTime(timezone=True), NOT NULL):
+            Timestamp indicating when the fare record was created.
+            Set automatically at insertion time.
     """
 
     __tablename__ = "fare"
