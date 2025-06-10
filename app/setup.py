@@ -11,6 +11,10 @@ from app.src.db import (
     OperatorRole,
     OperatorRoleMap,
     Landmark,
+    Business,
+    Vendor,
+    VendorRole,
+    VendorRoleMap,
     BusStop,
     sessionMaker,
     engine,
@@ -121,17 +125,13 @@ def testDB():
     adminRole = OperatorRole(
         company_id=company.id,
         name="Admin",
-        manage_bus=True,
-        manage_role=True,
-        manage_operator=True,
-        manage_company=True,
-        manage_route=True,
-        manage_schedule=True,
-        manage_fare=True,
-        manage_duty=True,
-        manage_service=True,
+        manage_op_token=True,
     )
-    guestRole = OperatorRole(company_id=company.id, name="Guest")
+    guestRole = OperatorRole(
+        company_id=company.id,
+        name="Guest",
+        manage_op_token=False,
+    )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
     adminMapping = OperatorRoleMap(
@@ -171,6 +171,69 @@ def testDB():
         location="POINT(76.69557772943813 8.76404581254571)",
     )
     session.add_all([busStop1, busStop2])
+    session.flush()
+    business = Business(
+        name="Test Business",
+        contact_person="John Doe",
+        phone_number="+911234567890",
+        email_id="testbusiness@gmail.com",
+    )
+    session.add(business)
+    session.flush()
+    adminRole = VendorRole(
+        name="Admin",
+        business_id=business.id,
+        manage_token=True,
+        create_vendor=True,
+        update_vendor=True,
+        delete_vendor=True,
+        create_role=True,
+        update_role=True,
+        delete_role=True,
+    )
+    guestRole = VendorRole(
+        name="Guest",
+        business_id=business.id,
+        manage_token=False,
+        create_vendor=False,
+        update_vendor=False,
+        delete_vendor=False,
+        create_role=False,
+        update_role=False,
+        delete_role=False,
+    )
+    adminVendor = Vendor(
+        business_id=business.id,
+        username="admin",
+        password=password,
+        full_name="Admin Vendor",
+    )
+    guestVendor = Vendor(
+        business_id=business.id,
+        username="guest",
+        password=password,
+        full_name="Guest Vendor",
+    )
+    session.add_all(
+        [
+            adminRole,
+            guestRole,
+            adminVendor,
+            guestVendor,
+        ]
+    )
+    session.flush()
+    adminRoleMap = VendorRoleMap(
+        business_id=business.id,
+        role_id=adminRole.id,
+        vendor_id=adminVendor.id,
+    )
+    guestRoleMap = VendorRoleMap(
+        business_id=business.id,
+        role_id=guestRole.id,
+        vendor_id=guestVendor.id,
+    )
+    session.add_all([adminRoleMap, guestRoleMap])
     session.commit()
     print("* Test population completed")
     session.close()

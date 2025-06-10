@@ -10,6 +10,7 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
+from secrets import token_hex
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
@@ -29,8 +30,6 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
-    getExecutiveToken,
-    getExecutiveRole,
     checkExecutivePermission,
 )
 
@@ -118,9 +117,65 @@ async def create_token(
         session.close()
 
 
-@route_executive.patch("/entebus/account/token", tags=["Token"])
-async def update_token(credential=Depends(bearer_executive)):
-    pass
+# Refresh token
+@route_executive.patch(
+    "/entebus/account/token",
+    tags=["Token"],
+    response_model=schemas.ExecutiveToken,
+    status_code=status.HTTP_200_OK,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
+    description="""
+    Refreshes an existing executive access token.
+
+    - If no `id` is provided, refreshes only the current token (used in this request).
+    - If an `id` is provided: Must match the current token's `access_token` (prevents
+      unauthorized refreshes, even by the same executive).
+    - Raises `InvalidIdentifier` if the token does not exist (avoids ID probing).
+    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
+    - Rotates the `access_token` value (invalidates the old token immediately).
+    - Logs the refresh event for auditability.
+    """,
+)
+async def refresh_token(
+    id: Annotated[int, Form()] = None,
+    access_token=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(access_token.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        if id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
+
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
+        tokenToUpdate.access_token = token_hex(32)
+        session.commit()
+        session.refresh(tokenToUpdate)
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
+        )
+        session.expunge(tokenToUpdate)
+        return tokenToUpdate
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.get(
