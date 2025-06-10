@@ -9,18 +9,21 @@ from fastapi import (
 )
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
-from enum import IntEnum
 from secrets import token_hex
+from enum import IntEnum
 
 from app.api.bearer import bearer_executive
 from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.enums import AccountStatus, PlatformType, OrderIn
+from app.src.enums import (
+    AccountStatus,
+    PlatformType,
+    OrderIn,
+)
 from app.src import schemas
 from app.src.db import (
     sessionMaker,
     Executive,
     ExecutiveToken,
-    ExecutiveRole,
 )
 from app.src import argon2, exceptions
 from app.src.functions import (
@@ -30,7 +33,6 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
-    checkExecutivePermission,
 )
 
 
@@ -140,12 +142,12 @@ async def create_token(
 )
 async def refresh_token(
     id: Annotated[int, Form()] = None,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
 
@@ -211,15 +213,15 @@ async def fetch_tokens(
     limit: Annotated[int, Query(gt=0, le=100)] = 20,
     order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
     order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        canManageToken = checkExecutivePermission(role, ExecutiveRole.manage_ex_token)
+        canManageToken = bool(role and role.manage_ex_token)
 
         query = session.query(ExecutiveToken)
         if executive_id is not None:
@@ -281,12 +283,12 @@ async def fetch_tokens(
 )
 async def delete_token(
     id: Annotated[int, Form()] = None,
-    access_token=Depends(bearer_executive),
+    bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(access_token.credentials, session)
+        token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
@@ -299,10 +301,8 @@ async def delete_token(
             )
             if tokenToDelete is not None:
                 forSelf = token.executive_id == tokenToDelete.executive_id
-                havePermission = checkExecutivePermission(
-                    role, ExecutiveRole.manage_ex_token
-                )
-                if not forSelf and not havePermission:
+                canManageToken = bool(role and role.manage_ex_token)
+                if not forSelf and not canManageToken:
                     raise exceptions.NoPermission()
             else:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
