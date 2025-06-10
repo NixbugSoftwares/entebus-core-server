@@ -179,7 +179,6 @@ def testDB():
     fare = Fare(
         company_id=company.id,
         name="Test fare",
-        version=1,
         scope=FareScope.GLOBAL,
         attributes={
             "df_version": 1,
