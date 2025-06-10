@@ -277,6 +277,7 @@ class ExecutiveToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the token record is modified.
@@ -514,10 +515,11 @@ class OperatorToken(ORMbase):
             Indicates the type of device or platform from which the token was issued.
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
-
-        client_version (TEXT):
-            Optional field for storing the version of the client application.
-            Helps in enforcing version constraints and debugging issues related to client behavior.
+        
+        client_details (TEXT):
+            Optional description of the client device or environment.
+            May include user agent, app version, IP address, etc.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp that updates automatically whenever the record is modified.
@@ -547,7 +549,7 @@ class OperatorToken(ORMbase):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     # Device related details
     platform_type = Column(Integer, default=PlatformType.OTHER)
-    client_version = Column(TEXT)
+    client_details = Column(TEXT)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -945,7 +947,7 @@ class VendorToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
-            Maximum 32 characters long.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp automatically updated when the token record is modified.
