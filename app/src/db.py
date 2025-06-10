@@ -694,51 +694,55 @@ class Landmark(ORMbase):
 
 class BusStop(ORMbase):
     """
-    Represents a public bus stop, tied to a specific geographic location and an associated landmark.
+    Represents a physical bus stop with a precise geospatial location and a relationship
+    to a parent landmark.
 
-    This model supports precise spatial mapping of transportation infrastructure, enabling geospatial
-    queries (e.g., proximity, containment), route planning, and landmark-based grouping of stops.
-    Each bus stop is stored as a geospatial `POINT` and must be associated with a defined `Landmark`.
-
-    Table Constraints:
-        - UniqueConstraint(location, landmark_id): Ensures spatial and contextual uniqueness.
-          Prevents duplicate bus stops from being registered at the same coordinates within
-          the same landmark boundary.
+    This table supports mapping and location-aware operations within transportation systems.
+    Each bus stop is uniquely identified by a combination of its geographic `POINT` location
+    and the `landmark` it belongs to. This model is useful for building spatial queries,
+    organizing stops within specific zones, and supporting efficient geospatial indexing.
 
     Columns:
         id (Integer):
-            Primary key. Auto-incremented unique identifier for the bus stop record.
-            Typically a 32-bit signed integer.
+            Primary key. Unique identifier for the bus stop record.
+            Auto-incremented by the database.
 
-        name (TEXT, NOT NULL):
+        name (String(32)):
             Human-readable name of the bus stop.
-            Commonly shown in UI, maps, and navigation systems.
-            Unlimited length (`TEXT`), but should be constrained in frontend/backend validations.
+            Used for labeling in interfaces, navigation, and route planning.
+            Maximum length is 32 characters.
 
-        landmark_id (Integer, NOT NULL):
+        landmark_id (Integer):
             Foreign key to the `landmark.id` column.
-            Indicates which landmark the bus stop belongs to.
-            Enforces referential integrity with cascading deletes: if the landmark is removed,
-            associated bus stops are automatically deleted.
+            Associates the bus stop with a specific landmark.
+            Required field. Deleting the associated landmark cascades and deletes the bus stop.
 
-        location (Geometry(POINT, SRID=4326), NOT NULL):
-            Geospatial point representing the longitude and latitude of the bus stop.
-            Uses PostGIS `POINT` with SRID 4326 (WGS 84 standard).
+        location (Geometry):
+            Geospatial location of the bus stop defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
+            Represents a specific latitude and longitude coordinate.
+            Must be unique in combination with `landmark_id`.
 
-        updated_on (DateTime(timezone=True)):
-            Auto-updated timestamp when the record is modified.
-            Useful for syncing and auditing purposes.
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Timezone-aware.
+            Useful for tracking changes or syncing data.
 
-        created_on (DateTime(timezone=True), NOT NULL):
-            Timestamp set when the record is first created.
-            Defaults to the current time at insertion.
+        created_on (DateTime):
+            Timestamp indicating when the bus stop was created.
+            Timezone-aware.
+            Automatically set at the time of record insertion.
+
+    Table Constraints:
+        UniqueConstraint(location, landmark_id):
+            Ensures no two bus stops exist at the same geographic point within the same landmark.
+            Helps maintain spatial uniqueness and prevents duplication.
     """
 
     __tablename__ = "bus_stop"
     __table_args__ = (UniqueConstraint("location", "landmark_id"),)
 
     id = Column(Integer, primary_key=True)
-    name = Column(TEXT, nullable=False)
+    name = Column(String(32), nullable=False)
     landmark_id = Column(
         Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
     )
