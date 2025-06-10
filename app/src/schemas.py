@@ -35,3 +35,12 @@ class Landmark(BaseModel):
     type: str
     updated_on: Optional[datetime]
     created_on: datetime
+
+
+class BusStop(BaseModel):
+    id: int
+    name: str
+    landmark_id: int
+    status: int
+    location: str
+    created_on: datetime
