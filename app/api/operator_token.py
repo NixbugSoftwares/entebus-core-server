@@ -68,6 +68,8 @@ async def delete_tokens(
     try:
         session = sessionMaker()
         token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
         role = getOperatorRole(token, session)
 
         if id is None:
