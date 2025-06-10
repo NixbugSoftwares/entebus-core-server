@@ -166,7 +166,7 @@ def testDB():
     busStop2 = BusStop(
         name="Edava",
         landmark_id=landmark2.id,
-        location="POINT(76.69694177590647 8.763503492804466)",
+        location="POINT(76.69557772943813 8.76404581254571)",
     )
     session.add_all([landmark1, landmark2, busStop1, busStop2])
     session.commit()
