@@ -87,13 +87,6 @@ def getExecutiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole |
     )
 
 
-def checkExecutivePermission(role: ExecutiveRole, permission: Column) -> bool:
-    if role and getattr(role, permission.name, False):
-        return True
-    else:
-        return False
-
-
 def logOperatorEvent(token: OperatorToken, request: dict, data: dict):
     logDetails = {
         "_method": request["method"],
