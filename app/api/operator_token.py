@@ -39,12 +39,13 @@ route_executive = APIRouter()
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for an executive after validating credentials.
+    Issues a new access token for an operator after validating credentials.
 
     - This endpoint performs authentication using company_id, username and password submitted as form data. 
-    - If the credentials are valid and the executive account is active, a new token is generated and returned.
+    - If the credentials are valid and the operator account is active, a new token is generated and returned.
     - Limits active tokens using MAX_OPERATOR_TOKENS (token rotation).
     - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
+    - Token will be generated for ACTIVE operators only.
     - Logs the authentication event for audit tracking.
     """,
 )
