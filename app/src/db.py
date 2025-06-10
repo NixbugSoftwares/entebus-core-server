@@ -723,6 +723,66 @@ class Landmark(ORMbase):
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
+class BusStop(ORMbase):
+    """
+    Represents a physical bus stop with a precise geospatial location and a relationship
+    to a parent landmark.
+
+    This table supports mapping and location-aware operations within transportation systems.
+    Each bus stop is uniquely identified by a combination of its geographic `POINT` location
+    and the `landmark` it belongs to. This model is useful for building spatial queries,
+    organizing stops within specific zones, and supporting efficient geospatial indexing.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bus stop record.
+            Auto-incremented by the database.
+
+        name (TEXT):
+            Human-readable name of the bus stop.
+            Used for labeling in interfaces, navigation, and route planning.
+            Maximum length is 128 characters.
+
+        landmark_id (Integer):
+            Foreign key to the `landmark.id` column.
+            Associates the bus stop with a specific landmark.
+            Required field. Deleting the associated landmark cascades and deletes the bus stop.
+
+        location (Geometry):
+            Geospatial location of the bus stop defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
+            Represents a specific latitude and longitude coordinate.
+            Must be unique in combination with `landmark_id`.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Timezone-aware.
+            Useful for tracking changes or syncing data.
+
+        created_on (DateTime):
+            Timestamp indicating when the bus stop was created.
+            Timezone-aware.
+            Automatically set at the time of record insertion.
+
+    Table Constraints:
+        UniqueConstraint(location, landmark_id):
+            Ensures no two bus stops exist at the same geographic point within the same landmark.
+            Helps maintain spatial uniqueness and prevents duplication.
+    """
+
+    __tablename__ = "bus_stop"
+    __table_args__ = (UniqueConstraint("location", "landmark_id"),)
+
+    id = Column(Integer, primary_key=True)
+    name = Column(TEXT, nullable=False)
+    landmark_id = Column(
+        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+    )
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
 class Business(ORMbase):
     """
     Represents a registered business entity within the system, serving as the parent

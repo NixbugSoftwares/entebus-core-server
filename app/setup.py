@@ -15,6 +15,7 @@ from app.src.db import (
     Vendor,
     VendorRole,
     VendorRoleMap,
+    BusStop,
     sessionMaker,
     engine,
     ORMbase,
@@ -158,6 +159,18 @@ def testDB():
                            76.6962373 8.7642725))",
     )
     session.add_all([landmark1, landmark2])
+    session.flush()
+    busStop1 = BusStop(
+        name="Varkala",
+        landmark_id=landmark1.id,
+        location="POINT(76.7230406 8.7405823)",
+    )
+    busStop2 = BusStop(
+        name="Edava",
+        landmark_id=landmark2.id,
+        location="POINT(76.6957873 8.7638225)",
+    )
+    session.add_all([busStop1, busStop2])
     session.flush()
     business = Business(
         name="Test Business",
