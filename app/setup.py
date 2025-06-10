@@ -234,7 +234,6 @@ def testDB():
         pollution_upto="2026-03-25T11:24:33.649Z",
         fitness_upto="2026-03-25T11:24:33.649Z",
         road_tax_upto="2026-03-25T11:24:33.649Z",
-        status=BusStatus.ACTIVE,
     )
     bus2 = Bus(
         company_id=company.id,
@@ -246,7 +245,6 @@ def testDB():
         pollution_upto="2026-03-25T11:24:33.649Z",
         fitness_upto="2026-03-25T11:24:33.649Z",
         road_tax_upto="2026-03-25T11:24:33.649Z",
-        status=BusStatus.ACTIVE,
     )
     session.add_all([bus1, bus2])
     session.flush()
