@@ -150,11 +150,6 @@ def testDB():
                            76.7225906 8.7410323, \
                            76.7234906 8.7410323))",
     )
-    busStop1 = BusStop(
-        name="Varkala",
-        landmark_id=landmark1.id,
-        location="POINT(76.72300754303551 8.740741624762)",
-    )
     landmark2 = Landmark(
         name="Edava",
         boundary="POLYGON((76.6962373 8.7642725, \
@@ -163,12 +158,19 @@ def testDB():
                            76.6953373 8.7642725, \
                            76.6962373 8.7642725))",
     )
+    session.add_all([landmark1, landmark2])
+    session.flush()
+    busStop1 = BusStop(
+        name="Varkala",
+        landmark_id=landmark1.id,
+        location="POINT(76.72300754303551 8.740741624762)",
+    )
     busStop2 = BusStop(
         name="Edava",
         landmark_id=landmark2.id,
         location="POINT(76.69557772943813 8.76404581254571)",
     )
-    session.add_all([landmark1, landmark2, busStop1, busStop2])
+    session.add_all([busStop1, busStop2])
     session.commit()
     print("* Test population completed")
     session.close()
