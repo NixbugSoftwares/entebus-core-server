@@ -524,7 +524,7 @@ class OperatorToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
-            Maximum 1024 characters long
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp that updates automatically whenever the record is modified.
