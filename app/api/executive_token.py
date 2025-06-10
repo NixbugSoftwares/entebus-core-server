@@ -38,6 +38,7 @@ from app.src.functions import (
 
 route_executive = APIRouter()
 
+
 ## Schemas
 class OrderBy(IntEnum):
     id = 1
