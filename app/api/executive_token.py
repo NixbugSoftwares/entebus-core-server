@@ -24,7 +24,6 @@ from app.src.db import (
     sessionMaker,
     Executive,
     ExecutiveToken,
-    ExecutiveRole,
 )
 from app.src import argon2, exceptions
 from app.src.functions import (

@@ -12,7 +12,7 @@ from app.src.constants import (
     MAX_LANDMARK_AREA,
     MIN_LANDMARK_AREA,
 )
-from app.src.db import ExecutiveRole, sessionMaker, Landmark
+from app.src.db import sessionMaker, Landmark
 from app.src.enums import LandmarkType
 from app.src.functions import (
     enumStr,
