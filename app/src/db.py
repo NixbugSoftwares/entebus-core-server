@@ -12,13 +12,18 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     func,
-    UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
-from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
+from app.src.constants import (
+    PSQL_DB_DRIVER,
+    PSQL_DB_HOST,
+    PSQL_DB_PASSWORD,
+    PSQL_DB_NAME,
+    PSQL_DB_PORT,
+    PSQL_DB_USERNAME,
+)
 from app.src.enums import (
     AccountStatus,
     BankAccountType,
@@ -515,7 +520,7 @@ class OperatorToken(ORMbase):
             Indicates the type of device or platform from which the token was issued.
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
-        
+
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
