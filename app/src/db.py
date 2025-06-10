@@ -710,6 +710,7 @@ class BusStop(ORMbase):
         name (TEXT):
             Human-readable name of the bus stop.
             Used for labeling in interfaces, navigation, and route planning.
+            Maximum length is 128 characters.
 
         landmark_id (Integer):
             Foreign key to the `landmark.id` column.
