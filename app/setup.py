@@ -163,12 +163,12 @@ def testDB():
     busStop1 = BusStop(
         name="Varkala",
         landmark_id=landmark1.id,
-        location="POINT(76.72300754303551 8.740741624762)",
+        location="POINT(76.7230406 8.7405823)",
     )
     busStop2 = BusStop(
         name="Edava",
         landmark_id=landmark2.id,
-        location="POINT(76.69557772943813 8.76404581254571)",
+        location="POINT(76.6957873 8.7638225)",
     )
     session.add_all([busStop1, busStop2])
     session.flush()
