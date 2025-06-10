@@ -1,9 +1,9 @@
 from enum import IntEnum
 
 
-class OrderBy(IntEnum):
-    id = 1
-    created_on = 2
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
 
 
 class AccountStatus(IntEnum):
@@ -31,11 +31,6 @@ class LandmarkType(IntEnum):
     DISTRICT = 3
     STATE = 4
     NATIONAL = 5
-
-
-class OrderIn(IntEnum):
-    ASC = 1
-    DESC = 2
 
 
 class BusinessStatus(IntEnum):
