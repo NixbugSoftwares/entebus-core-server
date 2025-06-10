@@ -153,7 +153,7 @@ def testDB():
     busStop1 = BusStop(
         name="Varkala",
         landmark_id=landmark1.id,
-        location="POINT(76.72531799929881 8.73426896053255)",
+        location="POINT(76.72300754303551 8.740741624762)",
     )
     landmark2 = Landmark(
         name="Edava",
