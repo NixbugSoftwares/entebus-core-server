@@ -517,7 +517,7 @@ class OperatorToken(ORMbase):
             Indicates the type of device or platform from which the token was issued.
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
-        
+
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
@@ -793,13 +793,15 @@ class Fare(ORMbase):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(Integer, ForeignKey("company.id", ondelete="CASCADE"))
-    version = Column(Integer, nullable=False)
+    version = Column(Integer, nullable=False, default=1)
     name = Column(String(32), nullable=False, index=True)
     attributes = Column(JSONB, nullable=False)
     function = Column(TEXT, nullable=False)
     scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
+    starts_at = Column(DateTime(timezone=True))
+    expires_on = Column(DateTime(timezone=True))
     # Metadata
-    updated_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
