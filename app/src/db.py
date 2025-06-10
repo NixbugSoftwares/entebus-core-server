@@ -707,10 +707,10 @@ class BusStop(ORMbase):
             Primary key. Unique identifier for the bus stop record.
             Auto-incremented by the database.
 
-        name (String(32)):
+        name (String(128)):
             Human-readable name of the bus stop.
             Used for labeling in interfaces, navigation, and route planning.
-            Maximum length is 32 characters.
+            Maximum length is 128 characters.
 
         landmark_id (Integer):
             Foreign key to the `landmark.id` column.
@@ -742,7 +742,7 @@ class BusStop(ORMbase):
     __table_args__ = (UniqueConstraint("location", "landmark_id"),)
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(128), nullable=False)
     landmark_id = Column(
         Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
     )
