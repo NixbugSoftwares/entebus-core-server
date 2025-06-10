@@ -399,13 +399,23 @@ class Operator(ORMbase):
             Identifies the company to which the operator belongs.
             Cascades on delete — if the company is deleted, all its operators are removed.
 
-        username (String):
-            The operator's login username.
-            Must be unique within the same company.
+        username (String(32)):
+            Unique username used for login or identification within the system.
+            Ideally, the username shouldn't be changed once set.
+            It should start with an alphabet (uppercase or lowercase).
+            It can contain uppercase and lowercase letters, as well as digits from 0 to 9.
+            It should be 4-32 characters long.
+            May include hyphen (-), period (.), at symbol (@), and underscore (_).
+            Must not be null and unique.
 
         password (TEXT):
             Hashed password used for authentication.
-            Stored securely; should never be stored in plain text.
+            It should be 8-32 characters long.
+            Passwords can contain uppercase and lowercase letters, as well as digits from 0 to 9.
+            Plaintext should never be stored here. Argon2 is used for secure hashing.
+            May include hyphen (-), plus (+), comma (,), period (.), at symbol (@), underscore (_),
+            dollar sign ($), percent (%), ampersand (&), asterisk (*), hash (#),
+            exclamation mark (!), caret (^), equals (=), forward slash (/), question mark (?).
 
         gender (Integer):
             Enum representing the operator’s gender.
@@ -413,6 +423,7 @@ class Operator(ORMbase):
 
         full_name (TEXT):
             The full name of the operator (optional).
+            Maximum 32 characters long.
 
         status (Integer):
             Enum representing the account's current status.
@@ -420,13 +431,21 @@ class Operator(ORMbase):
 
         phone_number (TEXT):
             Optional contact phone number for the operator.
+            Maximum 32 characters long.
+            Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
+            Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
             Optional contact email address for the operator.
+            Maximum 256 characters long.
+            Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
+
+        updated_on (DateTime):
+            Timestamp of the last update to the operator's profile or credentials.
+            Timestamp automatically updated whenever the operators's profile is modified.
 
         created_on (DateTime):
-            Timestamp of when the operator account was created.
-            Automatically set to the current time during insertion.
+            Timestamp of when the operators account was created.
 
     Constraints:
         UniqueConstraint (username, company_id):
@@ -439,7 +458,10 @@ class Operator(ORMbase):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
-        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     username = Column(String(32), nullable=False)
     password = Column(TEXT, nullable=False)
@@ -450,6 +472,7 @@ class Operator(ORMbase):
     phone_number = Column(TEXT)
     email_id = Column(TEXT)
     # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
@@ -543,8 +566,8 @@ class OperatorRole(ORMbase):
         id (Integer):
             Primary key. Unique identifier for the operator role.
 
-        name (String):
-            Name of the role. Must be unique across the system.
+        name (String(32)):
+            Name of the role. Must be unique across the company.
 
         company_id (Integer):
             Foreign key referencing `company.id`.
@@ -564,11 +587,15 @@ class OperatorRole(ORMbase):
     """
 
     __tablename__ = "operator_role"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False, unique=True)
     company_id = Column(
-        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
@@ -726,6 +753,7 @@ class Business(ORMbase):
         address (TEXT):
             Optional physical address of the business.
             Used for communication or billing purposes.
+            Maximum 128 characters long.
 
         contact_person (TEXT):
             Name of the contact person for the business.
@@ -746,6 +774,7 @@ class Business(ORMbase):
         website (TEXT):
             Optional URL to the business's website or landing page.
             Should be a valid HTTP(S) address if provided.
+            Maximum length is 256 characters.
 
         location (Geometry(Point)):
             Represents the geographic location of the business in (latitude/longitude).
@@ -969,7 +998,6 @@ class VendorRole(ORMbase):
         name (String(32)):
             Name of the role.
             Must not be null, and unique against business.
-            Maximum 32 characters long.
 
         business_id (Integer):
             Foreign key referencing the associated business entity, its indexed.
