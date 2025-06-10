@@ -767,8 +767,6 @@ class Fare(ORMbase):
     attributes = Column(JSONB, nullable=False)
     function = Column(TEXT, nullable=False)
     scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
-    starts_at = Column(DateTime(timezone=True))
-    expires_on = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
