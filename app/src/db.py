@@ -521,9 +521,10 @@ class OperatorToken(ORMbase):
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
 
-        client_version (TEXT):
-            Optional field for storing the version of the client application.
-            Helps in enforcing version constraints and debugging issues related to client behavior.
+        client_details (TEXT):
+            Optional description of the client device or environment.
+            May include user agent, app version, IP address, etc.
+            Maximum 1024 characters long
 
         updated_on (DateTime):
             Timestamp that updates automatically whenever the record is modified.
@@ -952,6 +953,7 @@ class VendorToken(ORMbase):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
             Maximum 1024 characters long.
+
         updated_on (DateTime):
             Timestamp automatically updated when the token record is modified.
             Useful for tracking recent activity or token refresh events.
