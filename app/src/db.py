@@ -490,7 +490,7 @@ class OperatorToken(ORMbase):
             Indicates the type of device or platform from which the token was issued.
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
-        
+
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
