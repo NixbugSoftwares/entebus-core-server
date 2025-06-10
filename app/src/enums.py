@@ -55,3 +55,9 @@ class CompanyType(IntEnum):
     OTHER = 1
     PRIVATE = 2
     GOVERNMENT = 3
+
+
+class BusStatus(IntEnum):
+    ACTIVE = 1
+    MAINTENANCE = 2
+    SUSPENDED = 3

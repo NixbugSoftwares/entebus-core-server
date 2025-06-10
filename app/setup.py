@@ -2,6 +2,7 @@ import argparse
 
 from app.src import argon2
 from app.src.enums import CompanyStatus
+from app.src.enums import BusStatus
 from app.src.db import (
     Executive,
     ExecutiveRole,
@@ -15,6 +16,7 @@ from app.src.db import (
     Vendor,
     VendorRole,
     VendorRoleMap,
+    Bus,
     sessionMaker,
     engine,
     ORMbase,
@@ -221,6 +223,33 @@ def testDB():
         vendor_id=guestVendor.id,
     )
     session.add_all([adminRoleMap, guestRoleMap])
+    session.flush()
+    bus1 = Bus(
+        company_id=company.id,
+        registration_number="KL 02 WH 3000",
+        name="Test Bus 1",
+        capacity=100,
+        manufactured_on="2025-03-25T11:24:33.649Z",
+        insurance_upto="2027-10-25T11:24:33.649Z",
+        pollution_upto="2026-03-25T11:24:33.649Z",
+        fitness_upto="2026-03-25T11:24:33.649Z",
+        road_tax_upto="2026-03-25T11:24:33.649Z",
+        status=BusStatus.ACTIVE,
+    )
+    bus2 = Bus(
+        company_id=company.id,
+        registration_number="KL 01 HW 2000",
+        name="Test Bus 2",
+        capacity=10,
+        manufactured_on="2024-03-25T11:24:33.649Z",
+        insurance_upto="2028-10-25T11:24:33.649Z",
+        pollution_upto="2026-03-25T11:24:33.649Z",
+        fitness_upto="2026-03-25T11:24:33.649Z",
+        road_tax_upto="2026-03-25T11:24:33.649Z",
+        status=BusStatus.ACTIVE,
+    )
+    session.add_all([bus1, bus2])
+    session.flush()
     session.commit()
     print("* Test population completed")
     session.close()

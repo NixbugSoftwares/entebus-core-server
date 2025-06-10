@@ -27,6 +27,7 @@ from app.src.enums import (
     BusinessType,
     CompanyStatus,
     CompanyType,
+    BusStatus,
 )
 
 
@@ -1084,6 +1085,90 @@ class VendorRoleMap(ORMbase):
         ForeignKey("vendor.id", ondelete="CASCADE"),
         nullable=False,
     )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Bus(ORMbase):
+    """
+    Represents a bus entity that is part of a company's fleet.
+
+    Each bus record stores registration and operational details and is uniquely
+    identified by a combination of its registration number and company ID.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bus.
+
+        company_id (Integer):
+            Foreign key referencing the company that owns the bus.
+            Must be non-null. Deletion of the company cascades to its buses.
+
+        registration_number (String(16)):
+            Vehicle registration number.
+            Must be unique per company and non-null.
+            Indexed for fast lookup.
+
+        name (String(32)):
+            Display name or label for the bus.
+            Must be non-null.
+            Indexed for fast lookup.
+
+        capacity (Integer):
+            Seating or passenger capacity of the bus.
+            Must be non-null.
+
+        manufactured_on (DateTime):
+            Manufacture date of the bus.
+            Must be non-null.
+
+        insurance_upto (DateTime):
+            Date until which the bus is insured.
+            Nullable.
+
+        pollution_upto (DateTime):
+            Date until which the pollution certificate is valid.
+            Nullable.
+
+        fitness_upto (DateTime):
+            Date until which the fitness certificate is valid.
+            Nullable.
+
+        road_tax_upto (DateTime):
+            Date until which road tax is paid.
+            Nullable.
+
+        status (Integer):
+            Operational status of the bus (ACTIVE, MAINTENANCE, SUSPENDED).
+            Must be non-null.
+            Defaults to `BusStatus.ACTIVE`.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the bus record was initially created.
+            Must be non-null. Defaults to the current time.
+    """
+
+    __tablename__ = "bus"
+    __table_args__ = (UniqueConstraint("registration_number", "company_id"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    registration_number = Column(String(16), nullable=False, index=True)
+    name = Column(String(32), nullable=False, index=True)
+    capacity = Column(Integer, nullable=False)
+    manufactured_on = Column(DateTime(timezone=True), nullable=False)
+    insurance_upto = Column(DateTime(timezone=True))
+    pollution_upto = Column(DateTime(timezone=True))
+    fitness_upto = Column(DateTime(timezone=True))
+    road_tax_upto = Column(DateTime(timezone=True))
+    status = Column(Integer, nullable=False, default=BusStatus.ACTIVE)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
