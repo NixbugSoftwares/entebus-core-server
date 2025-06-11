@@ -3,6 +3,7 @@ from sqlalchemy.orm.session import Session
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     status,
     Form,
 )
@@ -48,16 +49,16 @@ class OperatorTokenQueryParams(BaseModel):
     id_le: Optional[int] = None
     operator_id: Optional[int] = None
     platform_type: Optional[PlatformType] = Field(
-        default=None, description=enumStr(PlatformType)
+        Query(default=None, description=enumStr(PlatformType))
     )
     client_details: Optional[str] = None
     created_on: Optional[datetime] = None
     created_on_ge: Optional[datetime] = None
     created_on_le: Optional[datetime] = None
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=20, gt=0, le=100)
-    order_by: OrderBy = Field(default=OrderBy.id, description=enumStr(OrderBy))
-    order_in: OrderIn = Field(default=OrderIn.DESC, description=enumStr(OrderIn))
+    offset: int = Query(default=0, ge=0)
+    limit: int = Query(default=20, gt=0, le=100)
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
 
 
 class ExecutiveTokenQueryParams(OperatorTokenQueryParams):
