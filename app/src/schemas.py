@@ -55,11 +55,13 @@ class OperatorToken(MaskedOperatorToken):
 
 class MaskedVendorToken(BaseModel):
     id: int
+    business_id: int
     vendor_id: int
     expires_in: int
     platform_type: Optional[str] = None
     client_details: Optional[str] = None
     created_on: datetime
+    updated_on: Optional[datetime]
 
 
 class VendorToken(MaskedVendorToken):

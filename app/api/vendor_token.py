@@ -33,8 +33,8 @@ route_executive = APIRouter()
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/vendor_token",
-    tags=["Token Management"],
+    "/vendor/merchant/account",
+    tags=["Token"],
     response_model=schemas.VendorToken,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
@@ -51,24 +51,21 @@ route_executive = APIRouter()
     """,
 )
 async def token_creation(
+    username: Annotated[str, Form(max_length=32)],
+    password: Annotated[str, Form(max_length=32)],
     platform_type: Annotated[
         PlatformType, Form(description=enumStr(PlatformType))
     ] = PlatformType.OTHER,
-    client_details: Annotated[str, Form(max_length=32)] = None,
-    credentials: OAuth2PasswordRequestForm = Depends(),
+    client_details: Annotated[str | None, Form(max_length=1024)] = None,
     request_info=Depends(getRequestInfo),
 ):
     try:
         session = sessionMaker()
-        vendor = (
-            session.query(Vendor)
-            .filter(Vendor.username == credentials.username)
-            .first()
-        )
+        vendor = session.query(Vendor).filter(Vendor.username == username).first()
         if vendor is None:
             raise exceptions.InvalidCredentials()
 
-        if not argon2.checkPassword(credentials.password, vendor.password):
+        if not argon2.checkPassword(password, vendor.password):
             raise exceptions.InvalidCredentials()
         if vendor.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveAccount()
