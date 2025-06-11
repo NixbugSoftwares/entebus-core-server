@@ -743,47 +743,47 @@ class Fare(ORMbase):
         id (Integer):
             Primary key. Auto-incremented unique identifier for the fare record.
 
-        company_id (Integer, ForeignKey, Nullable):
+        company_id (Integer):
             References the `company.id` column.
             Indicates which company owns the fare configuration.
             Uses cascading delete — fares are deleted if the associated company is removed.
 
-        version (Integer, NOT NULL):
+        version (Integer):
             Numerical version of the fare.
             Used to track changes or revisions to fare logic.
 
-        name (String(32), NOT NULL, Indexed):
+        name (String(32)):
             Human-readable name of the fare.
             Max length is 32 characters.
             Indexed to support fast lookup by name.
 
-        attributes (JSONB, NOT NULL):
+        attributes (JSONB):
             A structured set of parameters that define how the fare behaves.
             Stored as binary JSON for efficient querying and indexing in PostgreSQL.
 
-        function (TEXT, NOT NULL):
+        function (TEXT):
             The implementation logic for the fare, often expressed as a code block or formula.
             This function interprets the `attributes` to calculate fares dynamically.
             Unlimited size (`TEXT`), but should be validated for security/syntax at the application layer.
 
-        scope (Integer, NOT NULL):
+        scope (Integer):
             Indicates where or how the fare applies.
             Typically mapped to an enum like `FareScope.GLOBAL`.
             Defaults to global scope.
 
-        starts_at (DateTime(timezone=True), Nullable):
+        starts_at (DateTime):
             The start datetime when this fare becomes active.
             Can be null if the fare is immediately active on creation.
 
-        expires_on (DateTime(timezone=True), Nullable):
+        expires_on (DateTime):
             Optional datetime when this fare expires.
             Null means the fare is valid indefinitely unless replaced or removed.
 
-        updated_on (DateTime(timezone=True), NOT NULL):
+        updated_on (DateTime):
             Timestamp that is automatically updated when the record changes.
             Used for auditing and cache invalidation.
 
-        created_on (DateTime(timezone=True), NOT NULL):
+        created_on (DateTime):
             Timestamp indicating when the fare record was created.
             Set automatically at insertion time.
     """
