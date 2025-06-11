@@ -8,10 +8,9 @@ from app.api.bearer import bearer_executive
 from app.src.enums import VerificationStatus
 from app.src import schemas, exceptions
 from app.src.constants import (
-    EPSG_3857,
     EPSG_4326,
 )
-from app.src.db import sessionMaker, Landmark
+from app.src.db import sessionMaker, Landmark, BusStop
 from app.src.functions import (
     toWKTgeometry,
     isSRID4326,
@@ -37,24 +36,24 @@ route_executive = APIRouter()
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
+            exceptions.InvalidBusStopLocation,
         ]
     ),
     description="""
-    Creates a new landmark for the executive with a valid SRID 4326 boundary.
+    Creates a new bus stop under a specified landmark with a valid SRID 4326 location.
 
-    - Accepts a WKT polygon representing the landmark boundary. Only **AABB (axis-aligned bounding box)** geometries are allowed.
-    - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
-    - Ensures the boundary does not **overlap with existing landmarks** in the database.
-    - Only executives with the required permission (`create_landmark`) can access this endpoint.
-    - Logs the landmark creation activity with the associated token.
+    - Accepts a WKT point representing the bus stop location. Only SRID 4326 (WGS 84) geometries are allowed.
+    - Validates geometry format and SRID.
+    - Ensures the point lies within the boundary of the referenced landmark.
+    - Only executives with the required permission (`create_bus_stop`) can access this endpoint.
+    - Logs the bus stop creation activity with the associated token.
     """,
 )
 async def create_bus_stop(
     landmark_id: Annotated[int, Form()],
     name: Annotated[str, Form(max_length=128)],
     location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
-    status: Annotated[
-            VerificationStatus, Form()] = VerificationStatus.VALIDATING,
+    status: Annotated[VerificationStatus, Form()] = VerificationStatus.VALIDATING,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -70,7 +69,7 @@ async def create_bus_stop(
 
         landmark = session.query(Landmark).filter(Landmark.id == landmark_id).first()
         if landmark is None:
-            raise exceptions.InvalidLandmarkId()
+            raise exceptions.InvalidIdentifier()
         wktBoundary = toWKTgeometry(location, Point)
         if wktBoundary is None:
             raise exceptions.InvalidWKTStringOrType()
@@ -82,7 +81,9 @@ async def create_bus_stop(
         if not withinBoundary:
             raise exceptions.InvalidBusStopLocation()
 
-        bus_stop = BusStop(name=name, landmark_id=landmark_id, status=status, location=location)
+        bus_stop = BusStop(
+            name=name, landmark_id=landmark_id, status=status, location=location
+        )
         session.add(bus_stop)
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
