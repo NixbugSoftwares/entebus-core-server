@@ -31,7 +31,7 @@ route_vendor = APIRouter()
 route_executive = APIRouter()
 
 
-## API endpoints
+## API endpoints [Vendor]
 @route_vendor.post(
     "/vendor_token",
     tags=["Token Management"],
@@ -122,6 +122,7 @@ async def delete_tokens(credential=Depends(bearer_vendor)):
     pass
 
 
+## API endpoints [Executive]
 @route_executive.get("/business/account/token", tags=["Vendor token"])
 async def fetch_tokens(credential=Depends(bearer_executive)):
     pass
