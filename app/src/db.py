@@ -729,7 +729,7 @@ class Fare(ORMbase):
     """
     Represents a fare configuration used by a transport company to determine ticket pricing.
 
-    Each fare defines pricing logic and metadata, optionally scoped by time or applicability.
+    Each fare defines pricing logic and metadata, optionally scoped by applicability.
     Fares are versioned and uniquely named per company, supporting fare updates, seasonal changes,
     or experimental pricing models. The fare logic is stored as text, and attributes define input
     parameters or configuration details.
@@ -771,14 +771,6 @@ class Fare(ORMbase):
             Typically mapped to an enum like `FareScope.GLOBAL`.
             Defaults to global scope.
 
-        starts_at (DateTime):
-            The start datetime when this fare becomes active.
-            Can be null if the fare is immediately active on creation.
-
-        expires_on (DateTime):
-            Optional datetime when this fare expires.
-            Null means the fare is valid indefinitely unless replaced or removed.
-
         updated_on (DateTime):
             Timestamp that is automatically updated when the record changes.
             Used for auditing and cache invalidation.
@@ -798,8 +790,6 @@ class Fare(ORMbase):
     attributes = Column(JSONB, nullable=False)
     function = Column(TEXT, nullable=False)
     scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
-    starts_at = Column(DateTime(timezone=True))
-    expires_on = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
