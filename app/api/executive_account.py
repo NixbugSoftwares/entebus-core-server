@@ -26,15 +26,24 @@ route_executive = APIRouter()
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/entebus/account",
+    "/account",
     tags=["Account"],
     response_model=schemas.Executive,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses([exceptions.InactiveAccount]),
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
     description="""
-    --------------
+    Creates a new executive account with an active status.
 
-    - oooooooo
+    - Only executives with `create_executive` permission can create executives
+    - Logs the executive account creation activity with the associated token.
+    - Follow patterns for smooth creation of username and password
+    - Phone number must follow RFC3966 format.
+    - Email ID must follow RFC5322 format.
     """,
 )
 async def create_executive(
@@ -45,8 +54,8 @@ async def create_executive(
     ] = GenderType.OTHER,
     full_name: Annotated[str | None, Form(max_length=32)] = None,
     designation: Annotated[str | None, Form(max_length=32)] = None,
-    phone_number: Annotated[PhoneNumber | None, Form()] = None,
-    email_id: Annotated[EmailStr | None, Form()] = None,
+    phone_number: Annotated[PhoneNumber | None, Form(max_length=32)] = None,
+    email_id: Annotated[EmailStr | None, Form(max_length=256)] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
