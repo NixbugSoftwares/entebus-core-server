@@ -38,7 +38,7 @@ route_executive = APIRouter()
     response_model=schemas.VendorToken,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InactiveStatus, exceptions.InvalidCredentials]
+        [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
     Issues a new access token for a vendor after validating credentials.
@@ -71,7 +71,7 @@ async def token_creation(
         if not argon2.checkPassword(credentials.password, vendor.password):
             raise exceptions.InvalidCredentials()
         if vendor.status != AccountStatus.ACTIVE:
-            raise exceptions.InactiveStatus(Vendor)
+            raise exceptions.InactiveAccount()
 
         # Remove excess tokens from DB
         tokens = (

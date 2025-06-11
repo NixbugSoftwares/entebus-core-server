@@ -136,8 +136,3 @@ class InvalidLandmarkBoundaryArea(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Boundary area not within the prescribed limits"
     headers = {"X-Error": "InvalidLandmarkBoundaryArea"}
-
-
-class InactiveStatus(APIException):
-    status_code = status.HTTP_412_PRECONDITION_FAILED
-    headers = {"X-Error": "InactiveStatus"}
