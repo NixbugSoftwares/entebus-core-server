@@ -191,7 +191,8 @@ def testDB():
             "distance_unit": "m",
             "extra": {},
         },
-        function="""function getFare(ticket_type, distance, extra) {
+        function="""
+        function getFare(ticket_type, distance, extra) {
             const base_fare_distance = 2.5;
             const base_fare = 10;
             const rate_per_km = 1;
@@ -227,7 +228,7 @@ def testDB():
                 }
             }
             return -1;
-        },
+        }
         """,
     )
     session.add(fare)
