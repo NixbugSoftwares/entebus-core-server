@@ -7,19 +7,27 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     create_engine,
     func,
-    UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB
 
-from app.src.constants import PSQL_DB_DRIVER, PSQL_DB_HOST, PSQL_DB_PASSWORD
-from app.src.constants import PSQL_DB_NAME, PSQL_DB_PORT, PSQL_DB_USERNAME
+from app.src.constants import (
+    PSQL_DB_DRIVER,
+    PSQL_DB_HOST,
+    PSQL_DB_PASSWORD,
+    PSQL_DB_NAME,
+    PSQL_DB_PORT,
+    PSQL_DB_USERNAME,
+)
 from app.src.enums import (
     AccountStatus,
+    BankAccountType,
     GenderType,
     LandmarkType,
     PlatformType,
@@ -27,6 +35,7 @@ from app.src.enums import (
     BusinessType,
     CompanyStatus,
     CompanyType,
+    FareScope,
     BusStatus,
 )
 
@@ -276,6 +285,7 @@ class ExecutiveToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the token record is modified.
@@ -398,13 +408,23 @@ class Operator(ORMbase):
             Identifies the company to which the operator belongs.
             Cascades on delete — if the company is deleted, all its operators are removed.
 
-        username (String):
-            The operator's login username.
-            Must be unique within the same company.
+        username (String(32)):
+            Unique username used for login or identification within the system.
+            Ideally, the username shouldn't be changed once set.
+            It should start with an alphabet (uppercase or lowercase).
+            It can contain uppercase and lowercase letters, as well as digits from 0 to 9.
+            It should be 4-32 characters long.
+            May include hyphen (-), period (.), at symbol (@), and underscore (_).
+            Must not be null and unique.
 
         password (TEXT):
             Hashed password used for authentication.
-            Stored securely; should never be stored in plain text.
+            It should be 8-32 characters long.
+            Passwords can contain uppercase and lowercase letters, as well as digits from 0 to 9.
+            Plaintext should never be stored here. Argon2 is used for secure hashing.
+            May include hyphen (-), plus (+), comma (,), period (.), at symbol (@), underscore (_),
+            dollar sign ($), percent (%), ampersand (&), asterisk (*), hash (#),
+            exclamation mark (!), caret (^), equals (=), forward slash (/), question mark (?).
 
         gender (Integer):
             Enum representing the operator’s gender.
@@ -412,6 +432,7 @@ class Operator(ORMbase):
 
         full_name (TEXT):
             The full name of the operator (optional).
+            Maximum 32 characters long.
 
         status (Integer):
             Enum representing the account's current status.
@@ -419,13 +440,21 @@ class Operator(ORMbase):
 
         phone_number (TEXT):
             Optional contact phone number for the operator.
+            Maximum 32 characters long.
+            Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
+            Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
             Optional contact email address for the operator.
+            Maximum 256 characters long.
+            Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
+
+        updated_on (DateTime):
+            Timestamp of the last update to the operator's profile or credentials.
+            Timestamp automatically updated whenever the operators's profile is modified.
 
         created_on (DateTime):
-            Timestamp of when the operator account was created.
-            Automatically set to the current time during insertion.
+            Timestamp of when the operators account was created.
 
     Constraints:
         UniqueConstraint (username, company_id):
@@ -438,7 +467,10 @@ class Operator(ORMbase):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
-        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     username = Column(String(32), nullable=False)
     password = Column(TEXT, nullable=False)
@@ -449,6 +481,7 @@ class Operator(ORMbase):
     phone_number = Column(TEXT)
     email_id = Column(TEXT)
     # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
@@ -491,9 +524,10 @@ class OperatorToken(ORMbase):
             Defaults to `PlatformType.OTHER`.
             Useful for device-aware authentication and access logging.
 
-        client_version (TEXT):
-            Optional field for storing the version of the client application.
-            Helps in enforcing version constraints and debugging issues related to client behavior.
+        client_details (TEXT):
+            Optional description of the client device or environment.
+            May include user agent, app version, IP address, etc.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp that updates automatically whenever the record is modified.
@@ -523,7 +557,7 @@ class OperatorToken(ORMbase):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     # Device related details
     platform_type = Column(Integer, default=PlatformType.OTHER)
-    client_version = Column(TEXT)
+    client_details = Column(TEXT)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -542,8 +576,8 @@ class OperatorRole(ORMbase):
         id (Integer):
             Primary key. Unique identifier for the operator role.
 
-        name (String):
-            Name of the role. Must be unique across the system.
+        name (String(32)):
+            Name of the role. Must be unique across the company.
 
         company_id (Integer):
             Foreign key referencing `company.id`.
@@ -563,11 +597,15 @@ class OperatorRole(ORMbase):
     """
 
     __tablename__ = "operator_role"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False, unique=True)
     company_id = Column(
-        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
@@ -693,6 +731,136 @@ class Landmark(ORMbase):
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
+class Fare(ORMbase):
+    """
+    Represents a fare configuration used by a transport company to determine ticket pricing.
+
+    Each fare defines pricing logic and metadata, optionally scoped by applicability.
+    Fares are versioned and uniquely named per company, supporting fare updates, seasonal changes,
+    or experimental pricing models. The fare logic is stored as text, and attributes define input
+    parameters or configuration details.
+
+    Table Constraints:
+        - UniqueConstraint(name, company_id):
+            Ensures that a fare with the same name cannot exist more than once per company.
+            Enables companies to version or replace fares by name without duplication.
+
+    Columns:
+        id (Integer):
+            Primary key. Auto-incremented unique identifier for the fare record.
+
+        company_id (Integer):
+            References the `company.id` column.
+            Indicates which company owns the fare configuration.
+            Uses cascading delete — fares are deleted if the associated company is removed.
+
+        version (Integer):
+            Numerical version of the fare.
+            Used to track changes or revisions to fare logic.
+
+        name (String(32)):
+            Human-readable name of the fare.
+            Max length is 32 characters.
+            Indexed to support fast lookup by name.
+
+        attributes (JSONB):
+            A structured set of parameters that define how the fare behaves.
+            Stored as binary JSON for efficient querying and indexing in PostgreSQL.
+
+        function (TEXT):
+            The implementation logic for the fare, often expressed as a code block or formula.
+            This function interprets the `attributes` to calculate fares dynamically.
+            Unlimited size (`TEXT`), but should be validated for security/syntax at the application layer.
+
+        scope (Integer):
+            Indicates where or how the fare applies.
+            Typically mapped to an enum like `FareScope.GLOBAL`.
+            Defaults to global scope.
+
+        updated_on (DateTime):
+            Timestamp that is automatically updated when the record changes.
+            Used for auditing and cache invalidation.
+
+        created_on (DateTime):
+            Timestamp indicating when the fare record was created.
+            Set automatically at insertion time.
+    """
+
+    __tablename__ = "fare"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("company.id", ondelete="CASCADE"))
+    version = Column(Integer, nullable=False, default=1)
+    name = Column(String(32), nullable=False, index=True)
+    attributes = Column(JSONB, nullable=False)
+    function = Column(TEXT, nullable=False)
+    scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class BusStop(ORMbase):
+    """
+    Represents a physical bus stop with a precise geospatial location and a relationship
+    to a parent landmark.
+
+    This table supports mapping and location-aware operations within transportation systems.
+    Each bus stop is uniquely identified by a combination of its geographic `POINT` location
+    and the `landmark` it belongs to. This model is useful for building spatial queries,
+    organizing stops within specific zones, and supporting efficient geospatial indexing.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bus stop record.
+            Auto-incremented by the database.
+
+        name (TEXT):
+            Human-readable name of the bus stop.
+            Used for labeling in interfaces, navigation, and route planning.
+            Maximum length is 128 characters.
+
+        landmark_id (Integer):
+            Foreign key to the `landmark.id` column.
+            Associates the bus stop with a specific landmark.
+            Required field. Deleting the associated landmark cascades and deletes the bus stop.
+
+        location (Geometry):
+            Geospatial location of the bus stop defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
+            Represents a specific latitude and longitude coordinate.
+            Must be unique in combination with `landmark_id`.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Timezone-aware.
+            Useful for tracking changes or syncing data.
+
+        created_on (DateTime):
+            Timestamp indicating when the bus stop was created.
+            Timezone-aware.
+            Automatically set at the time of record insertion.
+
+    Table Constraints:
+        UniqueConstraint(location, landmark_id):
+            Ensures no two bus stops exist at the same geographic point within the same landmark.
+            Helps maintain spatial uniqueness and prevents duplication.
+    """
+
+    __tablename__ = "bus_stop"
+    __table_args__ = (UniqueConstraint("location", "landmark_id"),)
+
+    id = Column(Integer, primary_key=True)
+    name = Column(TEXT, nullable=False)
+    landmark_id = Column(
+        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+    )
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
 class Business(ORMbase):
     """
     Represents a registered business entity within the system, serving as the parent
@@ -725,6 +893,7 @@ class Business(ORMbase):
         address (TEXT):
             Optional physical address of the business.
             Used for communication or billing purposes.
+            Maximum 128 characters long.
 
         contact_person (TEXT):
             Name of the contact person for the business.
@@ -745,6 +914,7 @@ class Business(ORMbase):
         website (TEXT):
             Optional URL to the business's website or landing page.
             Should be a valid HTTP(S) address if provided.
+            Maximum length is 256 characters.
 
         location (Geometry(Point)):
             Represents the geographic location of the business in (latitude/longitude).
@@ -915,7 +1085,7 @@ class VendorToken(ORMbase):
         client_details (TEXT):
             Optional description of the client device or environment.
             May include user agent, app version, IP address, etc.
-            Maximum 32 characters long.
+            Maximum 1024 characters long.
 
         updated_on (DateTime):
             Timestamp automatically updated when the token record is modified.
@@ -968,7 +1138,6 @@ class VendorRole(ORMbase):
         name (String(32)):
             Name of the role.
             Must not be null, and unique against business.
-            Maximum 32 characters long.
 
         business_id (Integer):
             Foreign key referencing the associated business entity, its indexed.
@@ -1085,6 +1254,113 @@ class VendorRoleMap(ORMbase):
         ForeignKey("vendor.id", ondelete="CASCADE"),
         nullable=False,
     )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Wallet(ORMbase):
+    """
+    Represents a digital wallet tied to an associated object (e.g: entebus, company, merchant).
+
+    - Wallets must be manually removed when the associated object is removed.
+    - Wallets cannot be deleted if the balance is not zero, as it could lead to accounting inconsistencies.
+    - Deletion is restricted via a database trigger (for non zero balance).
+    - Wallet cannot be deleted if the debit_transfer, credit_transfer or wallet_transfer refer to this wallet.
+    - Data cleaner should handle dangling wallets.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the wallet.
+
+        name (TEXT):
+            Name of the wallet. This field is required.
+            Maximum 32 characters in length
+
+        balance (Numeric(10, 2)):
+            The current balance of the wallet.
+            Must be zero before deletion is permitted.
+
+        updated_on (DateTime):
+            The timestamp of the last balance update or modification.
+            This is automatically set to the current time when the wallet is modified.
+
+        created_on (DateTime):
+            The timestamp when the wallet was created.
+            Automatically set when the wallet is first inserted into the database.
+    """
+
+    __tablename__ = "wallet"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(TEXT, nullable=False)
+    balance = Column(Numeric(10, 2), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class BankAccount(ORMbase):
+    """
+    Represents a bank account used for financial transactions and settlements.
+
+    This table stores essential details of a bank account, such as the account holder's name,
+    account number, IFSC code, and bank/branch details. It can be associated with operators, company,
+    or merchants depending on the use case.
+
+    Notes:
+        - Bank accounts must be manually removed when the associated object is removed.
+        - Bank accounts cannot be deleted if the debit_transfer refer to this bank account.
+        - Data cleaner should handle dangling bank accounts.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bank account.
+
+        bank_name (TEXT):
+            Name of the bank. This field is required.
+            Maximum 32 characters in length
+
+        branch_name (TEXT):
+            Name of the bank branch. Optional field.
+            Maximum 32 characters in length
+
+        account_number (TEXT):
+            The actual bank account number. Required.
+            Maximum 32 characters in length
+
+        holder_name (TEXT):
+            Full name of the account holder. Required.
+            Maximum 32 characters in length
+
+        ifsc (TEXT):
+            The Indian Financial System Code (IFSC) of the branch.
+            Used to uniquely identify a bank branch. Required.
+            Maximum 16 characters in length
+
+        account_type (Integer):
+            Type of the bank account, stored as an integer enum.
+            Refers to the `BankAccountType` enumeration.
+            Defaults to `BankAccountType.OTHER`.
+
+        updated_on (DateTime):
+            The timestamp of the last balance update or modification.
+            This is automatically set to the current time when their is a modification.
+
+        created_on (DateTime):
+            The timestamp when the account was created.
+            Automatically set when the account is first inserted into the database.
+    """
+
+    __tablename__ = "bank_account"
+
+    id = Column(Integer, primary_key=True)
+    bank_name = Column(TEXT, nullable=False)
+    branch_name = Column(TEXT)
+    account_number = Column(TEXT, nullable=False)
+    holder_name = Column(TEXT, nullable=False)
+    ifsc = Column(TEXT, nullable=False)
+    account_type = Column(Integer, nullable=False, default=BankAccountType.OTHER)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

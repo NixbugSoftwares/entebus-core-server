@@ -1,6 +1,11 @@
 from enum import IntEnum
 
 
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
+
+
 class AccountStatus(IntEnum):
     ACTIVE = 1
     SUSPENDED = 2
@@ -28,11 +33,6 @@ class LandmarkType(IntEnum):
     NATIONAL = 5
 
 
-class OrderIn(IntEnum):
-    ASC = 1
-    DESC = 2
-
-
 class BusinessStatus(IntEnum):
     ACTIVE = 1
     SUSPENDED = 2
@@ -55,6 +55,18 @@ class CompanyType(IntEnum):
     OTHER = 1
     PRIVATE = 2
     GOVERNMENT = 3
+
+
+class FareScope(IntEnum):
+    GLOBAL = 1
+    LOCAL = 2
+
+
+class BankAccountType(IntEnum):
+    OTHER = 1
+    SAVINGS_ACCOUNT = 2
+    CURRENT_ACCOUNT = 3
+    SALARY_ACCOUNT = 4
 
 
 class BusStatus(IntEnum):
