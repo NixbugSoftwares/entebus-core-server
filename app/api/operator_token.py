@@ -136,7 +136,7 @@ async def fetch_tokens(credential=Depends(bearer_operator)):
     - This endpoint deletes an access token based on the token ID (optional).
     - If no ID is provided, it deletes the token used in the request (self-revocation).
     - If an ID is provided, the caller must either: 
-        Own the token being deleted, or have a role with `manage_ex_token` permission.
+        Own the token being deleted, or have a role with `manage_op_token` permission.
     - If the token ID is invalid or already deleted, the operation is silently ignored.
     - Returns 204 No Content upon success.
     - Logs the token revocation event for audit tracking.
