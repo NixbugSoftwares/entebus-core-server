@@ -28,7 +28,6 @@ from app.src.functions import (
     getOperatorRole,
 )
 
-
 route_operator = APIRouter()
 route_executive = APIRouter()
 
