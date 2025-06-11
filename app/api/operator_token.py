@@ -54,8 +54,6 @@ class OperatorTokenQueryParams(BaseModel):
     created_on: Optional[datetime] = None
     created_on_ge: Optional[datetime] = None
     created_on_le: Optional[datetime] = None
-    offset: int = 0
-    limit: int = 20
     offset: int = Field(default=0, ge=0)
     limit: int = Field(default=20, gt=0, le=100)
     order_by: OrderBy = Field(default=OrderBy.id, description=enumStr(OrderBy))
