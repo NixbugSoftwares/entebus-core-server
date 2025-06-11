@@ -15,6 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.src.constants import (
     PSQL_DB_DRIVER,
@@ -34,6 +35,7 @@ from app.src.enums import (
     BusinessType,
     CompanyStatus,
     CompanyType,
+    FareScope,
 )
 
 
@@ -723,6 +725,76 @@ class Landmark(ORMbase):
         Geometry(geometry_type="POLYGON", srid=4326), nullable=False, unique=True
     )
     type = Column(Integer, nullable=False, default=LandmarkType.LOCAL)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Fare(ORMbase):
+    """
+    Represents a fare configuration used by a transport company to determine ticket pricing.
+
+    Each fare defines pricing logic and metadata, optionally scoped by applicability.
+    Fares are versioned and uniquely named per company, supporting fare updates, seasonal changes,
+    or experimental pricing models. The fare logic is stored as text, and attributes define input
+    parameters or configuration details.
+
+    Table Constraints:
+        - UniqueConstraint(name, company_id):
+            Ensures that a fare with the same name cannot exist more than once per company.
+            Enables companies to version or replace fares by name without duplication.
+
+    Columns:
+        id (Integer):
+            Primary key. Auto-incremented unique identifier for the fare record.
+
+        company_id (Integer):
+            References the `company.id` column.
+            Indicates which company owns the fare configuration.
+            Uses cascading delete — fares are deleted if the associated company is removed.
+
+        version (Integer):
+            Numerical version of the fare.
+            Used to track changes or revisions to fare logic.
+
+        name (String(32)):
+            Human-readable name of the fare.
+            Max length is 32 characters.
+            Indexed to support fast lookup by name.
+
+        attributes (JSONB):
+            A structured set of parameters that define how the fare behaves.
+            Stored as binary JSON for efficient querying and indexing in PostgreSQL.
+
+        function (TEXT):
+            The implementation logic for the fare, often expressed as a code block or formula.
+            This function interprets the `attributes` to calculate fares dynamically.
+            Unlimited size (`TEXT`), but should be validated for security/syntax at the application layer.
+
+        scope (Integer):
+            Indicates where or how the fare applies.
+            Typically mapped to an enum like `FareScope.GLOBAL`.
+            Defaults to global scope.
+
+        updated_on (DateTime):
+            Timestamp that is automatically updated when the record changes.
+            Used for auditing and cache invalidation.
+
+        created_on (DateTime):
+            Timestamp indicating when the fare record was created.
+            Set automatically at insertion time.
+    """
+
+    __tablename__ = "fare"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("company.id", ondelete="CASCADE"))
+    version = Column(Integer, nullable=False, default=1)
+    name = Column(String(32), nullable=False, index=True)
+    attributes = Column(JSONB, nullable=False)
+    function = Column(TEXT, nullable=False)
+    scope = Column(Integer, nullable=False, default=FareScope.GLOBAL)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
