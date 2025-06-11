@@ -8,7 +8,7 @@ from fastapi import (
 from typing import Annotated
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.bearer import bearer_executive, bearer_vendor
 from app.src import argon2, exceptions
