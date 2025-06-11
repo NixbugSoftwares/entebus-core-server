@@ -103,6 +103,8 @@ class ExecutiveRole(ORMbase):
     create_landmark = Column(Boolean, nullable=False)
     update_landmark = Column(Boolean, nullable=False)
     delete_landmark = Column(Boolean, nullable=False)
+    # BusStop management permission
+    create_bus_stop = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

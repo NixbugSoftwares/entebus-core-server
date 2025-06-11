@@ -55,3 +55,8 @@ class CompanyType(IntEnum):
     OTHER = 1
     PRIVATE = 2
     GOVERNMENT = 3
+
+
+class VerificationStatus(IntEnum):
+    VALIDATING = 1
+    VERIFIED = 2
