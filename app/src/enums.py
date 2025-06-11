@@ -57,11 +57,6 @@ class CompanyType(IntEnum):
     GOVERNMENT = 3
 
 
-class FareScope(IntEnum):
-    GLOBAL = 1
-    LOCAL = 2
-
-
 class BankAccountType(IntEnum):
     OTHER = 1
     SAVINGS_ACCOUNT = 2

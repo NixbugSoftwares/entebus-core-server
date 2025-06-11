@@ -6,7 +6,6 @@ from fastapi import (
     Query,
     status,
     Form,
-    Response,
 )
 from typing import Annotated, List, Optional
 from fastapi.encoders import jsonable_encoder
@@ -32,11 +31,6 @@ from app.src.functions import (
     getRequestInfo,
     logOperatorEvent,
     makeExceptionResponses,
-    getOperatorToken,
-    getOperatorRole,
-    getExecutiveToken,
-    getExecutiveRole,
-    logExecutiveEvent,
 )
 
 route_operator = APIRouter()
@@ -229,96 +223,30 @@ async def fetch_tokens(
         session.close()
 
 
-@route_operator.delete(
-    "/company/account/token",
-    tags=["Token"],
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
-    ),
-    description="""
-    Revokes an active access token associated with an operator account.
-
-    - This endpoint deletes an access token based on the token ID (optional).
-    - If no ID is provided, it deletes the token used in the request (self-revocation).
-    - If an ID is provided, the caller must either: 
-        Own the token being deleted, or have a role with `manage_op_token` permission.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking.
-    """,
-)
-async def delete_token(
-    id: Annotated[int | None, Form()] = None,
-    bearer=Depends(bearer_operator),
-    request_info=Depends(getRequestInfo),
-):
-    try:
-        session = sessionMaker()
-        token = getOperatorToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getOperatorRole(token, session)
-
-        if id is None:
-            tokenToDelete = token
-        else:
-            tokenToDelete = (
-                session.query(OperatorToken)
-                .filter(OperatorToken.id == id)
-                .filter(OperatorToken.company_id == token.company_id)
-                .first()
-            )
-            if tokenToDelete is not None:
-                forSelf = token.operator_id == tokenToDelete.operator_id
-                canManageToken = bool(role and role.manage_op_token)
-                if not forSelf and not canManageToken:
-                    raise exceptions.NoPermission()
-            else:
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        session.delete(tokenToDelete)
-        session.commit()
-        logOperatorEvent(
-            token,
-            request_info,
-            jsonable_encoder(tokenToDelete, exclude={"access_token"}),
-        )
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-## API endpoints [Executive]
-@route_executive.get("/company/account/token", tags=["Operator token"])
-async def fetch_tokens(credential=Depends(bearer_executive)):
+@route_operator.delete("/company/account/token", tags=["Token"])
+async def delete_tokens(credential=Depends(bearer_operator)):
     pass
 
 
-@route_executive.delete(
+## API endpoints [Executive]
+@route_executive.get(
     "/company/account/token",
     tags=["Operator token"],
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=List[schemas.MaskedOperatorToken],
     responses=makeExceptionResponses(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
-    description="""
-    Revokes an access token associated with an operator account.
+    description=""" 
+    Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.
 
-    - This endpoint deletes an access token based on the operator token ID.
-    - The executive with `manage_op_token` permission can delete any operator's token.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking if the id is valid.
-    - Requires the operator token ID as an input parameter.
+    - Only executives with `manage_op_token` permission can access this endpoint.
+    - Supports filtering by token ID, operator ID, platform type, client details, and creation timestamps.
+    - Enables pagination using `offset` and `limit`.
+    - Allows sorting using `order_by` and `order_in`.
     """,
 )
-async def delete_token(
-    id: Annotated[int, Form()],
-    bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+async def fetch_tokens(
+    qParam: ExecutiveTokenQueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -330,21 +258,13 @@ async def delete_token(
         if not canManageToken:
             raise exceptions.NoPermission()
 
-        tokenToDelete = (
-            session.query(OperatorToken).filter(OperatorToken.id == id).first()
-        )
-        if tokenToDelete is None:
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        session.delete(tokenToDelete)
-        session.commit()
-        logExecutiveEvent(
-            token,
-            request_info,
-            jsonable_encoder(tokenToDelete, exclude={"access_token"}),
-        )
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return queryOperatorTokens(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
         session.close()
+
+
+@route_executive.delete("/company/account/token", tags=["Operator token"])
+async def delete_tokens(credential=Depends(bearer_executive)):
+    pass
