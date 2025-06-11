@@ -1,7 +1,10 @@
 import argparse
 
 from app.src import argon2
-from app.src.enums import CompanyStatus
+from app.src.enums import (
+    CompanyStatus,
+    FareScope,
+)
 from app.src.db import (
     Executive,
     ExecutiveRole,
@@ -11,6 +14,7 @@ from app.src.db import (
     OperatorRole,
     OperatorRoleMap,
     Landmark,
+    Fare,
     Business,
     Vendor,
     VendorRole,
@@ -171,6 +175,63 @@ def testDB():
         location="POINT(76.6957873 8.7638225)",
     )
     session.add_all([busStop1, busStop2])
+    session.flush()
+    fare = Fare(
+        company_id=company.id,
+        name="Test fare",
+        scope=FareScope.GLOBAL,
+        attributes={
+            "df_version": 1,
+            "ticket_types": [
+                {"id": 1, "name": "Adult"},
+                {"id": 2, "name": "Child"},
+                {"id": 3, "name": "Student"},
+            ],
+            "currency_type": "INR",
+            "distance_unit": "m",
+            "extra": {},
+        },
+        function="""
+        function getFare(ticket_type, distance, extra) {
+            const base_fare_distance = 2.5;
+            const base_fare = 10;
+            const rate_per_km = 1;
+
+            distance = distance / 1000;
+            if (ticket_type == "Student") {
+                if (distance <= 2.5) {
+                    return 1;
+                } else if (distance <= 7.5) {
+                    return 2;
+                } else if (distance <= 17.5) {
+                    return 3;
+                } else if (distance <= 27.5) {
+                    return 4;
+                } else {
+                    return 5;
+                }
+            }
+
+            if (ticket_type == "Adult") {
+                if (distance <= base_fare_distance) {
+                    return base_fare;
+                } else {
+                    return base_fare + ((distance - base_fare_distance) * rate_per_km);
+                }
+            }
+
+            if (ticket_type == "Child") {
+                if (distance <= base_fare_distance) {
+                    return base_fare / 2;
+                } else {
+                    return (base_fare + ((distance - base_fare_distance) * rate_per_km)) / 2;
+                }
+            }
+            return -1;
+        }
+        """,
+    )
+    session.add(fare)
     session.flush()
     business = Business(
         name="Test Business",
