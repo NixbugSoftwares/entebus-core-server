@@ -51,3 +51,17 @@ class MaskedOperatorToken(BaseModel):
 class OperatorToken(MaskedOperatorToken):
     access_token: str
     token_type: Optional[str] = "bearer"
+
+
+class MaskedVendorToken(BaseModel):
+    id: int
+    vendor_id: int
+    expires_in: int
+    platform_type: Optional[str] = None
+    client_version: Optional[str] = None
+    created_on: datetime
+
+
+class VendorToken(MaskedVendorToken):
+    access_token: str
+    token_type: Optional[str] = "bearer"
