@@ -84,7 +84,7 @@ async def create_executive(
         logExecutiveEvent(
             token,
             request_info,
-            jsonable_encoder(executive),
+            jsonable_encoder(executive, exclude={"password"}),
         )
         return executive
     except Exception as e:
