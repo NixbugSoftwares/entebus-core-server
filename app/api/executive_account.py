@@ -39,9 +39,9 @@ route_executive = APIRouter()
     description="""
     Creates a new executive account with an active status.
 
-    - Only executives with `create_executive` permission can create executives
+    - Only executives with `create_executive` permission can create executives.
     - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password
+    - Follow patterns for smooth creation of username and password.
     - Phone number must follow RFC3966 format.
     - Email ID must follow RFC5322 format.
     """,
