@@ -64,3 +64,19 @@ class Executive(BaseModel):
     status: int
     updated_on: Optional[datetime]
     created_on: datetime
+
+
+class MaskedVendorToken(BaseModel):
+    id: int
+    business_id: int
+    vendor_id: int
+    expires_in: int
+    platform_type: Optional[str] = None
+    client_details: Optional[str] = None
+    created_on: datetime
+    updated_on: Optional[datetime]
+
+
+class VendorToken(MaskedVendorToken):
+    access_token: str
+    token_type: Optional[str] = "bearer"
