@@ -13,6 +13,7 @@ from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
 from app.src.db import (
     sessionMaker,
     Executive,
+    ExecutiveToken,
 )
 from app.src.functions import (
     enumStr,
@@ -186,6 +187,91 @@ async def fetch_executives(
 
         executives = query.limit(limit).offset(offset).all()
         return executives
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.patch(
+    "/entebus/account",
+    tags=["Account"],
+    response_model=schemas.Executive,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an existing executive account.
+
+    - Only executives with `update_executive` permission can update executives.
+    - Logs the executive account update activity with the associated token.
+    """,
+)
+async def update_executive(
+    id: Annotated[int, Form()],
+    password: Annotated[
+        str | None, Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32)
+    ] = None,
+    gender: Annotated[GenderType | None, Form(description=enumStr(GenderType))] = None,
+    full_name: Annotated[str | None, Form(max_length=32)] = None,
+    designation: Annotated[str | None, Form(max_length=32)] = None,
+    phone_number: Annotated[PhoneNumber | None, Form(max_length=32)] = None,
+    email_id: Annotated[EmailStr | None, Form(max_length=256)] = None,
+    status: Annotated[
+        AccountStatus | None, Form(description=enumStr(AccountStatus))
+    ] = None,
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        forSelf = False
+        if id == token.executive_id:
+            forSelf = True
+        canManageExecutive = bool(role and role.update_executive)
+        if not forSelf and not canManageExecutive:
+            raise exceptions.NoPermission()
+
+        executive = session.query(Executive).filter(Executive.id == id).first()
+        if executive is None:
+            raise exceptions.InvalidIdentifier()
+        if password is not None:
+            password = argon2.makePassword(password)
+            executive.password = password
+        if gender is not None and executive.gender != gender:
+            executive.gender = gender
+        if full_name is not None and executive.full_name != full_name:
+            executive.full_name = full_name
+        if designation is not None and executive.designation != designation:
+            executive.designation = designation
+        if phone_number is not None and executive.phone_number != phone_number:
+            executive.phone_number = phone_number
+        if email_id is not None and executive.email_id != email_id:
+            executive.email_id = email_id
+        if status is not None and executive.status != status:
+            if forSelf or not canManageExecutive:
+                raise exceptions.NoPermission()
+            if status == AccountStatus.SUSPENDED:
+                session.query(ExecutiveToken).filter(
+                    ExecutiveToken.executive_id == id
+                ).delete()
+            executive.status = status
+        session.commit()
+        session.refresh(executive)
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(executive, exclude={"password"}),
+        )
+        return executive
     except Exception as e:
         exceptions.handle(e)
     finally:
