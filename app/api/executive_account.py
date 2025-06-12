@@ -110,7 +110,7 @@ async def create_executive(
     Retrieves a list of executive account filtered by optional query parameters.
 
     - Any authorized executive can access the endpoint.
-    - Supports filtering by executive ID range, ID list gender list, , creation timestamps, etc.
+    - Supports filtering by executive ID range, ID list, gender list, creation timestamps.
     - Enables pagination using `offset` and `limit`  query parameters.
     - Supports ordering by `id` or `created_on`, in ascending or descending order.
     """,
