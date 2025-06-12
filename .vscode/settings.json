@@ -4,6 +4,7 @@
         "entebus",
         "geoalchemy",
         "ifsc",
+        "ilike",
         "jsonable",
         "nixbug",
         "OPENOBSERVE",
