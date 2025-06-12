@@ -68,7 +68,7 @@ async def create_bus_stop(
 
         landmark = session.query(Landmark).filter(Landmark.id == landmark_id).first()
         if landmark is None:
-            raise exceptions.InvalidIdentifier()
+            raise exceptions.InvalidValue()
         wktBoundary = toWKTgeometry(location, Point)
         if wktBoundary is None:
             raise exceptions.InvalidWKTStringOrType()
