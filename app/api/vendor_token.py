@@ -45,7 +45,6 @@ route_executive = APIRouter()
 
     - Accepts OAuth2-style form data for authentication.
     - Only vendors with an `ACTIVE` account status are permitted to receive a token.
-    - If authentication fails an appropriate error is returned.
     - Limits active tokens using `MAX_VENDOR_TOKENS` (token rotation).
     - Generates a token with an expiry time of `MAX_TOKEN_VALIDITY` seconds from creation.
     - Optionally accepts platform type and client details for logging and metadata.
