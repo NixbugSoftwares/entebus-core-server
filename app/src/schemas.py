@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from pydantic_extra_types.phone_numbers import PhoneNumber
 
 
 class HealthStatus(BaseModel):
@@ -80,3 +81,17 @@ class MaskedVendorToken(BaseModel):
 class VendorToken(MaskedVendorToken):
     access_token: str
     token_type: Optional[str] = "bearer"
+
+
+class Company(BaseModel):
+    id: int
+    name: str
+    address: str
+    location: str
+    contact_person: str
+    phone_number: PhoneNumber
+    email_id: Optional[EmailStr]
+    status: int
+    type: int
+    updated_on: datetime
+    created_on: datetime

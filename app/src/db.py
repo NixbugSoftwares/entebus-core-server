@@ -89,6 +89,15 @@ class ExecutiveRole(ORMbase):
         delete_landmark (Boolean):
             Whether this role permits deletion of a landmark.
 
+        create_company (Boolean):
+            Whether this role permits the creation of a new company.
+
+        update_company (Boolean):
+            Whether this role permits editing existing the company.
+
+        delete_company (Boolean):
+            Whether this role permits deletion of a company.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -112,6 +121,10 @@ class ExecutiveRole(ORMbase):
     create_landmark = Column(Boolean, nullable=False)
     update_landmark = Column(Boolean, nullable=False)
     delete_landmark = Column(Boolean, nullable=False)
+    # Company management permission
+    create_company = Column(Boolean, nullable=False)
+    update_company = Column(Boolean, nullable=False)
+    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
