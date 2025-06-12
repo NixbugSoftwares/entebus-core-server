@@ -207,8 +207,11 @@ async def fetch_executives(
     description="""
     Updates an existing executive account.
 
-    - Only executives with `update_executive` permission can update executives.
-    - Logs the executive account update activity with the associated token.
+    - Executives can update their own account details.
+    - Executives with the `update_executive` permission can update other executives.
+    - An executive cannot update their own status.
+    - If the status is set to `SUSPENDED`, all tokens associated with that executive are revoked.
+    - Logs the update activity along with the associated token details.
     """,
 )
 async def update_executive(
