@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
-from pydantic_extra_types.phone_numbers import PhoneNumber
+from pydantic import BaseModel
 
 
 class HealthStatus(BaseModel):
@@ -60,8 +59,8 @@ class Executive(BaseModel):
     gender: int
     full_name: Optional[str]
     designation: Optional[str]
-    phone_number: Optional[PhoneNumber]
-    email_id: Optional[EmailStr]
+    phone_number: Optional[str]
+    email_id: Optional[str]
     status: int
     updated_on: Optional[datetime]
     created_on: datetime
