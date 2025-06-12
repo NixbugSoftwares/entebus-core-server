@@ -67,3 +67,9 @@ class BankAccountType(IntEnum):
     SAVINGS_ACCOUNT = 2
     CURRENT_ACCOUNT = 3
     SALARY_ACCOUNT = 4
+
+
+class BusStatus(IntEnum):
+    ACTIVE = 1
+    MAINTENANCE = 2
+    SUSPENDED = 3
