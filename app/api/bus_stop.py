@@ -26,7 +26,7 @@ route_executive = APIRouter()
 ## API endpoints [Executive]
 @route_executive.post(
     "/bus_stop",
-    tags=["BusStop"],
+    tags=["Bus Stop"],
     response_model=schemas.BusStop,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
