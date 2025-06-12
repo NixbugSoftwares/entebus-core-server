@@ -1380,6 +1380,7 @@ class Bus(ORMbase):
         company_id (Integer):
             Foreign key referencing the company that owns the bus.
             Must be non-null. Deletion of the company cascades to its buses.
+            Indexed for optimized grouping and filtering.
 
         registration_number (String(16)):
             Vehicle registration number.
@@ -1434,7 +1435,10 @@ class Bus(ORMbase):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
-        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     registration_number = Column(String(16), nullable=False, index=True)
     name = Column(String(32), nullable=False, index=True)
