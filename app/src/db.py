@@ -89,6 +89,9 @@ class ExecutiveRole(ORMbase):
         delete_landmark (Boolean):
             Whether this role permits deletion of a landmark.
 
+        create_bus_stop (Boolean):
+            Whether this role permits the creation of a new bus stop.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 

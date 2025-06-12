@@ -5,7 +5,6 @@ from shapely import Point
 from sqlalchemy import func
 
 from app.api.bearer import bearer_executive
-from app.src.enums import VerificationStatus
 from app.src import schemas, exceptions
 from app.src.constants import (
     EPSG_4326,
