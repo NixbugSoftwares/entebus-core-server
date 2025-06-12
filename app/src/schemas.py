@@ -51,3 +51,16 @@ class MaskedOperatorToken(BaseModel):
 class OperatorToken(MaskedOperatorToken):
     access_token: str
     token_type: Optional[str] = "bearer"
+
+
+class Executive(BaseModel):
+    id: int
+    username: str
+    gender: int
+    full_name: Optional[str]
+    designation: Optional[str]
+    phone_number: Optional[str]
+    email_id: Optional[str]
+    status: int
+    updated_on: Optional[datetime]
+    created_on: datetime
