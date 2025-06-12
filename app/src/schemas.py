@@ -43,6 +43,7 @@ class BusStop(BaseModel):
     landmark_id: int
     location: str
     created_on: datetime
+    updated_on: Optional[datetime]
 
 
 class MaskedOperatorToken(BaseModel):
