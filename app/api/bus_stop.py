@@ -37,6 +37,7 @@ route_executive = APIRouter()
             exceptions.InvalidSRID4326,
             exceptions.InvalidIdentifier,
             exceptions.InvalidBusStopLocation,
+            exceptions.InvalidValue,
         ]
     ),
     description="""
