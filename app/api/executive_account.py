@@ -107,9 +107,12 @@ async def create_executive(
     response_model=List[schemas.Executive],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Retrieves executive account.
+    Retrieves a list of executive account filtered by optional query parameters.
 
-    - Ooohohoooo..
+    - Any authorized executive can access the endpoint.
+    - Supports filtering by executive ID range, ID list gender list, , creation timestamps, etc.
+    - Enables pagination using `offset` and `limit`  query parameters.
+    - Supports ordering by `id` or `created_on`, in ascending or descending order.
     """,
 )
 async def fetch_executives(
