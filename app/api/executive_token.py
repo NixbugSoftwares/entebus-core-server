@@ -35,7 +35,6 @@ from app.src.functions import (
     makeExceptionResponses,
 )
 
-
 route_executive = APIRouter()
 
 
@@ -45,7 +44,7 @@ class OrderBy(IntEnum):
     created_on = 2
 
 
-## API endpoints
+## API endpoints [Executive]
 @route_executive.post(
     "/entebus/account/token",
     tags=["Token"],
@@ -119,7 +118,6 @@ async def create_token(
         session.close()
 
 
-# Refresh token
 @route_executive.patch(
     "/entebus/account/token",
     tags=["Token"],
