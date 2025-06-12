@@ -39,7 +39,7 @@ class Landmark(BaseModel):
 
 class BusStop(BaseModel):
     id: int
-    name: str
+    name: Optional[str]
     landmark_id: int
     status: int
     location: str

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
@@ -36,6 +36,7 @@ route_executive = APIRouter()
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
+            exceptions.InvalidIdentifier,
             exceptions.InvalidBusStopLocation,
         ]
     ),
@@ -51,9 +52,8 @@ route_executive = APIRouter()
 )
 async def create_bus_stop(
     landmark_id: Annotated[int, Form()],
-    name: Annotated[str, Form(max_length=128)],
     location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
-    status: Annotated[VerificationStatus, Form()] = VerificationStatus.VALIDATING,
+    name: Annotated[Optional[str], Form(max_length=128)] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -76,14 +76,13 @@ async def create_bus_stop(
         if not isSRID4326(wktBoundary):
             raise exceptions.InvalidSRID4326()
 
+        name = name or landmark.name
         location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
-        withinBoundary = func.ST_Within(location4326, landmark.boundary)
+        withinBoundary = session.scalar(func.ST_Within(location4326, landmark.boundary))
         if not withinBoundary:
             raise exceptions.InvalidBusStopLocation()
 
-        bus_stop = BusStop(
-            name=name, landmark_id=landmark_id, status=status, location=location
-        )
+        bus_stop = BusStop(landmark_id=landmark_id, location=location, name=name)
         session.add(bus_stop)
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))

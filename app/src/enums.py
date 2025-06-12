@@ -57,11 +57,6 @@ class CompanyType(IntEnum):
     GOVERNMENT = 3
 
 
-class VerificationStatus(IntEnum):
-    VALIDATING = 1
-    VERIFIED = 2
-
-
 class FareScope(IntEnum):
     GLOBAL = 1
     LOCAL = 2
