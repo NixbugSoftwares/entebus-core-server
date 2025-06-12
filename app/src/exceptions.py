@@ -82,8 +82,8 @@ class InvalidValue(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     headers = {"X-Error": "InvalidValue"}
 
-    def __init__(self, column_name_1: str):
-        detail = f"Invalid {column_name_1} is provided"
+    def __init__(self, column_name: str):
+        detail = f"Invalid {column_name.key} is provided"
         super().__init__(detail=detail)
 
 

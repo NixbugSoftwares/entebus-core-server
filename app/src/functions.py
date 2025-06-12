@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List, Type, Union
 from fastapi import Request
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
@@ -20,6 +20,7 @@ from app.src.db import (
     VendorRole,
     VendorRoleMap,
 )
+from app.src.exceptions import APIException
 
 
 def getRequestInfo(request: Request):
@@ -37,17 +38,27 @@ def logExecutiveEvent(token: ExecutiveToken, request: dict, data: dict):
     openobserve.logEvent(logDetails)
 
 
-def makeExceptionResponses(exceptions: List[Any]):
+def makeExceptionResponses(exceptions: List[Union[Type[APIException], APIException]]):
     responses = {}
 
-    for exception in exceptions:
+    for exc in exceptions:
+        if isinstance(exc, APIException):
+            # It's an instance — use it directly
+            exception = exc
+            example_key = type(exc).__name__
+        else:
+            # It's a class — try to instantiate with no args
+            try:
+                exception = exc()
+                example_key = exc.__name__
+            except Exception:
+                continue  # skip if we can't instantiate
+
         status_code = exception.status_code
-        example_key = exception.__name__
         example_value = {
             "summary": str(exception.headers),
             "value": {"detail": exception.detail},
         }
-
         if status_code not in responses:
             responses[status_code] = {
                 "model": schemas.ErrorResponse,
