@@ -78,6 +78,15 @@ class ForeignKeyViolation(APIException):
         super().__init__(detail=detail)
 
 
+class InvalidValue(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    headers = {"X-Error": "InvalidValue"}
+
+    def __init__(self, column_name: str):
+        detail = f"Invalid {column_name.key} is provided"
+        super().__init__(detail=detail)
+
+
 class InvalidCredentials(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "Invalid username or password"
@@ -136,3 +145,9 @@ class InvalidLandmarkBoundaryArea(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Boundary area not within the prescribed limits"
     headers = {"X-Error": "InvalidLandmarkBoundaryArea"}
+
+
+class InvalidBusStopLocation(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Bus stop location is not within the landmark boundary"
+    headers = {"X-Error": "InvalidBusStopLocation"}
