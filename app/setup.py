@@ -300,7 +300,7 @@ def testDB():
     session.flush()
     bus1 = Bus(
         company_id=company.id,
-        registration_number="KL 02 WH 3000",
+        registration_number="KL02WH3000",
         name="Test Bus 1",
         capacity=100,
         manufactured_on="2025-03-25T11:24:33.649Z",
@@ -311,7 +311,7 @@ def testDB():
     )
     bus2 = Bus(
         company_id=company.id,
-        registration_number="KL 01 HW 2000",
+        registration_number="KL01HW2000",
         name="Test Bus 2",
         capacity=10,
         manufactured_on="2024-03-25T11:24:33.649Z",
