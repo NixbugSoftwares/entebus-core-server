@@ -41,13 +41,15 @@ route_executive = APIRouter()
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for a vendor after validating credentials.
-    - This endpoint authenticates using the `username` and `password` fields via OAuth2 form data.
-    - Upon successful authentication and status verification (must be ACTIVE), a new token is created and returned.
-    - If the number of existing tokens reaches `MAX_VENDOR_TOKENS`, the oldest token is deleted (token rotation).
-    - The token will have a validity defined by `MAX_TOKEN_VALIDITY` (in seconds).
-    - Platform and client version details can optionally be included in the request.
-    - Authentication events are logged for audit purposes.
+    Issues a new access token for an vendor after validating credentials.
+
+    - Accepts OAuth2-style form data for authentication.
+    - Only vendors with an `ACTIVE` account status are permitted to receive a token.
+    - If authentication fails an appropriate error is returned.
+    - Limits active tokens using `MAX_VENDOR_TOKENS` (token rotation).
+    - Generates a token with an expiry time of `MAX_TOKEN_VALIDITY` seconds from creation.
+    - Optionally accepts platform type and client details for logging and metadata.
+    - Logs authentication events for auditing purposes.
     """,
 )
 async def token_creation(
