@@ -26,7 +26,7 @@ route_executive = APIRouter()
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/account",
+    "/entebus/account",
     tags=["Account"],
     response_model=schemas.Executive,
     status_code=status.HTTP_201_CREATED,
