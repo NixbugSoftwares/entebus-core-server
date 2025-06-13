@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
-from pydantic_extra_types.phone_numbers import PhoneNumber
+from pydantic import BaseModel
 
 
 class HealthStatus(BaseModel):
