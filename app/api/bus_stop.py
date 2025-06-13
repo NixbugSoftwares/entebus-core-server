@@ -195,14 +195,14 @@ async def create_bus_stop(
 
 
 @route_executive.get(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
-    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports filtering by ID range, ID list, landmark ID list, location, name, and creation timestamps.
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
@@ -225,14 +225,14 @@ async def fetch_bus_stops(
 
 ## API endpoints [Operator]
 @route_operator.get(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
-    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports filtering by ID range, ID list, landmark ID list, location, name, and creation timestamps.
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
@@ -255,14 +255,14 @@ async def fetch_bus_stops(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
-    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports filtering by ID range, ID list, landmark ID list, location, name, and creation timestamps.
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
