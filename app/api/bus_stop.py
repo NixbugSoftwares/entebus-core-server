@@ -147,7 +147,6 @@ async def update_bus_stop(
                 raise exceptions.InvalidWKTStringOrType()
             if not isSRID4326(geom):
                 raise exceptions.InvalidSRID4326()
-        if bus_stop.location != location:
             landmark = (
                 session.query(Landmark)
                 .filter(Landmark.id == bus_stop.landmark_id)
@@ -163,12 +162,13 @@ async def update_bus_stop(
 
             bus_stop.location = location
 
-        modified = session.is_modified(bus_stop)
+        updated = session.is_modified(bus_stop)
         session.commit()
+        session.refresh(bus_stop)
 
         bus_stop.location = session.scalar(func.ST_AsText(bus_stop.location))
 
-        if modified:
+        if updated:
             logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
 
         return bus_stop
