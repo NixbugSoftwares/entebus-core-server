@@ -239,8 +239,8 @@ async def update_executive(
         forSelf = False
         if id == token.executive_id:
             forSelf = True
-        canManageExecutive = bool(role and role.update_executive)
-        if not forSelf and not canManageExecutive:
+        canUpdateExecutive = bool(role and role.update_executive)
+        if not forSelf and not canUpdateExecutive:
             raise exceptions.NoPermission()
 
         executive = session.query(Executive).filter(Executive.id == id).first()
@@ -260,7 +260,7 @@ async def update_executive(
         if email_id is not None and executive.email_id != email_id:
             executive.email_id = email_id
         if status is not None and executive.status != status:
-            if forSelf or not canManageExecutive:
+            if forSelf or not canUpdateExecutive:
                 raise exceptions.NoPermission()
             if status == AccountStatus.SUSPENDED:
                 session.query(ExecutiveToken).filter(
