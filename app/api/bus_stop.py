@@ -1,5 +1,9 @@
-from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, Form, status
+from datetime import datetime
+from enum import IntEnum
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, Depends, Form, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
@@ -174,6 +178,95 @@ async def create_bus_stop(
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
         return bus_stop
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.get(
+    "/bus_stop",
+    tags=["Bus Stop"],
+    response_model=List[schemas.BusStop],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_bus_stops(
+    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryBusStops(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Operator]
+@route_operator.get(
+    "/bus_stop",
+    tags=["Bus Stop"],
+    response_model=List[schemas.BusStop],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_bus_stops(
+    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryBusStops(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/bus_stop",
+    tags=["Bus Stop"],
+    response_model=List[schemas.BusStop],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - Supports filtering by ID range, landmark ID, location, name, and creation timestamps.
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_bus_stops(
+    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryBusStops(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
