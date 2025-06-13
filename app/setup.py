@@ -82,6 +82,9 @@ def initDB():
         delete_landmark=True,
         create_bus_stop=True,
         delete_bus_stop=True,
+        create_company=True,
+        update_company=True,
+        delete_company=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -96,6 +99,9 @@ def initDB():
         delete_landmark=False,
         create_bus_stop=False,
         delete_bus_stop=False,
+        create_company=False,
+        update_company=False,
+        delete_company=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
