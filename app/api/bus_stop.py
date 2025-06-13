@@ -90,3 +90,22 @@ async def create_bus_stop(
         exceptions.handle(e)
     finally:
         session.close()
+
+
+@route_executive.patch(
+    "/landmark/bus_stop",
+    tags=["Bus Stop"],
+    response_model=schemas.ExecutiveToken,
+    status_code=status.HTTP_200_OK,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
+    description="""
+    Updates an existing bus stop's name and/or location.
+
+    - Requires `id` of the bus stop.
+    - Accepts updated `name` and a WKT point `location` (SRID 4326).
+    - Raises `InvalidIdentifier` if bus stop does not exist.
+    - Logs the update for auditability.
+    """,
+)
