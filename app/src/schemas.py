@@ -89,3 +89,17 @@ class MaskedVendorToken(BaseModel):
 class VendorToken(MaskedVendorToken):
     access_token: str
     token_type: Optional[str] = "bearer"
+
+
+class Company(BaseModel):
+    id: int
+    name: str
+    address: str
+    location: str
+    contact_person: str
+    phone_number: str
+    email_id: Optional[str]
+    status: int
+    type: int
+    created_on: datetime
+    updated_on: Optional[datetime]
