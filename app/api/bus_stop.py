@@ -122,16 +122,18 @@ async def delete_bus_stop(
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        if not role or not role.delete_bus_stop:
+        canDeleteBusStop = bool(role and role.delete_bus_stop)
+        if not canDeleteBusStop:
             raise exceptions.NoPermission()
 
         bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
         if bus_stop is None:
             raise exceptions.InvalidIdentifier()
-        bus_stop.location = session.scalar(func.ST_AsText(bus_stop.location))
+        logData = jsonable_encoder(bus_stop, exclude={"location"})
+        logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
         session.delete(bus_stop)
         session.commit()
-        logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
+        logExecutiveEvent(token, request_info, logData)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
