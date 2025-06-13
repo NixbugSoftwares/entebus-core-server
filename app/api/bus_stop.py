@@ -91,24 +91,7 @@ async def create_bus_stop(
     finally:
         session.close()
 
-@route_executive.delete(
-    "/bus_stop",
-    tags=["Bus Stop"],
-    response_model=schemas.BusStop,
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission,]
-    ),
-    description="""
-    Creates a new bus stop under a specified landmark with a valid SRID 4326 location.
 
-    - Accepts a WKT point representing the bus stop location. Only SRID 4326 (WGS 84) geometries are allowed.
-    - Validates geometry format and SRID.
-    - Ensures the point lies within the boundary of the referenced landmark.
-    - Only executives with the required permission (`create_bus_stop`) can access this endpoint.
-    - Logs the bus stop creation activity with the associated token.
-    """,
-)
 @route_executive.delete(
     "/bus_stop",
     tags=["Bus Stop"],
@@ -123,7 +106,7 @@ async def create_bus_stop(
     description="""
     Deletes a bus stop using its ID.
 
-    - Only executives with the required permission (`manage_landmark`) can access this endpoint.
+    - Only executives with the required permission (`delete_bus_stop`) can access this endpoint.
     - Validates the bus stop ID.
     - Logs the deletion activity with the associated executive token.
     """,
@@ -133,20 +116,26 @@ async def delete_bus_stop(
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
-    session = sessionMaker()
     try:
+        session = sessionMaker()
         token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        # if not role or not role.manage_landmark:
-        #     raise exceptions.NoPermission()
+        if not role or not role.delete_bus_stop:
+            raise exceptions.NoPermission()
+
         bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
         if bus_stop is None:
             raise exceptions.InvalidValue(BusStop.id)
+
         session.delete(bus_stop)
         session.commit()
-        logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop), exclude=["bus_stop"])
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(bus_stop, exclude={"location"}),
+        )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
