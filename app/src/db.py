@@ -92,6 +92,9 @@ class ExecutiveRole(ORMbase):
 
         create_bus_stop (Boolean):
             Whether this role permits the creation of a new bus stop.
+        
+        update_bus_stop (Boolean):
+            Whether this role permits editing existing the bus stop.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
@@ -118,6 +121,7 @@ class ExecutiveRole(ORMbase):
     delete_landmark = Column(Boolean, nullable=False)
     # Bus Stop management permission
     create_bus_stop = Column(Boolean, nullable=False)
+    update_bus_stop = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

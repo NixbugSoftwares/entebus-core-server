@@ -119,7 +119,9 @@ async def create_bus_stop(
 async def update_bus_stop(
     id: Annotated[int, Form()],
     name: Annotated[Optional[str], Form(max_length=128)] = None,
-    location: Annotated[Optional[str], Form(description="Accepts only SRID 4326 (WGS84)")] = None,
+    location: Annotated[
+        Optional[str], Form(description="Accepts only SRID 4326 (WGS84)")
+    ] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -128,9 +130,9 @@ async def update_bus_stop(
         token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
-        
         role = getExecutiveRole(token, session)
-        if not (role and role.manage_landmark):
+        canUpdateBusStop = bool(role and role.update_bus_stop)
+        if not canUpdateBusStop:
             raise exceptions.NoPermission()
 
         bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
@@ -145,14 +147,18 @@ async def update_bus_stop(
                 raise exceptions.InvalidWKTStringOrType()
             if not isSRID4326(geom):
                 raise exceptions.InvalidSRID4326()
-
-            landmark = session.query(Landmark).filter(Landmark.id == bus_stop.landmark_id).first()
-            if landmark is None:
-                raise exceptions.InvalidValue(BusStop.landmark_id)
+        if bus_stop.location != location:
+            landmark = (
+                session.query(Landmark)
+                .filter(Landmark.id == bus_stop.landmark_id)
+                .first()
+            )
 
             location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
-            within = session.scalar(func.ST_Within(location4326, landmark.boundary))
-            if not within:
+            withinBoundary = session.scalar(
+                func.ST_Within(location4326, landmark.boundary)
+            )
+            if not withinBoundary:
                 raise exceptions.InvalidBusStopLocation()
 
             bus_stop.location = location
