@@ -4,13 +4,13 @@ from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
 
-from app.api.bearer import bearer_executive
+from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
-from app.src.constants import (
-    EPSG_4326,
-)
+from app.src.enums import OrderIn
+from app.src.constants import EPSG_4326
 from app.src.db import sessionMaker, Landmark, BusStop
 from app.src.functions import (
+    enumStr,
     toWKTgeometry,
     isSRID4326,
     getExecutiveRole,
@@ -18,9 +18,97 @@ from app.src.functions import (
     getRequestInfo,
     logExecutiveEvent,
     makeExceptionResponses,
+    getOperatorToken,
+    getVendorToken,
 )
 
 route_executive = APIRouter()
+route_operator = APIRouter()
+route_vendor = APIRouter()
+
+
+## Schemas
+class OrderBy(IntEnum):
+    id = 1
+    landmark_id = 2
+    created_on = 3
+    updated_on = 4
+    # distance = 5
+
+
+class BusStopQueryParams(BaseModel):
+    id: Optional[int] = None
+    id_ge: Optional[int] = None
+    id_le: Optional[int] = None
+    id_list: Optional[List[int]] = None
+    name: Optional[str] = None
+    landmark_id: Optional[int] = None
+    landmark_id_list: Optional[List[int]] = None
+    location: Optional[str] = None
+    distance: Optional[int] = None
+    created_on: Optional[datetime] = None
+    created_on_ge: Optional[datetime] = None
+    created_on_le: Optional[datetime] = None
+    updated_on: Optional[datetime] = None
+    updated_on_ge: Optional[datetime] = None
+    updated_on_le: Optional[datetime] = None
+    offset: int = Query(default=0, ge=0)
+    limit: int = Query(default=20, gt=0, le=100)
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+
+
+## Function
+def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]:
+    query = session.query(BusStop)
+    if qParam.id is not None:
+        query = query.filter(BusStop.id == qParam.id)
+    if qParam.id_ge is not None:
+        query = query.filter(BusStop.id >= qParam.id_ge)
+    if qParam.id_le is not None:
+        query = query.filter(BusStop.id <= qParam.id_le)
+    if qParam.id_list is not None:
+        query = query.filter(BusStop.id.in_(qParam.id_list))
+    if qParam.name is not None:
+        query = query.filter(BusStop.name.ilike(f"%{qParam.name}%"))
+    if qParam.landmark_id is not None:
+        query = query.filter(BusStop.landmark_id == qParam.landmark_id)
+    if qParam.landmark_id_list is not None:
+        query = query.filter(BusStop.landmark_id.in_(qParam.landmark_id_list))
+    if qParam.created_on is not None:
+        query = query.filter(BusStop.created_on == qParam.created_on)
+    if qParam.created_on_ge is not None:
+        query = query.filter(BusStop.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(BusStop.created_on <= qParam.created_on_le)
+    if qParam.updated_on is not None:
+        query = query.filter(BusStop.updated_on == qParam.updated_on)
+    if qParam.updated_on_ge is not None:
+        query = query.filter(BusStop.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(BusStop.updated_on <= qParam.updated_on_le)
+    if qParam.location is not None:
+        wktLocation = toWKTgeometry(qParam.location, Point)
+        isSRID4326(wktLocation)
+        query = query.order_by(
+            func.ST_Distance(
+                BusStop.location,
+                func.Geometry(func.ST_GeographyFromText(qParam.location)),
+            )
+        )
+    if qParam.distance is not None:
+        query = query.filter(BusStop.location == qParam.distance)
+
+    # Apply ordering
+    orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderQuery.asc())
+    else:
+        query = query.order_by(orderQuery.desc())
+    for busStop in query:
+        busStop.location = session.scalar(func.ST_AsText(busStop.location))
+
+    return query.offset(qParam.offset).limit(qParam.limit).all()
 
 
 ## API endpoints [Executive]
