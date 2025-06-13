@@ -7,6 +7,7 @@ from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
+from dataclasses import dataclass
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
@@ -40,30 +41,32 @@ class OrderBy(IntEnum):
     # distance = 5
 
 
-class BusStopQueryParams(BaseModel):
-    id: Optional[int] = None
-    id_ge: Optional[int] = None
-    id_le: Optional[int] = None
-    id_list: Optional[List[int]] = None
-    name: Optional[str] = None
-    landmark_id: Optional[int] = None
-    landmark_id_list: Optional[List[int]] = None
-    location: Optional[str] = None
-    distance: Optional[int] = None
-    created_on: Optional[datetime] = None
-    created_on_ge: Optional[datetime] = None
-    created_on_le: Optional[datetime] = None
-    updated_on: Optional[datetime] = None
-    updated_on_ge: Optional[datetime] = None
-    updated_on_le: Optional[datetime] = None
-    offset: int = Query(default=0, ge=0)
-    limit: int = Query(default=20, gt=0, le=100)
-    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
-    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+@dataclass
+class BusStopQueryParams:
+    id: Annotated[int | None, Query()] = None
+    id_ge: Annotated[int | None, Query()] = None
+    id_le: Annotated[int | None, Query()] = None
+    id_list: Annotated[List[int | None], Query()] = None
+    name: Annotated[str | None, Query()] = None
+    landmark_id: Annotated[int | None, Query()] = None
+    landmark_id_list: Annotated[List[int | None], Query()] = None
+    location: Annotated[str | None, Query()] = None
+    distance: Annotated[int | None, Query()] = None
+    created_on: Annotated[datetime | None, Query()] = None
+    created_on_ge: Annotated[datetime | None, Query()] = None
+    created_on_le: Annotated[datetime | None, Query()] = None
+    updated_on: Annotated[datetime | None, Query()] = None
+    updated_on_ge: Annotated[datetime | None, Query()] = None
+    updated_on_le: Annotated[datetime | None, Query()] = None
+    offset: Annotated[int, Query(ge=0)] = 0
+    limit: Annotated[int, Query(gt=0, le=100)] = 20
+    order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id
+    order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC
 
 
 ## Function
 def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]:
+    print(f"DEBUG: -------------------------- = {qParam.id_list}")
     query = session.query(BusStop)
     if qParam.id is not None:
         query = query.filter(BusStop.id == qParam.id)
@@ -72,6 +75,7 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
     if qParam.id_le is not None:
         query = query.filter(BusStop.id <= qParam.id_le)
     if qParam.id_list is not None:
+        print(f"DEBUG: ---------------------------- = {qParam.id_list}")
         query = query.filter(BusStop.id.in_(qParam.id_list))
     if qParam.name is not None:
         query = query.filter(BusStop.name.ilike(f"%{qParam.name}%"))
