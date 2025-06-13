@@ -5,7 +5,6 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
 from shapely.geometry import Point
 from typing import Annotated, Optional
-from datetime import datetime
 
 from app.api.bearer import bearer_executive
 from app.src import schemas, exceptions
