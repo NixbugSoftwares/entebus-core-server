@@ -7,7 +7,6 @@ from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
-from dataclasses import dataclass
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
@@ -38,88 +37,108 @@ class OrderBy(IntEnum):
     landmark_id = 2
     created_on = 3
     updated_on = 4
-    # distance = 5
-
-
-@dataclass
-class BusStopQueryParams:
-    id: Annotated[int | None, Query()] = None
-    id_ge: Annotated[int | None, Query()] = None
-    id_le: Annotated[int | None, Query()] = None
-    id_list: Annotated[List[int | None], Query()] = None
-    name: Annotated[str | None, Query()] = None
-    landmark_id: Annotated[int | None, Query()] = None
-    landmark_id_list: Annotated[List[int | None], Query()] = None
-    location: Annotated[str | None, Query()] = None
-    distance: Annotated[int | None, Query()] = None
-    created_on: Annotated[datetime | None, Query()] = None
-    created_on_ge: Annotated[datetime | None, Query()] = None
-    created_on_le: Annotated[datetime | None, Query()] = None
-    updated_on: Annotated[datetime | None, Query()] = None
-    updated_on_ge: Annotated[datetime | None, Query()] = None
-    updated_on_le: Annotated[datetime | None, Query()] = None
-    offset: Annotated[int, Query(ge=0)] = 0
-    limit: Annotated[int, Query(gt=0, le=100)] = 20
-    order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id
-    order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC
 
 
 ## Function
-def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]:
-    print(f"DEBUG: -------------------------- = {qParam.id_list}")
+def bus_stop_query_params(
+    id: Optional[int] = Query(None),
+    id_ge: Optional[int] = Query(None),
+    id_le: Optional[int] = Query(None),
+    id_list: Optional[List[int]] = Query(None),
+    name: Optional[str] = Query(None),
+    landmark_id: Optional[int] = Query(None),
+    landmark_id_list: Optional[List[int]] = Query(None),
+    location: Optional[str] = Query(None),
+    distance: Optional[int] = Query(None),
+    created_on: Optional[datetime] = Query(None),
+    created_on_ge: Optional[datetime] = Query(None),
+    created_on_le: Optional[datetime] = Query(None),
+    updated_on: Optional[datetime] = Query(None),
+    updated_on_ge: Optional[datetime] = Query(None),
+    updated_on_le: Optional[datetime] = Query(None),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, gt=0, le=100),
+    order_by: OrderBy = Query(OrderBy.id, description=enumStr(OrderBy)),
+    order_in: OrderIn = Query(OrderIn.DESC, description=enumStr(OrderIn)),
+):
+    return {
+        "id": id,
+        "id_ge": id_ge,
+        "id_le": id_le,
+        "id_list": id_list,
+        "name": name,
+        "landmark_id": landmark_id,
+        "landmark_id_list": landmark_id_list,
+        "location": location,
+        "distance": distance,
+        "created_on": created_on,
+        "created_on_ge": created_on_ge,
+        "created_on_le": created_on_le,
+        "updated_on": updated_on,
+        "updated_on_ge": updated_on_ge,
+        "updated_on_le": updated_on_le,
+        "offset": offset,
+        "limit": limit,
+        "order_by": order_by,
+        "order_in": order_in,
+    }
+
+
+def queryBusStops(session: Session, qParam: dict) -> List[BusStop]:
     query = session.query(BusStop)
-    if qParam.id is not None:
-        query = query.filter(BusStop.id == qParam.id)
-    if qParam.id_ge is not None:
-        query = query.filter(BusStop.id >= qParam.id_ge)
-    if qParam.id_le is not None:
-        query = query.filter(BusStop.id <= qParam.id_le)
-    if qParam.id_list is not None:
-        print(f"DEBUG: ---------------------------- = {qParam.id_list}")
-        query = query.filter(BusStop.id.in_(qParam.id_list))
-    if qParam.name is not None:
-        query = query.filter(BusStop.name.ilike(f"%{qParam.name}%"))
-    if qParam.landmark_id is not None:
-        query = query.filter(BusStop.landmark_id == qParam.landmark_id)
-    if qParam.landmark_id_list is not None:
-        query = query.filter(BusStop.landmark_id.in_(qParam.landmark_id_list))
-    if qParam.created_on is not None:
-        query = query.filter(BusStop.created_on == qParam.created_on)
-    if qParam.created_on_ge is not None:
-        query = query.filter(BusStop.created_on >= qParam.created_on_ge)
-    if qParam.created_on_le is not None:
-        query = query.filter(BusStop.created_on <= qParam.created_on_le)
-    if qParam.updated_on is not None:
-        query = query.filter(BusStop.updated_on == qParam.updated_on)
-    if qParam.updated_on_ge is not None:
-        query = query.filter(BusStop.updated_on >= qParam.updated_on_ge)
-    if qParam.updated_on_le is not None:
-        query = query.filter(BusStop.updated_on <= qParam.updated_on_le)
-    if qParam.location is not None:
-        wktLocation = toWKTgeometry(qParam.location, Point)
+    if "id" in qParam and qParam["id"] is not None:
+        query = query.filter(BusStop.id == qParam["id"])
+    # if qParam.get('id') is not None:
+    #     query = query.filter(BusStop.id == qParam.get('id'))
+    if qParam.get("id_ge") is not None:
+        query = query.filter(BusStop.id >= qParam.get("id_ge"))
+    if qParam.get("id_le") is not None:
+        query = query.filter(BusStop.id <= qParam.get("id_le"))
+    if qParam.get("id_list") is not None:
+        query = query.filter(BusStop.id.in_(qParam.get("id_list")))
+    if qParam.get("name") is not None:
+        query = query.filter(BusStop.name.ilike(f"%{qParam.get('name')}%"))
+    if qParam.get("landmark_id") is not None:
+        query = query.filter(BusStop.landmark_id == qParam.get("landmark_id"))
+    if qParam.get("landmark_id_list") is not None:
+        query = query.filter(BusStop.landmark_id.in_(qParam.get("landmark_id_list")))
+    if qParam.get("created_on") is not None:
+        query = query.filter(BusStop.created_on == qParam.get("created_on"))
+    if qParam.get("created_on_ge") is not None:
+        query = query.filter(BusStop.created_on >= qParam.get("created_on_ge"))
+    if qParam.get("created_on_le") is not None:
+        query = query.filter(BusStop.created_on <= qParam.get("created_on_le"))
+    if qParam.get("updated_on") is not None:
+        query = query.filter(BusStop.updated_on == qParam.get("updated_on"))
+    if qParam.get("updated_on_ge") is not None:
+        query = query.filter(BusStop.updated_on >= qParam.get("updated_on_ge"))
+    if qParam.get("updated_on_le") is not None:
+        query = query.filter(BusStop.updated_on <= qParam.get("updated_on_le"))
+    if qParam.get("location") is not None:
+        wktLocation = toWKTgeometry(qParam.get("location"), Point)
         isSRID4326(wktLocation)
-        query = query.filter(
+        query = query.order_by(
             func.ST_Distance(
                 BusStop.location,
-                func.Geometry(func.ST_GeographyFromText(qParam.location)),
+                func.Geometry(func.ST_GeographyFromText(qParam.get("location"))),
             )
         )
-    if qParam.location is not None and qParam.distance is not None:
+    if qParam.get("location") is not None and qParam.get("distance") is not None:
         query = query.filter(
             func.ST_DWithin(
                 BusStop.location,
-                func.ST_GeographyFromText(qParam.location),
-                qParam.distance,
+                func.ST_GeographyFromText(qParam.get("location")),
+                qParam.get("distance"),
             )
         )
 
     # Apply ordering
-    orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
-    if qParam.order_in == OrderIn.ASC:
+    orderQuery = getattr(BusStop, OrderBy(qParam.get("order_by")).name)
+    if qParam.get("order_in") == OrderIn.ASC:
         query = query.order_by(orderQuery.asc())
     else:
         query = query.order_by(orderQuery.desc())
-    busStops = query.offset(qParam.offset).limit(qParam.limit).all()
+    busStops = query.offset(qParam.get("offset")).limit(qParam.get("limit")).all()
     for busStop in busStops:
         busStop.location = session.scalar(func.ST_AsText(busStop.location))
     return busStops
@@ -208,7 +227,8 @@ async def create_bus_stop(
     """,
 )
 async def fetch_bus_stops(
-    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_executive)
+    qParam: dict = Depends(bus_stop_query_params),
+    bearer=Depends(bearer_executive),
 ):
     try:
         session = sessionMaker()
@@ -238,7 +258,7 @@ async def fetch_bus_stops(
     """,
 )
 async def fetch_bus_stops(
-    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: dict = Depends(bus_stop_query_params), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
@@ -268,7 +288,7 @@ async def fetch_bus_stops(
     """,
 )
 async def fetch_bus_stops(
-    qParam: BusStopQueryParams = Depends(), bearer=Depends(bearer_vendor)
+    qParam: dict = Depends(bus_stop_query_params), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
