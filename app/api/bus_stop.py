@@ -25,7 +25,7 @@ route_executive = APIRouter()
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=schemas.BusStop,
     status_code=status.HTTP_201_CREATED,
@@ -93,7 +93,7 @@ async def create_bus_stop(
 
 
 @route_executive.delete(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -125,7 +125,7 @@ async def delete_bus_stop(
         if not role or not role.delete_bus_stop:
             raise exceptions.NoPermission()
 
-        bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
+        bus_stop = (session.query(BusStop).filter(BusStop.id == id).first())
         if bus_stop is None:
             raise exceptions.InvalidIdentifier()
 
