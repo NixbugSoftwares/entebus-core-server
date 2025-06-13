@@ -96,6 +96,15 @@ class ExecutiveRole(ORMbase):
         update_bus_stop (Boolean):
             Whether this role permits editing existing the bus stop.
 
+        create_company (Boolean):
+            Whether this role permits the creation of a new company.
+
+        update_company (Boolean):
+            Whether this role permits editing the existing company.
+
+        delete_company (Boolean):
+            Whether this role permits deletion of a company.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -122,6 +131,10 @@ class ExecutiveRole(ORMbase):
     # Bus Stop management permission
     create_bus_stop = Column(Boolean, nullable=False)
     update_bus_stop = Column(Boolean, nullable=False)
+    # Company management permission
+    create_company = Column(Boolean, nullable=False)
+    update_company = Column(Boolean, nullable=False)
+    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -343,6 +356,7 @@ class Company(ORMbase):
         name (String):
             Name of the company.
             Must be unique and is required.
+            Maximum 32 characters long.
 
         status (Integer):
             Enum representing the verification status of the company
@@ -353,16 +367,25 @@ class Company(ORMbase):
             Defaults to `CompanyType.OTHER`.
 
         address (TEXT):
-            Optional physical or mailing address of the company.
+            Physical or mailing address of the company.
+            Used for communication or locating the company.
+            Maximum 512 characters long.
 
         contact_person (TEXT):
-            Optional name of the primary contact person for the company.
+            Name of the primary contact person for the company.
+            Must not be null.
+            Maximum 32 characters long.
 
         phone_number (TEXT):
-            Optional phone number associated with the company.
+            Phone number associated with the company, must not be null
+            Maximum 32 characters long.
+            Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
+            Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
             Optional email address for company-related communication.
+            Maximum 256 characters long
+            Enforce the format prescribed by RFC 5322
 
         location (Geometry):
             Geographical location of the company represented as a `POINT`
@@ -384,9 +407,9 @@ class Company(ORMbase):
     status = Column(Integer, nullable=False, default=CompanyStatus.UNDER_VERIFICATION)
     type = Column(Integer, nullable=False, default=CompanyType.OTHER)
     # Contact details
-    address = Column(TEXT)
-    contact_person = Column(TEXT)
-    phone_number = Column(TEXT)
+    address = Column(TEXT, nullable=False)
+    contact_person = Column(TEXT, nullable=False)
+    phone_number = Column(TEXT, nullable=False)
     email_id = Column(TEXT)
     location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata
