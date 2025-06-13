@@ -352,6 +352,7 @@ class Company(ORMbase):
         name (String):
             Name of the company.
             Must be unique and is required.
+            Maximum 32 characters long.
 
         status (Integer):
             Enum representing the verification status of the company
@@ -363,15 +364,24 @@ class Company(ORMbase):
 
         address (TEXT):
             Physical or mailing address of the company.
+            Used for communication or locating the company.
+            Maximum 512 characters long.
 
         contact_person (TEXT):
             Name of the primary contact person for the company.
+            Must not be null.
+            Maximum 32 characters long.
 
         phone_number (TEXT):
-            Phone number associated with the company.
+            Phone number associated with the company, must not be null
+            Maximum 32 characters long.
+            Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
+            Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
             Optional email address for company-related communication.
+            Maximum 256 characters long
+            Enforce the format prescribed by RFC 5322
 
         location (Geometry):
             Geographical location of the company represented as a `POINT`
