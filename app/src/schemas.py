@@ -98,7 +98,7 @@ class Company(BaseModel):
     location: str
     contact_person: str
     phone_number: str
-    email_id: str
+    email_id: Optional[str]
     status: int
     type: int
     created_on: datetime
