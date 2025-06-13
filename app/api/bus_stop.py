@@ -98,14 +98,20 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
     if qParam.location is not None:
         wktLocation = toWKTgeometry(qParam.location, Point)
         isSRID4326(wktLocation)
-        query = query.order_by(
+        query = query.filter(
             func.ST_Distance(
                 BusStop.location,
                 func.Geometry(func.ST_GeographyFromText(qParam.location)),
             )
         )
-    if qParam.distance is not None:
-        query = query.filter(BusStop.location == qParam.distance)
+    if qParam.location is not None and qParam.distance is not None:
+        query = query.filter(
+            func.ST_DWithin(
+                BusStop.location,
+                func.ST_GeographyFromText(qParam.location),
+                qParam.distance,
+            )
+        )
 
     # Apply ordering
     orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
@@ -113,10 +119,10 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
         query = query.order_by(orderQuery.asc())
     else:
         query = query.order_by(orderQuery.desc())
-    for busStop in query:
+    busStops = query.offset(qParam.offset).limit(qParam.limit).all()
+    for busStop in busStops:
         busStop.location = session.scalar(func.ST_AsText(busStop.location))
-
-    return query.offset(qParam.offset).limit(qParam.limit).all()
+    return busStops
 
 
 ## API endpoints [Executive]
