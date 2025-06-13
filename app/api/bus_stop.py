@@ -127,7 +127,7 @@ async def delete_bus_stop(
 
         bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
         if bus_stop is None:
-            raise exceptions.InvalidValue(BusStop.id)
+            raise exceptions.InvalidIdentifier()
 
         session.delete(bus_stop)
         session.commit()
