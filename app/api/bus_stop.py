@@ -95,17 +95,79 @@ async def create_bus_stop(
 @route_executive.patch(
     "/landmark/bus_stop",
     tags=["Bus Stop"],
-    response_model=schemas.ExecutiveToken,
+    response_model=schemas.BusStop,
     status_code=status.HTTP_200_OK,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+            exceptions.InvalidBusStopLocation,
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
-    Updates an existing bus stop's name and/or location.
+    Updates an existing bus stop with provided fields.
 
-    - Requires `id` of the bus stop.
-    - Accepts updated `name` and a WKT point `location` (SRID 4326).
-    - Raises `InvalidIdentifier` if bus stop does not exist.
-    - Logs the update for auditability.
+    - Accepts optional updates to `name`, `location` (WKT), and `status`.
+    - Ensures the WKT location is valid, SRID 4326, and inside the associated landmark boundary.
+    - Only executives with the `manage_landmark` permission can update bus stops.
+    - Logs updates only if any field was changed.
     """,
 )
+async def update_bus_stop(
+    id: Annotated[int, Form()],
+    name: Annotated[Optional[str], Form(max_length=128)] = None,
+    location: Annotated[Optional[str], Form(description="Accepts only SRID 4326 (WGS84)")] = None,
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        
+        role = getExecutiveRole(token, session)
+        if not (role and role.manage_landmark):
+            raise exceptions.NoPermission()
+
+        bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
+        if bus_stop is None:
+            raise exceptions.InvalidIdentifier()
+        if name is not None and bus_stop.name != name:
+            bus_stop.name = name
+
+        if location is not None:
+            geom = toWKTgeometry(location, Point)
+            if geom is None:
+                raise exceptions.InvalidWKTStringOrType()
+            if not isSRID4326(geom):
+                raise exceptions.InvalidSRID4326()
+
+            landmark = session.query(Landmark).filter(Landmark.id == bus_stop.landmark_id).first()
+            if landmark is None:
+                raise exceptions.InvalidValue(BusStop.landmark_id)
+
+            location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
+            within = session.scalar(func.ST_Within(location4326, landmark.boundary))
+            if not within:
+                raise exceptions.InvalidBusStopLocation()
+
+            bus_stop.location = location
+
+        modified = session.is_modified(bus_stop)
+        session.commit()
+
+        bus_stop.location = session.scalar(func.ST_AsText(bus_stop.location))
+
+        if modified:
+            logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
+
+        return bus_stop
+
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
