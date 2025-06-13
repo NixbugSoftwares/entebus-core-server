@@ -98,9 +98,9 @@ class Company(BaseModel):
     address: str
     location: str
     contact_person: str
-    phone_number: PhoneNumber
-    email_id: Optional[EmailStr]
+    phone_number: str
+    email_id: str
     status: int
     type: int
-    updated_on: datetime
     created_on: datetime
+    updated_on: Optional[datetime]

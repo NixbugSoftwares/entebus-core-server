@@ -97,7 +97,7 @@ class ExecutiveRole(ORMbase):
             Whether this role permits the creation of a new company.
 
         update_company (Boolean):
-            Whether this role permits editing existing the company.
+            Whether this role permits editing the existing company.
 
         delete_company (Boolean):
             Whether this role permits deletion of a company.
@@ -362,13 +362,13 @@ class Company(ORMbase):
             Defaults to `CompanyType.OTHER`.
 
         address (TEXT):
-            Optional physical or mailing address of the company.
+            Physical or mailing address of the company.
 
         contact_person (TEXT):
-            Optional name of the primary contact person for the company.
+            Name of the primary contact person for the company.
 
         phone_number (TEXT):
-            Optional phone number associated with the company.
+            Phone number associated with the company.
 
         email_id (TEXT):
             Optional email address for company-related communication.
@@ -393,9 +393,9 @@ class Company(ORMbase):
     status = Column(Integer, nullable=False, default=CompanyStatus.UNDER_VERIFICATION)
     type = Column(Integer, nullable=False, default=CompanyType.OTHER)
     # Contact details
-    address = Column(TEXT)
-    contact_person = Column(TEXT)
-    phone_number = Column(TEXT)
+    address = Column(TEXT, nullable=False)
+    contact_person = Column(TEXT, nullable=False)
+    phone_number = Column(TEXT, nullable=False)
     email_id = Column(TEXT)
     location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata

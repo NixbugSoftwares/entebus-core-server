@@ -16,7 +16,6 @@ from app.src.functions import (
     getExecutiveRole,
     getExecutiveToken,
     getRequestInfo,
-    isAABB,
     isSRID4326,
     logExecutiveEvent,
     makeExceptionResponses,
@@ -29,7 +28,7 @@ route_executive = APIRouter()
 ## API endpoints [Executive]
 @route_executive.post(
     "/company",
-    tags=["Company Management"],
+    tags=["Company"],
     response_model=schemas.Company,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
@@ -38,7 +37,6 @@ route_executive = APIRouter()
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.InvalidWKTStringOrType,
         ]
     ),
     description="""
@@ -58,8 +56,12 @@ async def create_company(
     contact_person: Annotated[str, Form(min_length=4, max_length=32)],
     phone_number: Annotated[PhoneNumber, Form()],
     email_id: Annotated[Optional[EmailStr], Form()] = None,
-    status: Annotated[CompanyStatus, Form()] = CompanyStatus.UNDER_VERIFICATION,
-    type: Annotated[CompanyType, Form()] = CompanyType.PRIVATE,
+    status: Annotated[
+        CompanyStatus, Form(description=enumStr(CompanyStatus))
+    ] = CompanyStatus.UNDER_VERIFICATION,
+    type: Annotated[
+        CompanyType, Form(description=enumStr(CompanyType))
+    ] = CompanyType.PRIVATE,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -77,8 +79,6 @@ async def create_company(
             raise exceptions.InvalidWKTStringOrType()
         if not isSRID4326(wktLocation):
             raise exceptions.InvalidSRID4326()
-        if wktLocation.geom_type.upper() != "POINT":
-            raise exceptions.InvalidWKTStringOrType()
 
         company = Company(
             name=name,
@@ -89,7 +89,6 @@ async def create_company(
             email_id=email_id,
             status=status,
             type=type,
-            updated_on=datetime.now(),
         )
         session.add(company)
         session.commit()

@@ -10,7 +10,6 @@ from app.api import company
 app_executive = FastAPI()
 app_vendor = FastAPI()
 app_operator = FastAPI()
-app_company = FastAPI()
 
 app_executive.include_router(executive_token.route_executive)
 app_operator.include_router(operator_token.route_operator)
@@ -26,5 +25,4 @@ app_executive.include_router(bus_stop.route_executive)
 
 app_executive.include_router(executive_account.route_executive)
 
-app_company.include_router(company.route_executive)
 app_executive.include_router(company.route_executive)
