@@ -104,7 +104,7 @@ async def create_bus_stop(
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.InvalidBusStopLocation,
-            exceptions.InvalidIdentifier(),
+            exceptions.InvalidIdentifier,
         ]
     ),
     description="""
