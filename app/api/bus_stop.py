@@ -161,13 +161,13 @@ async def update_bus_stop(
                 raise exceptions.InvalidBusStopLocation()
             bus_stop.location = location
 
-        updated = session.is_modified(bus_stop)
+        updatedBusSTOP = session.is_modified(bus_stop)
         session.commit()
         session.refresh(bus_stop)
 
         bus_stop.location = session.scalar(func.ST_AsText(bus_stop.location))
 
-        if updated:
+        if updatedBusSTOP:
             logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
 
         return bus_stop
