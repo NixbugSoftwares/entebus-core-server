@@ -1,5 +1,5 @@
 from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, Form, status
+from fastapi import APIRouter, Depends, Form, status, Response
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
@@ -161,17 +161,15 @@ async def update_bus_stop(
                 raise exceptions.InvalidBusStopLocation()
             bus_stop.location = location
 
-        updatedBusStop = session.is_modified(bus_stop)
-        session.commit()
-        session.refresh(bus_stop)
+            updatedBusStop = session.is_modified(bus_stop)
+            session.commit()
+            session.refresh(bus_stop)
 
-        bus_stop.location = session.scalar(func.ST_AsText(bus_stop.location))
-
-        if updatedBusStop:
-            logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
-
-        return bus_stop
-
+            if updatedBusStop:
+                logData = jsonable_encoder(bus_stop, exclude={"location"})
+                logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+                logExecutiveEvent(token, request_info, logData)
+            return Response(status_code=status.HTTP_200_OK)
     except Exception as e:
         exceptions.handle(e)
     finally:
