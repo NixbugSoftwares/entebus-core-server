@@ -127,13 +127,12 @@ async def delete_bus_stop(
             raise exceptions.NoPermission()
 
         bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
-        if bus_stop is None:
-            raise exceptions.InvalidIdentifier()
-        logData = jsonable_encoder(bus_stop, exclude={"location"})
-        logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
-        session.delete(bus_stop)
-        session.commit()
-        logExecutiveEvent(token, request_info, logData)
+        if bus_stop:
+            logData = jsonable_encoder(bus_stop, exclude={"location"})
+            logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+            session.delete(bus_stop)
+            session.commit()
+            logExecutiveEvent(token, request_info, logData)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
