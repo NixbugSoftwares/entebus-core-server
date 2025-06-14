@@ -125,7 +125,7 @@ async def token_creation(
     - Logs the refresh event for auditability.
     """,
 )
-async def update_token(
+async def refresh_token(
     id: Annotated[int, Form()] = None,
     bearer=Depends(bearer_vendor),
     request_info=Depends(getRequestInfo),
