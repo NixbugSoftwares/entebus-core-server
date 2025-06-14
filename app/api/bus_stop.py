@@ -50,7 +50,6 @@ class BusStopQueryParams:
         name: Optional[str] = Query(default=None),
         landmark_id: Optional[int] = Query(default=None),
         location: Optional[str] = Query(default=None),
-        distance: Optional[int] = Query(default=None),
         created_on: Optional[datetime] = Query(default=None),
         created_on_ge: Optional[datetime] = Query(default=None),
         created_on_le: Optional[datetime] = Query(default=None),
@@ -69,7 +68,6 @@ class BusStopQueryParams:
         self.name = name
         self.landmark_id = landmark_id
         self.location = location
-        self.distance = distance
         self.created_on = created_on
         self.created_on_ge = created_on_ge
         self.created_on_le = created_on_le
@@ -111,23 +109,16 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
         query = query.filter(BusStop.updated_on <= qParam.updated_on_le)
     if qParam.location is not None:
         wktLocation = toWKTgeometry(qParam.location, Point)
-    if qParam.location is not None:
-        wktLocation = toWKTgeometry(qParam.location, Point)
-        isSRID4326(wktLocation)
+        if wktLocation is None:
+            raise exceptions.InvalidWKTStringOrType()
+        if not isSRID4326(wktLocation):
+            raise exceptions.InvalidSRID4326()
         query = query.order_by(
             func.ST_Distance(
                 BusStop.location,
                 func.Geometry(func.ST_GeographyFromText(qParam.location)),
             )
         )
-        if qParam.distance is not None:
-            query = query.filter(
-                func.ST_DWithin(
-                    BusStop.location,
-                    func.ST_GeographyFromText(qParam.get.location),
-                    qParam.distance,
-                )
-            )
 
     # Apply ordering
     orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
@@ -214,7 +205,13 @@ async def create_bus_stop(
     "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
@@ -244,7 +241,13 @@ async def fetch_bus_stops(
     "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
@@ -274,7 +277,13 @@ async def fetch_bus_stops(
     "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=List[schemas.BusStop],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
