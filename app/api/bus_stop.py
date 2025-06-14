@@ -165,11 +165,15 @@ async def update_bus_stop(
             session.commit()
             session.refresh(bus_stop)
 
+            wktLocation = session.scalar(func.ST_AsText(bus_stop.location))
+            logData = jsonable_encoder(bus_stop, exclude={"location"})
+            logData["location"] = wktLocation
             if updatedBusStop:
-                logData = jsonable_encoder(bus_stop, exclude={"location"})
-                logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
                 logExecutiveEvent(token, request_info, logData)
-            return Response(status_code=status.HTTP_200_OK)
+                return logData
+            else:
+                wktLocation = session.scalar(func.ST_AsText(bus_stop.location))
+                return jsonable_encoder(bus_stop, exclude={"location", "updated_on"} | {"location": wktLocation})
     except Exception as e:
         exceptions.handle(e)
     finally:
