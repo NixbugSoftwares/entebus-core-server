@@ -159,7 +159,6 @@ async def update_bus_stop(
             )
             if not withinBoundary:
                 raise exceptions.InvalidBusStopLocation()
-
             bus_stop.location = location
 
         updated = session.is_modified(bus_stop)
