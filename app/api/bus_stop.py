@@ -69,10 +69,10 @@ async def create_bus_stop(
         landmark = session.query(Landmark).filter(Landmark.id == landmark_id).first()
         if landmark is None:
             raise exceptions.InvalidValue(BusStop.landmark_id)
-        wktBoundary = toWKTgeometry(location, Point)
-        if wktBoundary is None:
+        wktLocation = toWKTgeometry(location, Point)
+        if wktLocation is None:
             raise exceptions.InvalidWKTStringOrType()
-        if not isSRID4326(wktBoundary):
+        if not isSRID4326(wktLocation):
             raise exceptions.InvalidSRID4326()
 
         name = name or landmark.name
@@ -142,10 +142,10 @@ async def update_bus_stop(
             bus_stop.name = name
 
         if location is not None:
-            geom = toWKTgeometry(location, Point)
-            if geom is None:
+            wktLocation = toWKTgeometry(location, Point)
+            if wktLocation is None:
                 raise exceptions.InvalidWKTStringOrType()
-            if not isSRID4326(geom):
+            if not isSRID4326(wktLocation):
                 raise exceptions.InvalidSRID4326()
             landmark = (
                 session.query(Landmark)
