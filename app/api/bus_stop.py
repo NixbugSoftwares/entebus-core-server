@@ -40,83 +40,33 @@ class OrderBy(IntEnum):
 
 
 ## Function
-def bus_stop_query_params(
+def busStopQueryParams(
     id: Annotated[Optional[int], Query()] = None,
     id_ge: Annotated[Optional[int], Query()] = None,
     id_le: Annotated[Optional[int], Query()] = None,
     id_list: Annotated[Optional[List[int]], Query()] = None,
-
     name: Annotated[Optional[str], Query()] = None,
     landmark_id: Annotated[Optional[int], Query()] = None,
-    landmark_id_list: Annotated[Optional[List[int]], Query()] = None,
     location: Annotated[Optional[str], Query()] = None,
     distance: Annotated[Optional[int], Query()] = None,
-
     created_on: Annotated[Optional[datetime], Query()] = None,
     created_on_ge: Annotated[Optional[datetime], Query()] = None,
     created_on_le: Annotated[Optional[datetime], Query()] = None,
-
     updated_on: Annotated[Optional[datetime], Query()] = None,
     updated_on_ge: Annotated[Optional[datetime], Query()] = None,
     updated_on_le: Annotated[Optional[datetime], Query()] = None,
-
-    offset: int = 0,
-    limit: int = 20,
-
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(gt=0, le=100)] = 20,
     order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
     order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
 ):
     return locals()
-# def bus_stop_query_params(
-#     id: Optional[int] = Query(None),
-#     id_ge: Optional[int] = Query(None),
-#     id_le: Optional[int] = Query(None),
-#     id_list: Optional[List[int]] = Query(None),
-#     name: Optional[str] = Query(None),
-#     landmark_id: Optional[int] = Query(None),
-#     landmark_id_list: Optional[List[int]] = Query(None),
-#     location: Optional[str] = Query(None),
-#     distance: Optional[int] = Query(None),
-#     created_on: Optional[datetime] = Query(None),
-#     created_on_ge: Optional[datetime] = Query(None),
-#     created_on_le: Optional[datetime] = Query(None),
-#     updated_on: Optional[datetime] = Query(None),
-#     updated_on_ge: Optional[datetime] = Query(None),
-#     updated_on_le: Optional[datetime] = Query(None),
-#     offset: int = Query(0, ge=0),
-#     limit: int = Query(20, gt=0, le=100),
-#     order_by: OrderBy = Query(OrderBy.id, description=enumStr(OrderBy)),
-#     order_in: OrderIn = Query(OrderIn.DESC, description=enumStr(OrderIn)),
-# ):
-#     return {
-#         "id": id,
-#         "id_ge": id_ge,
-#         "id_le": id_le,
-#         "id_list": id_list,
-#         "name": name,
-#         "landmark_id": landmark_id,
-#         "landmark_id_list": landmark_id_list,
-#         "location": location,
-#         "distance": distance,
-#         "created_on": created_on,
-#         "created_on_ge": created_on_ge,
-#         "created_on_le": created_on_le,
-#         "updated_on": updated_on,
-#         "updated_on_ge": updated_on_ge,
-#         "updated_on_le": updated_on_le,
-#         "offset": offset,
-#         "limit": limit,
-#         "order_by": order_by,
-#         "order_in": order_in,
-#     }
 
 
 def queryBusStops(session: Session, qParam: dict) -> List[BusStop]:
     query = session.query(BusStop)
-    if "id" in qParam and qParam["id"] is not None:
-        query = query.filter(BusStop.id == qParam["id"])
-    # if qParam.get('id') is not None:
-    #     query = query.filter(BusStop.id == qParam.get('id'))
+    if qParam.get("id") is not None:
+        query = query.filter(BusStop.id == qParam.get("id"))
     if qParam.get("id_ge") is not None:
         query = query.filter(BusStop.id >= qParam.get("id_ge"))
     if qParam.get("id_le") is not None:
@@ -124,11 +74,9 @@ def queryBusStops(session: Session, qParam: dict) -> List[BusStop]:
     if qParam.get("id_list") is not None:
         query = query.filter(BusStop.id.in_(qParam.get("id_list")))
     if qParam.get("name") is not None:
-        query = query.filter(BusStop.name.ilike(f"%{qParam.get('name')}%"))
+        query = query.filter(BusStop.name.ilike(f"%{qParam.get("name")}%"))
     if qParam.get("landmark_id") is not None:
         query = query.filter(BusStop.landmark_id == qParam.get("landmark_id"))
-    if qParam.get("landmark_id_list") is not None:
-        query = query.filter(BusStop.landmark_id.in_(qParam.get("landmark_id_list")))
     if qParam.get("created_on") is not None:
         query = query.filter(BusStop.created_on == qParam.get("created_on"))
     if qParam.get("created_on_ge") is not None:
@@ -150,14 +98,22 @@ def queryBusStops(session: Session, qParam: dict) -> List[BusStop]:
                 func.Geometry(func.ST_GeographyFromText(qParam.get("location"))),
             )
         )
-    if qParam.get("location") is not None and qParam.get("distance") is not None:
-        query = query.filter(
-            func.ST_DWithin(
-                BusStop.location,
-                func.ST_GeographyFromText(qParam.get("location")),
-                qParam.get("distance"),
+        if qParam.get("distance") is not None:
+            query = query.filter(
+                func.ST_DWithin(
+                    BusStop.location,
+                    func.ST_GeographyFromText(qParam.get("location")),
+                    qParam.get("distance")
+                )
             )
-        )
+    # if qParam.get("distance") is not None:
+    #     query = query.filter(
+    #         func.ST_DWithin(
+    #             BusStop.location,
+    #             func.ST_GeographyFromText(qParam.get("location")),
+    #             qParam.get("distance"),
+    #         )
+    #     )
 
     # Apply ordering
     orderQuery = getattr(BusStop, OrderBy(qParam.get("order_by")).name)
@@ -254,7 +210,7 @@ async def create_bus_stop(
     """,
 )
 async def fetch_bus_stops(
-    qParam: dict = Depends(bus_stop_query_params),
+    qParam: dict = Depends(busStopQueryParams),
     bearer=Depends(bearer_executive),
 ):
     try:
@@ -285,7 +241,7 @@ async def fetch_bus_stops(
     """,
 )
 async def fetch_bus_stops(
-    qParam: dict = Depends(bus_stop_query_params), bearer=Depends(bearer_operator)
+    qParam: dict = Depends(busStopQueryParams), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
@@ -315,7 +271,7 @@ async def fetch_bus_stops(
     """,
 )
 async def fetch_bus_stops(
-    qParam: dict = Depends(bus_stop_query_params), bearer=Depends(bearer_vendor)
+    qParam: dict = Depends(busStopQueryParams), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
