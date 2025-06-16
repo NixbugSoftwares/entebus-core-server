@@ -105,6 +105,15 @@ class ExecutiveRole(ORMbase):
         delete_company (Boolean):
             Whether this role permits deletion of a company.
 
+        create_business (Boolean):
+            Whether this role permits the creation of a new business.
+
+        update_business (Boolean):
+            Whether this role permits editing the existing business.
+
+        delete_business (Boolean):
+            Whether this role permits deletion of a business.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -135,6 +144,10 @@ class ExecutiveRole(ORMbase):
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
     delete_company = Column(Boolean, nullable=False)
+    # Business management permission
+    create_business = Column(Boolean, nullable=False)
+    update_business = Column(Boolean, nullable=False)
+    delete_business = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -925,7 +938,7 @@ class Business(ORMbase):
         address (TEXT):
             Optional physical address of the business.
             Used for communication or billing purposes.
-            Maximum 128 characters long.
+            Maximum 512 characters long.
 
         contact_person (TEXT):
             Name of the contact person for the business.

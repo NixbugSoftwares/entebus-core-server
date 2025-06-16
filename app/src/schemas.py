@@ -103,3 +103,18 @@ class Company(BaseModel):
     type: int
     created_on: datetime
     updated_on: Optional[datetime]
+
+
+class Business(BaseModel):
+    id: int
+    name: str
+    address: Optional[str]
+    location: str
+    contact_person: str
+    phone_number: str
+    email_id: str
+    website: Optional[str]
+    status: int
+    type: int
+    created_on: datetime
+    updated_on: Optional[datetime]

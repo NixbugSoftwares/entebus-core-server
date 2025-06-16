@@ -6,6 +6,7 @@ from app.api import vendor_token
 from app.api import landmark, bus_stop
 from app.api import executive_account
 from app.api import company
+from app.api import business
 
 app_executive = FastAPI()
 app_vendor = FastAPI()
@@ -26,3 +27,5 @@ app_executive.include_router(bus_stop.route_executive)
 app_executive.include_router(executive_account.route_executive)
 
 app_executive.include_router(company.route_executive)
+
+app_executive.include_router(business.route_executive)
