@@ -1,5 +1,6 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, Form, status
+from datetime import datetime
+from typing import Annotated, List
+from fastapi import APIRouter, Depends, Form, status, Query
 from fastapi.encoders import jsonable_encoder
 from shapely import Polygon
 from sqlalchemy import func
@@ -13,6 +14,7 @@ from app.src.constants import (
     MAX_LANDMARK_AREA,
     MIN_LANDMARK_AREA,
 )
+from app.src.enums import OrderIn
 from app.src.db import sessionMaker, Landmark
 from app.src.enums import LandmarkType
 from app.src.functions import (
@@ -38,6 +40,54 @@ class OrderBy(IntEnum):
     location = 3
     created_on = 4
     updated_on = 5
+
+
+class LandmarkQueryParams:
+    def __init__(
+        self,
+        id: int | None = Query(default=None),
+        id_ge: int | None = Query(default=None),
+        id_le: int | None = Query(default=None),
+        id_list: List[int | None] = Query(
+            default=None,
+        ),
+        name: str | None = Query(default=None),
+        location: str | None = Query(
+            default=None, description="Accepts only SRID 4326 (WGS84)"
+        ),
+        type: LandmarkType | None = Query(default=None),
+        type_list: List[LandmarkType | None] = Query(
+            default=None, description=enumStr(LandmarkType)
+        ),
+        created_on: datetime | None = Query(default=None),
+        created_on_ge: datetime | None = Query(default=None),
+        created_on_le: datetime | None = Query(default=None),
+        updated_on: datetime | None = Query(default=None),
+        updated_on_ge: datetime | None = Query(default=None),
+        updated_on_le: datetime | None = Query(default=None),
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=20, gt=0, le=100),
+        order_by: OrderBy = Query(default=OrderBy.id, description=enumStr(OrderBy)),
+        order_in: OrderIn = Query(default=OrderIn.DESC, description=enumStr(OrderIn)),
+    ):
+        self.id = id
+        self.id_ge = id_ge
+        self.id_le = id_le
+        self.id_list = id_list
+        self.name = name
+        self.type = type
+        self.type_list = type_list
+        self.location = location
+        self.created_on = created_on
+        self.created_on_ge = created_on_ge
+        self.created_on_le = created_on_le
+        self.updated_on = updated_on
+        self.updated_on_ge = updated_on_ge
+        self.updated_on_le = updated_on_le
+        self.offset = offset
+        self.limit = limit
+        self.order_by = order_by
+        self.order_in = order_in
 
 
 ## API endpoints [Executive]
@@ -121,27 +171,27 @@ async def create_landmark(
 
 
 @route_executive.patch("/landmark", tags=["Landmark"])
-async def update_landmark(access_token=Depends(bearer_executive)):
+async def update_landmark(bearer=Depends(bearer_executive)):
     pass
 
 
 @route_executive.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(access_token=Depends(bearer_executive)):
+async def fetch_landmarks(bearer=Depends(bearer_executive)):
     pass
 
 
 @route_executive.delete("/landmark", tags=["Landmark"])
-async def delete_landmark(access_token=Depends(bearer_executive)):
+async def delete_landmark(bearer=Depends(bearer_executive)):
     pass
 
 
 ## API endpoints [Operator]
 @route_operator.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(access_token=Depends(bearer_operator)):
+async def fetch_landmarks(bearer=Depends(bearer_operator)):
     pass
 
 
 ## API endpoints [Vendor]
 @route_vendor.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(access_token=Depends(bearer_vendor)):
+async def fetch_landmarks(bearer=Depends(bearer_vendor)):
     pass
