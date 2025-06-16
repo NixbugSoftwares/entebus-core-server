@@ -84,7 +84,7 @@ class BusStopQueryParams:
 
 
 ## Function
-def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[schemas.BusStop]:
+def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]:
     query = session.query(BusStop)
     if qParam.id is not None:
         query = query.filter(BusStop.id == qParam.id)
