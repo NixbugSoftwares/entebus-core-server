@@ -100,7 +100,6 @@ async def create_bus_stop(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
         ]
     ),
     description="""
