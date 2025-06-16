@@ -191,6 +191,6 @@ async def delete_tokens(credential=Depends(bearer_executive)):
     pass
 
 
-@route_executive.patch("/entebus/account/token", tags=["Token"])
+@route_executive.patch("/business/account/token", tags=["Vendor Token"])
 async def update_token(credential=Depends(bearer_executive)):
     pass
