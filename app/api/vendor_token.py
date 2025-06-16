@@ -139,8 +139,7 @@ async def refresh_token(
     try:
         session = sessionMaker()
         token = getVendorToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
+
         if id is None:
             tokenToUpdate = token
         else:
