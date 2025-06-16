@@ -80,8 +80,8 @@ class MaskedVendorToken(BaseModel):
     business_id: int
     vendor_id: int
     expires_in: int
-    platform_type: Optional[str] = None
-    client_details: Optional[str] = None
+    platform_type: int
+    client_details: Optional[str]
     created_on: datetime
     updated_on: Optional[datetime]
 
