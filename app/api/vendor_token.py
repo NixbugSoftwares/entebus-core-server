@@ -121,7 +121,8 @@ async def token_creation(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
-    Refreshes an existing vendor access token.
+    Refreshes a vendor's existing access token to maintain authenticated access.
+
     - If `id` is not given, refreshes only the current token (used in this request).
     - If an `id` is provided: Must match the current token's `access_token` (prevents
       unauthorized refreshes, even by the same vendor).
