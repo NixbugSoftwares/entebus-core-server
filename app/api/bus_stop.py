@@ -6,6 +6,7 @@ from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
 from sqlalchemy import func
+from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
@@ -110,25 +111,24 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
         query = query.filter(BusStop.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(BusStop.updated_on <= qParam.updated_on_le)
-    if qParam.order_by == OrderBy.location and qParam.location is not None:
+    if qParam.order_by == OrderBy.location and qParam.location:
         wktLocation = toWKTgeometry(qParam.location, Point)
         if wktLocation is None:
             raise exceptions.InvalidWKTStringOrType()
         if not isSRID4326(wktLocation):
             raise exceptions.InvalidSRID4326()
-        query = query.order_by(
-            func.ST_Distance(
-                BusStop.location,
-                func.Geometry(func.ST_GeographyFromText(qParam.location)),
-            )
+        orderQuery = func.ST_Distance(
+            BusStop.location.cast(Geography), func.ST_GeogFromText(qParam.location)
         )
     else:
         orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
-        if qParam.order_in == OrderIn.ASC:
-            query = query.order_by(orderQuery.asc())
-        else:
-            query = query.order_by(orderQuery.desc())
-    busStops = query.offset(qParam.offset).limit(qParam.limit).all()
+
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderQuery.asc())
+    else:
+        query = query.order_by(orderQuery.desc())
+    query = query.offset(qParam.offset).limit(qParam.limit)
+    busStops = query.all()
     for busStop in busStops:
         busStop.location = session.scalar(func.ST_AsText(busStop.location))
     return busStops
