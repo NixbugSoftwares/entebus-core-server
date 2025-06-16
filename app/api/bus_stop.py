@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 from fastapi import APIRouter, Depends, Form, Query, status, Response
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
@@ -43,23 +43,23 @@ class OrderBy(IntEnum):
 class BusStopQueryParams:
     def __init__(
         self,
-        id: Optional[int] = Query(default=None),
-        id_ge: Optional[int] = Query(default=None),
-        id_le: Optional[int] = Query(default=None),
-        id_list: Optional[List[int]] = Query(
+        id: int | None = Query(default=None),
+        id_ge: int | None = Query(default=None),
+        id_le: int | None = Query(default=None),
+        id_list: List[int | None] = Query(
             default=None,
         ),
-        name: Optional[str] = Query(default=None),
-        landmark_id: Optional[int] = Query(default=None),
-        location: Optional[str] = Query(
+        name: str | None = Query(default=None),
+        landmark_id: int | None = Query(default=None),
+        location: str | None = Query(
             default=None, description="Accepts only SRID 4326 (WGS84)"
         ),
-        created_on: Optional[datetime] = Query(default=None),
-        created_on_ge: Optional[datetime] = Query(default=None),
-        created_on_le: Optional[datetime] = Query(default=None),
-        updated_on: Optional[datetime] = Query(default=None),
-        updated_on_ge: Optional[datetime] = Query(default=None),
-        updated_on_le: Optional[datetime] = Query(default=None),
+        created_on: datetime | None = Query(default=None),
+        created_on_ge: datetime | None = Query(default=None),
+        created_on_le: datetime | None = Query(default=None),
+        updated_on: datetime | None = Query(default=None),
+        updated_on_ge: datetime | None = Query(default=None),
+        updated_on_le: datetime | None = Query(default=None),
         offset: int = Query(default=0, ge=0),
         limit: int = Query(default=20, gt=0, le=100),
         order_by: OrderBy = Query(default=OrderBy.id, description=enumStr(OrderBy)),
@@ -163,7 +163,7 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
 async def create_bus_stop(
     landmark_id: Annotated[int, Form()],
     location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
-    name: Annotated[Optional[str], Form(max_length=128)] = None,
+    name: Annotated[str | None, Form(max_length=128)] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
