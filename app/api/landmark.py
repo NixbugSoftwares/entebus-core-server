@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
 from shapely import Polygon
 from sqlalchemy import func
+from enum import IntEnum
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
@@ -29,6 +30,14 @@ from app.src.functions import (
 route_operator = APIRouter()
 route_executive = APIRouter()
 route_vendor = APIRouter()
+
+
+## Schemas
+class OrderBy(IntEnum):
+    id = 1
+    location = 3
+    created_on = 4
+    updated_on = 5
 
 
 ## API endpoints [Executive]
