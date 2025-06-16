@@ -96,7 +96,6 @@ async def create_bus_stop(
     "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=schemas.BusStop,
-    status_code=status.HTTP_200_OK,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
