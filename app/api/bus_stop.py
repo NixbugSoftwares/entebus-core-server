@@ -173,6 +173,7 @@ async def update_bus_stop(
         else:
             busStop = jsonable_encoder(bus_stop, exclude={"location"})
             busStop["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+            session.expunge(bus_stop)
             return busStop
     except Exception as e:
         exceptions.handle(e)
