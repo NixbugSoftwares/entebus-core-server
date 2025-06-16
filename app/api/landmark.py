@@ -29,6 +29,8 @@ from app.src.functions import (
     logExecutiveEvent,
     makeExceptionResponses,
     toWKTgeometry,
+    getOperatorToken,
+    getVendorToken,
 )
 
 route_operator = APIRouter()
@@ -138,10 +140,10 @@ def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landma
     else:
         query = query.order_by(orderQuery.desc())
     query = query.offset(qParam.offset).limit(qParam.limit)
-    busStops = query.all()
-    for busStop in busStops:
-        busStop.location = session.scalar(func.ST_AsText(busStop.location))
-    return busStops
+    landmarks = query.all()
+    for landmark in landmarks:
+        landmark.boundary = session.scalar(func.ST_AsText(landmark.boundary))
+    return landmarks
 
 
 ## API endpoints [Executive]
@@ -229,9 +231,41 @@ async def update_landmark(bearer=Depends(bearer_executive)):
     pass
 
 
-@route_executive.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(bearer=Depends(bearer_executive)):
-    pass
+@route_executive.get(
+    "/landmark",
+    tags=["Landmark"],
+    response_model=List[schemas.Landmark],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - The authenticated user can access this endpoint.
+    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_landmarks(
+    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryLandmarks(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.delete("/landmark", tags=["Landmark"])
@@ -240,12 +274,76 @@ async def delete_landmark(bearer=Depends(bearer_executive)):
 
 
 ## API endpoints [Operator]
-@route_operator.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(bearer=Depends(bearer_operator)):
-    pass
+@route_operator.get(
+    "/landmark",
+    tags=["Landmark"],
+    response_model=List[schemas.Landmark],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - The authenticated user can access this endpoint.
+    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_landmarks(
+    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryLandmarks(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 ## API endpoints [Vendor]
-@route_vendor.get("/landmark", tags=["Landmark"])
-async def fetch_landmarks(bearer=Depends(bearer_vendor)):
-    pass
+@route_vendor.get(
+    "/landmark",
+    tags=["Landmark"],
+    response_model=List[schemas.Landmark],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Fetches a list of bus stops filtered by optional query parameters.
+    
+    - The authenticated user can access this endpoint.
+    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_landmarks(
+    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+
+        return queryLandmarks(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
