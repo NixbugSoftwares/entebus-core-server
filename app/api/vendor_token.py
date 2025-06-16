@@ -116,7 +116,6 @@ async def token_creation(
     "/business/account/token",
     tags=["Token"],
     response_model=schemas.VendorToken,
-    status_code=status.HTTP_200_OK,
     responses=makeExceptionResponses(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
@@ -133,7 +132,7 @@ async def token_creation(
     """,
 )
 async def refresh_token(
-    id: Annotated[int, Form()] = None,
+    id: Annotated[int | None, Form()] = None,
     bearer=Depends(bearer_vendor),
     request_info=Depends(getRequestInfo),
 ):
