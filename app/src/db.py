@@ -10,6 +10,7 @@ from sqlalchemy import (
     Numeric,
     String,
     UniqueConstraint,
+    Time,
     create_engine,
     func,
 )
@@ -1481,6 +1482,60 @@ class Bus(ORMbase):
     fitness_upto = Column(DateTime(timezone=True))
     road_tax_upto = Column(DateTime(timezone=True))
     status = Column(Integer, nullable=False, default=BusStatus.ACTIVE)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Route(ORMbase):
+    """
+    Represents a route associated with a company and a starting landmark.
+
+    Each route defines a named path or schedule that begins at a specific landmark
+    and is managed by a specific company. It includes basic scheduling and metadata
+    used for transportation or logistics operations.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the route.
+
+        company_id (Integer):
+            Foreign key referencing the company that owns or operates the route.
+            Must be non-null. Deletion of the company cascades to its routes.
+
+        landmark_id (Integer):
+            Foreign key referencing the landmark from where the route starts.
+            Must be non-null. Deletion of the landmark cascades to the route.
+
+        name (String(4096)):
+            Descriptive name or label for the route.
+            Must be non-null.
+            Indexed for fast lookup.
+
+        starting_time (Time):
+            Scheduled time when the route is expected to start.
+            Must be non-null. Used for scheduling and dispatching.
+
+        updated_on (DateTime):
+            Timestamp automatically updated when the route record is modified.
+            Useful for audit logs, syncing, or change tracking.
+
+        created_on (DateTime):
+            Timestamp indicating when the route was initially created.
+            Must be non-null. Defaults to the current timestamp.
+    """
+
+    __tablename__ = "route"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    landmark_id = Column(
+        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(4096), nullable=False, index=True)
+    starting_time = Column(Time(timezone=True), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

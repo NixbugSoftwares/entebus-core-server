@@ -1,6 +1,7 @@
 import argparse
 
 from app.src import argon2
+from datetime import time
 from app.src.enums import (
     CompanyStatus,
     FareScope,
@@ -22,6 +23,7 @@ from app.src.db import (
     VendorRoleMap,
     BusStop,
     Bus,
+    Route,
     sessionMaker,
     engine,
     ORMbase,
@@ -332,6 +334,13 @@ def testDB():
     )
     session.add_all([bus1, bus2])
     session.flush()
+    route = Route(
+        name="Test Route",
+        company_id=company.id,
+        landmark_id=landmark1.id,
+        starting_time=time(11, 2, 25),
+    )
+    session.add(route)
     session.commit()
     print("* Test population completed")
     session.close()
