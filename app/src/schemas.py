@@ -32,7 +32,7 @@ class Landmark(BaseModel):
     name: str
     version: int
     boundary: str
-    type: str
+    type: int
     updated_on: Optional[datetime]
     created_on: datetime
 

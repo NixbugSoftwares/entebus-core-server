@@ -41,9 +41,9 @@ route_vendor = APIRouter()
 ## Schemas
 class OrderBy(IntEnum):
     id = 1
-    boundary = 3
-    created_on = 4
-    updated_on = 5
+    boundary = 2
+    created_on = 3
+    updated_on = 4
 
 
 class LandmarkQueryParams:
@@ -59,7 +59,9 @@ class LandmarkQueryParams:
         location: str | None = Query(
             default=None, description="Accepts only SRID 4326 (WGS84)"
         ),
-        type: LandmarkType | None = Query(default=None),
+        type: LandmarkType | None = Query(
+            default=None, description=enumStr(LandmarkType)
+        ),
         type_list: List[LandmarkType | None] = Query(
             default=None, description=enumStr(LandmarkType)
         ),
@@ -243,7 +245,7 @@ async def update_landmark(bearer=Depends(bearer_executive)):
         ]
     ),
     description="""
-    Fetches a list of bus stops filtered by optional query parameters.
+    Fetches a list of landmark filtered by optional query parameters.
     
     - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
@@ -286,7 +288,7 @@ async def delete_landmark(bearer=Depends(bearer_executive)):
         ]
     ),
     description="""
-    Fetches a list of bus stops filtered by optional query parameters.
+    Fetches a list of landmark filtered by optional query parameters.
     
     - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
@@ -324,7 +326,7 @@ async def fetch_landmarks(
         ]
     ),
     description="""
-    Fetches a list of bus stops filtered by optional query parameters.
+    Fetches a list of landmark filtered by optional query parameters.
     
     - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
