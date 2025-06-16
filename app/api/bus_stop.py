@@ -172,11 +172,9 @@ async def update_bus_stop(
             return logData
 
         else:
-            response_data = jsonable_encoder(bus_stop, exclude={"location"})
-            response_data["location"] = session.scalar(
-                func.ST_AsText(bus_stop.location)
-            )
-            return response_data
+            busStop = jsonable_encoder(bus_stop, exclude={"location"})
+            busStop["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+            return busStop
     except Exception as e:
         exceptions.handle(e)
     finally:
