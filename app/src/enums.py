@@ -73,3 +73,8 @@ class BusStatus(IntEnum):
     ACTIVE = 1
     MAINTENANCE = 2
     SUSPENDED = 3
+
+
+class RouteStatus(IntEnum):
+    IN_USE = 1
+    TO_BE_REMOVED = 2

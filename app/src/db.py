@@ -38,6 +38,7 @@ from app.src.enums import (
     CompanyType,
     FareScope,
     BusStatus,
+    RouteStatus,
 )
 
 
@@ -1535,6 +1536,7 @@ class Route(ORMbase):
         Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
     )
     name = Column(String(4096), nullable=False, index=True)
+    status = Column(Integer, nullable=False, default=RouteStatus.IN_USE)
     starting_time = Column(Time(timezone=True), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())

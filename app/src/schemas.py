@@ -110,6 +110,7 @@ class Route(BaseModel):
     company_id:         int
     landmark_id:        int
     name:               str
+    status:             int
     starting_time:      time
     updated_on:         datetime
     created_on:         Optional[datetime]

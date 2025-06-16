@@ -338,6 +338,7 @@ def testDB():
         company_id=company.id,
         landmark_id=landmark1.id,
         name="Test Route",
+        status=1,
         starting_time=time(11, 2, 25),
     )
     session.add(route)
