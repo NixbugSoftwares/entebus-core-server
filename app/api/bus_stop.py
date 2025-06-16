@@ -34,8 +34,9 @@ route_vendor = APIRouter()
 class OrderBy(IntEnum):
     id = 1
     landmark_id = 2
-    created_on = 3
-    updated_on = 4
+    location = 3
+    created_on = 4
+    updated_on = 5
 
 
 class BusStopQueryParams:
@@ -49,7 +50,9 @@ class BusStopQueryParams:
         ),
         name: Optional[str] = Query(default=None),
         landmark_id: Optional[int] = Query(default=None),
-        location: Optional[str] = Query(default=None),
+        location: Optional[str] = Query(
+            default=None, description="Accepts only SRID 4326 (WGS84)"
+        ),
         created_on: Optional[datetime] = Query(default=None),
         created_on_ge: Optional[datetime] = Query(default=None),
         created_on_le: Optional[datetime] = Query(default=None),
@@ -81,7 +84,7 @@ class BusStopQueryParams:
 
 
 ## Function
-def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]:
+def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[schemas.BusStop]:
     query = session.query(BusStop)
     if qParam.id is not None:
         query = query.filter(BusStop.id == qParam.id)
@@ -107,7 +110,7 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
         query = query.filter(BusStop.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(BusStop.updated_on <= qParam.updated_on_le)
-    if qParam.location is not None:
+    if qParam.order_by == OrderBy.location and qParam.location is not None:
         wktLocation = toWKTgeometry(qParam.location, Point)
         if wktLocation is None:
             raise exceptions.InvalidWKTStringOrType()
@@ -119,13 +122,12 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
                 func.Geometry(func.ST_GeographyFromText(qParam.location)),
             )
         )
-
-    # Apply ordering
-    orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
-    if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(orderQuery.asc())
     else:
-        query = query.order_by(orderQuery.desc())
+        orderQuery = getattr(BusStop, OrderBy(qParam.order_by).name)
+        if qParam.order_in == OrderIn.ASC:
+            query = query.order_by(orderQuery.asc())
+        else:
+            query = query.order_by(orderQuery.desc())
     busStops = query.offset(qParam.offset).limit(qParam.limit).all()
     for busStop in busStops:
         busStop.location = session.scalar(func.ST_AsText(busStop.location))
@@ -215,7 +217,9 @@ async def create_bus_stop(
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
+    - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
@@ -251,7 +255,9 @@ async def fetch_bus_stops(
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
+    - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided.
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
@@ -287,7 +293,9 @@ async def fetch_bus_stops(
     description="""
     Fetches a list of bus stops filtered by optional query parameters.
     
+    - The authenticated user can access this endpoint.
     - Supports filtering by ID range, ID list, location, name, and creation timestamps.
+    - Support distance-based filtering when order_by is set to location and the location parameter is provided
     - Supports pagination with `offset` and `limit`.
     - Supports sorting using `order_by` and `order_in`.
     """,
