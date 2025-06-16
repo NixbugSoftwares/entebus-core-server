@@ -110,7 +110,7 @@ async def create_bus_stop(
     description="""
     Updates an existing bus stop with provided fields.
 
-    - Accepts optional updates to `name`, `location` (WKT), and `status`.
+    - Accepts optional updates to `name`, `location` (WKT).
     - Ensures the WKT location is valid, SRID 4326, and inside the associated landmark boundary.
     - Only executives with the `update_bus_stop` permission can update bus stops.
     - Logs updates only if any field was changed.
