@@ -25,7 +25,7 @@ route_executive = APIRouter()
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/bus_stop",
+    "/landmark/bus_stop",
     tags=["Bus Stop"],
     response_model=schemas.BusStop,
     status_code=status.HTTP_201_CREATED,
@@ -177,6 +177,53 @@ async def update_bus_stop(
                 func.ST_AsText(bus_stop.location)
             )
             return response_data
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.delete(
+    "/landmark/bus_stop",
+    tags=["Bus Stop"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Deletes a bus stop using its ID.
+
+    - Only executives with the required permission (`delete_bus_stop`) can access this endpoint.
+    - Validates the bus stop ID.
+    - Logs the deletion activity with the associated executive token.
+    """,
+)
+async def delete_bus_stop(
+    id: Annotated[int, Form()],
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canDeleteBusStop = bool(role and role.delete_bus_stop)
+        if not canDeleteBusStop:
+            raise exceptions.NoPermission()
+
+        bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
+        if bus_stop:
+            logData = jsonable_encoder(bus_stop, exclude={"location"})
+            logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+            session.delete(bus_stop)
+            session.commit()
+            logExecutiveEvent(token, request_info, logData)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
