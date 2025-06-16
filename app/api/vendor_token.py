@@ -34,7 +34,7 @@ route_executive = APIRouter()
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/vendor/merchant/account",
+    "/business/account/token",
     tags=["Token"],
     response_model=schemas.VendorToken,
     status_code=status.HTTP_201_CREATED,
@@ -53,6 +53,7 @@ route_executive = APIRouter()
     """,
 )
 async def token_creation(
+    business_id: Annotated[int, Form()],
     username: Annotated[str, Form(max_length=32)],
     password: Annotated[str, Form(max_length=32)],
     platform_type: Annotated[
@@ -63,7 +64,12 @@ async def token_creation(
 ):
     try:
         session = sessionMaker()
-        vendor = session.query(Vendor).filter(Vendor.username == username).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.username == username)
+            .filter(Vendor.business_id == business_id)
+            .first()
+        )
         if vendor is None:
             raise exceptions.InvalidCredentials()
 
@@ -107,7 +113,7 @@ async def token_creation(
 
 
 @route_vendor.patch(
-    "/vendor/business/account/token",
+    "/business/account/token",
     tags=["Token"],
     response_model=schemas.VendorToken,
     status_code=status.HTTP_200_OK,
@@ -116,7 +122,7 @@ async def token_creation(
     ),
     description="""
     Refreshes an existing vendor access token.
-    - If no `id` is provided, refreshes only the current token (used in this request).
+    - If `id` is not given, refreshes only the current token (used in this request).
     - If an `id` is provided: Must match the current token's `access_token` (prevents
       unauthorized refreshes, even by the same vendor).
     - Raises `InvalidIdentifier` if the token does not exist (avoids ID probing).
@@ -135,7 +141,6 @@ async def refresh_token(
         token = getVendorToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
-
         if id is None:
             tokenToUpdate = token
         else:
