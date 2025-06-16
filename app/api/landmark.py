@@ -1,10 +1,13 @@
 from datetime import datetime
 from typing import Annotated, List
 from fastapi import APIRouter, Depends, Form, status, Query
+from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from shapely import Polygon
 from sqlalchemy import func
 from enum import IntEnum
+from shapely import Point
+from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src import schemas, exceptions
@@ -14,9 +17,8 @@ from app.src.constants import (
     MAX_LANDMARK_AREA,
     MIN_LANDMARK_AREA,
 )
-from app.src.enums import OrderIn
 from app.src.db import sessionMaker, Landmark
-from app.src.enums import LandmarkType
+from app.src.enums import LandmarkType, OrderIn
 from app.src.functions import (
     enumStr,
     getExecutiveRole,
@@ -37,7 +39,7 @@ route_vendor = APIRouter()
 ## Schemas
 class OrderBy(IntEnum):
     id = 1
-    location = 3
+    boundary = 3
     created_on = 4
     updated_on = 5
 
@@ -88,6 +90,58 @@ class LandmarkQueryParams:
         self.limit = limit
         self.order_by = order_by
         self.order_in = order_in
+
+
+## Function
+def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landmark]:
+    query = session.query(Landmark)
+    if qParam.id is not None:
+        query = query.filter(Landmark.id == qParam.id)
+    if qParam.id_ge is not None:
+        query = query.filter(Landmark.id >= qParam.id_ge)
+    if qParam.id_le is not None:
+        query = query.filter(Landmark.id <= qParam.id_le)
+    if qParam.id_list is not None:
+        query = query.filter(Landmark.id.in_(qParam.id_list))
+    if qParam.name is not None:
+        query = query.filter(Landmark.name.ilike(f"%{qParam.name}%"))
+    if qParam.type is not None:
+        query = query.filter(Landmark.type == qParam.type)
+    if qParam.type_list is not None:
+        query = query.filter(Landmark.type.in_(qParam.type_list))
+    if qParam.created_on is not None:
+        query = query.filter(Landmark.created_on == qParam.created_on)
+    if qParam.created_on_ge is not None:
+        query = query.filter(Landmark.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(Landmark.created_on <= qParam.created_on_le)
+    if qParam.updated_on is not None:
+        query = query.filter(Landmark.updated_on == qParam.updated_on)
+    if qParam.updated_on_ge is not None:
+        query = query.filter(Landmark.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(Landmark.updated_on <= qParam.updated_on_le)
+    if qParam.order_by == OrderBy.boundary and qParam.location:
+        wktLocation = toWKTgeometry(qParam.location, Point)
+        if wktLocation is None:
+            raise exceptions.InvalidWKTStringOrType()
+        if not isSRID4326(wktLocation):
+            raise exceptions.InvalidSRID4326()
+        orderQuery = func.ST_Distance(
+            Landmark.boundary.cast(Geography), func.ST_GeogFromText(qParam.location)
+        )
+    else:
+        orderQuery = getattr(Landmark, OrderBy(qParam.order_by).name)
+
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderQuery.asc())
+    else:
+        query = query.order_by(orderQuery.desc())
+    query = query.offset(qParam.offset).limit(qParam.limit)
+    busStops = query.all()
+    for busStop in busStops:
+        busStop.location = session.scalar(func.ST_AsText(busStop.location))
+    return busStops
 
 
 ## API endpoints [Executive]
