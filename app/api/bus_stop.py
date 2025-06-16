@@ -130,6 +130,7 @@ async def update_bus_stop(
         token = getExecutiveToken(bearer.credentials, session)
         if token is None:
             raise exceptions.InvalidToken()
+
         role = getExecutiveRole(token, session)
         canUpdateBusStop = bool(role and role.update_bus_stop)
         if not canUpdateBusStop:
@@ -159,21 +160,23 @@ async def update_bus_stop(
             )
             if not withinBoundary:
                 raise exceptions.InvalidBusStopLocation()
-            bus_stop.location = location
+            bus_stop.location = location4326
 
-            updatedBusStop = session.is_modified(bus_stop)
+        if session.is_modified(bus_stop):
             session.commit()
             session.refresh(bus_stop)
 
-            wktLocation = session.scalar(func.ST_AsText(bus_stop.location))
             logData = jsonable_encoder(bus_stop, exclude={"location"})
-            logData["location"] = wktLocation
-            if updatedBusStop:
-                logExecutiveEvent(token, request_info, logData)
-                return logData
-            else:
-                wktLocation = session.scalar(func.ST_AsText(bus_stop.location))
-                return jsonable_encoder(bus_stop, exclude={"location", "updated_on"} | {"location": wktLocation})
+            logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
+            logExecutiveEvent(token, request_info, logData)
+            return logData
+
+        else:
+            response_data = jsonable_encoder(bus_stop, exclude={"location"})
+            response_data["location"] = session.scalar(
+                func.ST_AsText(bus_stop.location)
+            )
+            return response_data
     except Exception as e:
         exceptions.handle(e)
     finally:
