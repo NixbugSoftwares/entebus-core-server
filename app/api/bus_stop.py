@@ -153,7 +153,6 @@ async def update_bus_stop(
                 .filter(Landmark.id == bus_stop.landmark_id)
                 .first()
             )
-
             location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
             withinBoundary = session.scalar(
                 func.ST_Within(location4326, landmark.boundary)
