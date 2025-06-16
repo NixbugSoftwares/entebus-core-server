@@ -335,9 +335,9 @@ def testDB():
     session.add_all([bus1, bus2])
     session.flush()
     route = Route(
-        name="Test Route",
         company_id=company.id,
         landmark_id=landmark1.id,
+        name="Test Route",
         starting_time=time(11, 2, 25),
     )
     session.add(route)
