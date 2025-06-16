@@ -44,7 +44,7 @@ route_executive = APIRouter()
     description="""
     Issues a new access token for an vendor after validating credentials.
 
-    - Accepts OAuth2-style form data for authentication.
+    - Accepts form data including the vendor's `business_id`, `username`, and `password` for credential verification.
     - Only vendors with an `ACTIVE` account status are permitted to receive a token.
     - Limits active tokens using `MAX_VENDOR_TOKENS` (token rotation).
     - Generates a token with an expiry time of `MAX_TOKEN_VALIDITY` seconds from creation.
@@ -93,7 +93,7 @@ async def token_creation(
         # Create a new token
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=MAX_TOKEN_VALIDITY)
         token = VendorToken(
-            business_id=vendor.business_id,
+            business_id=business_id,
             vendor_id=vendor.id,
             expires_in=MAX_TOKEN_VALIDITY,
             expires_at=expires_at,
