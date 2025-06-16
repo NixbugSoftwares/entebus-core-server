@@ -52,7 +52,7 @@ route_executive = APIRouter()
 async def create_bus_stop(
     landmark_id: Annotated[int, Form()],
     location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
-    name: Annotated[Optional[str], Form(max_length=128)] = None,
+    name: Annotated[str | None, Form(max_length=128)] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -117,7 +117,7 @@ async def create_bus_stop(
 )
 async def update_bus_stop(
     id: Annotated[int, Form()],
-    name: Annotated[Optional[str], Form(max_length=128)] = None,
+    name: Annotated[str | None, Form(max_length=128)] = None,
     location: Annotated[
         Optional[str], Form(description="Accepts only SRID 4326 (WGS84)")
     ] = None,
