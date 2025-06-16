@@ -140,11 +140,18 @@ def testDB():
         company_id=company.id,
         name="Admin",
         manage_op_token=True,
+        create_company=True,
+        update_company=True,
+        delete_company=True,
+
     )
     guestRole = OperatorRole(
         company_id=company.id,
         name="Guest",
         manage_op_token=False,
+        create_company=False,
+        update_company=False,
+        delete_company=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()

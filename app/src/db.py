@@ -615,6 +615,15 @@ class OperatorRole(ORMbase):
         manage_op_token (Boolean):
             Determines whether the role grants permission to manage operator tokens.
 
+        create_company (Boolean):
+            Whether this role permits the creation of a new company.
+
+        update_company (Boolean):
+            Whether this role permits editing the existing company.
+
+        delete_company (Boolean):
+            Whether this role permits deletion of a company.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -637,6 +646,10 @@ class OperatorRole(ORMbase):
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
+    # Company management permission
+    create_company = Column(Boolean, nullable=False)
+    update_company = Column(Boolean, nullable=False)
+    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
