@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from fastapi import APIRouter, Depends, Form, status, Response
 from fastapi.encoders import jsonable_encoder
 from shapely import Point
@@ -6,9 +6,7 @@ from sqlalchemy import func
 
 from app.api.bearer import bearer_executive
 from app.src import schemas, exceptions
-from app.src.constants import (
-    EPSG_4326,
-)
+from app.src.constants import EPSG_4326
 from app.src.db import sessionMaker, Landmark, BusStop
 from app.src.functions import (
     toWKTgeometry,
@@ -119,7 +117,7 @@ async def update_bus_stop(
     id: Annotated[int, Form()],
     name: Annotated[str | None, Form(max_length=128)] = None,
     location: Annotated[
-        Optional[str], Form(description="Accepts only SRID 4326 (WGS84)")
+        str | None, Form(description="Accepts only SRID 4326 (WGS84)")
     ] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
