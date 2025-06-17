@@ -74,14 +74,12 @@ async def create_business(
         if not role or not role.create_business:
             raise exceptions.NoPermission()
 
-        db_location = None
         if location is not None:
             wktLocation = toWKTgeometry(location, Point)
             if wktLocation is None:
                 raise exceptions.InvalidWKTStringOrType()
             if not isSRID4326(wktLocation):
                 raise exceptions.InvalidSRID4326()
-            db_location = location
 
         business = Business(
             name=name,
@@ -89,7 +87,7 @@ async def create_business(
             phone_number=phone_number,
             email_id=email_id,
             address=address,
-            location=db_location,
+            location=location,
             website=website,
             status=status,
             type=type,
