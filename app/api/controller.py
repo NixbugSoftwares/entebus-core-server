@@ -1,11 +1,16 @@
 from fastapi import FastAPI
 
-from app.api import executive_token
-from app.api import operator_token
-from app.api import vendor_token
-from app.api import landmark, bus_stop
-from app.api import executive_account
-from app.api import company
+from app.api import (
+    executive_token,
+    company,
+    operator_token,
+    vendor_token,
+    landmark,
+    bus_stop,
+    executive_account,
+    operator_account,
+)
+
 
 app_executive = FastAPI()
 app_vendor = FastAPI()
@@ -28,3 +33,6 @@ app_vendor.include_router(bus_stop.route_vendor)
 app_executive.include_router(executive_account.route_executive)
 
 app_executive.include_router(company.route_executive)
+
+app_operator.include_router(operator_account.route_operator)
+app_executive.include_router(operator_account.route_executive)
