@@ -99,7 +99,6 @@ async def create_operator(
             request_info,
             jsonable_encoder(operator, exclude={"password"}),
         )
-        session.expunge(operator)
         return operator
     except Exception as e:
         exceptions.handle(e)
@@ -161,7 +160,6 @@ async def create_operator(
             request_info,
             jsonable_encoder(operator, exclude={"password"}),
         )
-        session.expunge(operator)
         return operator
     except Exception as e:
         exceptions.handle(e)
