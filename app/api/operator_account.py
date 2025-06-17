@@ -141,6 +141,62 @@ async def create_operator(
         session.close()
 
 
+@route_operator.patch(
+    "/company/account",
+    tags=["Account"],
+    response_model=schemas.Operator,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an operator account with an active status.
+
+    - Only operator with `update_operator` permission can update operator.
+    - Logs the operator account update activity with the associated token.
+    - Follow patterns for smooth creation of username and password.
+    - Phone number must follow RFC3966 format.
+    - Email ID must follow RFC5322 format.
+    """,
+)
+async def update_operator(
+    fParam: UpdateFormForOperator = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getOperatorRole(token, session)
+        forSelf = False
+        if fParam.id == token.operator_id:
+            forSelf = True
+        canUpdateOperator = bool(role and role.update_operator)
+        if not forSelf and not canUpdateOperator:
+            raise exceptions.NoPermission()
+
+        operator = formOperator(session, fParam)
+        if session.is_modified(operator):
+            session.commit()
+            session.refresh(operator)
+            logOperatorEvent(
+                token,
+                request_info,
+                jsonable_encoder(operator, exclude={"password"}),
+            )
+        session.expunge(operator)
+        return operator
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 ## API endpoints [Executive]
 @route_executive.post(
     "/company/account",
