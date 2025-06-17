@@ -5,7 +5,6 @@ from app.src.enums import (
     CompanyStatus,
     FareScope,
 )
-from app.src.enums import BusStatus
 from app.src.db import (
     Executive,
     ExecutiveRole,

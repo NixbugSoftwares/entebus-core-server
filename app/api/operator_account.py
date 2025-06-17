@@ -13,10 +13,7 @@ from app.api.bearer import bearer_executive, bearer_operator
 from app.src.enums import GenderType
 from app.src import argon2, exceptions, schemas
 from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
-from app.src.db import (
-    sessionMaker,
-    Operator,
-)
+from app.src.db import sessionMaker, Operator
 from app.src.functions import (
     enumStr,
     getRequestInfo,
