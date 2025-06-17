@@ -59,7 +59,7 @@ async def create_company(
     location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
     contact_person: Annotated[str, Form(min_length=4, max_length=32)],
     phone_number: Annotated[PhoneNumber, Form()],
-    email_id: Annotated[Optional[EmailStr], Form()] = None,
+    email_id: Annotated[EmailStr | None, Form()] = None,
     status: Annotated[
         CompanyStatus, Form(description=enumStr(CompanyStatus))
     ] = CompanyStatus.UNDER_VERIFICATION,
@@ -129,13 +129,13 @@ async def create_company(
 async def update_company(
     id: Annotated[int, Form()],
     name: Annotated[str | None, Form(min_length=4, max_length=32)] = None,
-    address: Annotated[Optional[str], Form(min_length=4, max_length=512)] = None,
-    location: Annotated[Optional[str], Form()] = None,
-    contact_person: Annotated[Optional[str], Form(min_length=4, max_length=32)] = None,
-    phone_number: Annotated[Optional[PhoneNumber], Form()] = None,
-    email_id: Annotated[Optional[EmailStr], Form()] = None,
-    status: Annotated[Optional[CompanyStatus], Form()] = None,
-    type: Annotated[Optional[CompanyType], Form()] = None,
+    address: Annotated[str | None, Form(min_length=4, max_length=512)] = None,
+    location: Annotated[str | None, Form()] = None,
+    contact_person: Annotated[str | None, Form(min_length=4, max_length=32)] = None,
+    phone_number: Annotated[PhoneNumber | None, Form()] = None,
+    email_id: Annotated[EmailStr | None, Form()] = None,
+    status: Annotated[CompanyStatus | None, Form()] = None,
+    type: Annotated[CompanyType | None, Form()] = None,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -226,12 +226,12 @@ async def update_company(
     """,
 )
 async def update_company(
-    id: Annotated[Optional[int], Form()] = None,
-    contact_person: Annotated[Optional[str], Form(min_length=4, max_length=32)] = None,
-    location: Annotated[Optional[str], Form()] = None,
-    phone_number: Annotated[Optional[PhoneNumber], Form()] = None,
-    email_id: Annotated[Optional[EmailStr], Form()] = None,
-    address: Annotated[Optional[str], Form(min_length=4, max_length=512)] = None,
+    id: Annotated[int | None, Form()] = None,
+    contact_person: Annotated[str | None, Form(min_length=4, max_length=32)] = None,
+    location: Annotated[str | None, Form()] = None,
+    phone_number: Annotated[PhoneNumber | None, Form()] = None,
+    email_id: Annotated[EmailStr | None, Form()] = None,
+    address: Annotated[str | None, Form(min_length=4, max_length=512)] = None,
     bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
