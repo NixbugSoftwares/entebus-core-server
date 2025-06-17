@@ -103,3 +103,16 @@ class Company(BaseModel):
     type: int
     created_on: datetime
     updated_on: Optional[datetime]
+
+
+class Operator(BaseModel):
+    id: int
+    company_id: int
+    username: str
+    gender: int
+    full_name: Optional[str]
+    phone_number: Optional[str]
+    email_id: Optional[str]
+    status: int
+    updated_on: Optional[datetime]
+    created_on: datetime
