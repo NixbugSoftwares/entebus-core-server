@@ -56,6 +56,9 @@ async def create_business(
         Optional[str], Form(description="Optional WKT POINT with SRID 4326")
     ] = None,
     website: Annotated[Optional[str], Form()] = None,
+    status: Annotated[
+        BusinessStatus, Form(description=enumStr(BusinessStatus))
+    ] = BusinessStatus.ACTIVE,
     type: Annotated[
         BusinessType, Form(description=enumStr(BusinessType))
     ] = BusinessType.OTHER,
@@ -88,6 +91,7 @@ async def create_business(
             address=address,
             location=db_location,
             website=website,
+            status=status,
             type=type,
         )
         session.add(business)
