@@ -157,7 +157,7 @@ async def create_operator(
 
     - Only operator with `update_operator` permission can update operator.
     - Logs the operator account update activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
+    - Follow patterns for smooth creation of password.
     - Phone number must follow RFC3966 format.
     - Email ID must follow RFC5322 format.
     """,
@@ -251,6 +251,59 @@ async def create_operator(
             request_info,
             jsonable_encoder(operator, exclude={"password"}),
         )
+        return operator
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.patch(
+    "/company/account",
+    tags=["Operator Account"],
+    response_model=schemas.Operator,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an operator account with an active status.
+
+    - Only executive with `update_operator` permission can update operator.
+    - Logs the executive account update activity with the associated token.
+    - Follow patterns for smooth creation of password.
+    - Phone number must follow RFC3966 format.
+    - Email ID must follow RFC5322 format.
+    """,
+)
+async def update_operator(
+    fParam: UpdateFormForOperator = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canUpdateOperator = bool(role and role.update_operator)
+        if not canUpdateOperator:
+            raise exceptions.NoPermission()
+
+        operator = formOperator(session, fParam)
+        if session.is_modified(operator):
+            session.commit()
+            session.refresh(operator)
+            logExecutiveEvent(
+                token,
+                request_info,
+                jsonable_encoder(operator, exclude={"password"}),
+            )
+        session.expunge(operator)
         return operator
     except Exception as e:
         exceptions.handle(e)
