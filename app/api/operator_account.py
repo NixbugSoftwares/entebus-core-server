@@ -4,6 +4,7 @@ from fastapi import (
     status,
     Form,
 )
+from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
@@ -43,6 +44,40 @@ class CreateFormForOperator(BaseModel):
 
 class CreateFormForExecutive(CreateFormForOperator):
     company_id: int = Field(Form())
+
+
+class UpdateFormForOperator(BaseModel):
+    id: int = Field(Form())
+    password: str | None = Field(
+        Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
+    )
+    gender: GenderType | None = Field(
+        Form(description=enumStr(GenderType), default=None)
+    )
+    full_name: str | None = Field(Form(max_length=32, default=None))
+    email_id: EmailStr | None = Field(Form(max_length=256, default=None))
+    phone_number: PhoneNumber | None = Field(Form(max_length=32, default=None))
+    status: int | None = Field(Form(default=None))
+
+
+## Function
+def formOperator(session: Session, fParam: UpdateFormForOperator) -> Operator:
+    operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+    if operator is None:
+        raise exceptions.InvalidIdentifier()
+    if fParam.password is not None:
+        operator.password = argon2.makePassword(fParam.password)
+    if fParam.gender is not None and operator.gender != fParam.gender:
+        operator.gender = fParam.gender
+    if fParam.full_name is not None and operator.full_name != fParam.full_name:
+        operator.full_name = fParam.full_name
+    if fParam.email_id is not None and operator.email_id != fParam.email_id:
+        operator.email_id = fParam.email_id
+    if fParam.phone_number is not None and operator.phone_number != fParam.phone_number:
+        operator.phone_number = fParam.phone_number
+    if fParam.status is not None and operator.status != fParam.status:
+        operator.status = fParam.status
+    return operator
 
 
 ## API endpoints [Operator]
