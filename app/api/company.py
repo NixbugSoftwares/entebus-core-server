@@ -241,12 +241,15 @@ async def update_company(
         if token is None:
             raise exceptions.InvalidToken()
 
-        role = getExecutiveRole(token, session)
+        role = getOperatorRole(token, session)
         if not role or not role.update_company:
             raise exceptions.NoPermission()
 
-        company = session.query(Company).filter(Company.id == id).first()
-        if company is None:
+        operator_company_id = token.company_id
+        target_company_id = id if id is not None else operator_company_id
+
+        company = session.query(Company).filter(Company.id == target_company_id).first()
+        if company is None or company.id != operator_company_id:
             raise exceptions.InvalidIdentifier()
 
         if contact_person is not None and company.contact_person != contact_person:
@@ -277,7 +280,7 @@ async def update_company(
 
             log_data = jsonable_encoder(company, exclude={"location"})
             log_data["location"] = session.scalar(func.ST_AsText(company.location))
-            logExecutiveEvent(token, request_info, log_data)
+            logOperatorEvent(token, request_info, log_data)
             return log_data
         else:
             company_data = jsonable_encoder(company, exclude={"location"})
