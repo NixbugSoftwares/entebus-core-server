@@ -55,7 +55,7 @@ class CreateFormForExecutive(CreateFormForOperator):
 @route_operator.post(
     "/company/account",
     tags=["Account"],
-    response_model=schemas.Executive,
+    response_model=schemas.Operator,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -100,7 +100,7 @@ async def create_operator(
         )
         session.add(operator)
         session.commit()
-        logExecutiveEvent(
+        logOperatorEvent(
             token,
             request_info,
             jsonable_encoder(operator, exclude={"password"}),
