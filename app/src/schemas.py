@@ -109,7 +109,7 @@ class Business(BaseModel):
     id: int
     name: str
     address: Optional[str]
-    location: str
+    location: Optional[str]
     contact_person: str
     phone_number: str
     email_id: str

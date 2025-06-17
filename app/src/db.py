@@ -962,7 +962,7 @@ class Business(ORMbase):
             Maximum length is 256 characters.
 
         location (Geometry(Point)):
-            Represents the geographic location of the business in (latitude/longitude).
+            Optional geographical location of the business in (latitude/longitude).
             Stored as a POINT geometry with SRID 4326 (WGS 84).
             Useful for spatial queries, mapping, and proximity-based operations.
 
