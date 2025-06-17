@@ -79,11 +79,11 @@ async def create_bus_stop(
         if not withinBoundary:
             raise exceptions.InvalidBusStopLocation()
 
-        bus_stop = BusStop(landmark_id=landmark_id, location=location, name=name)
-        session.add(bus_stop)
+        busStop = BusStop(landmark_id=landmark_id, location=location, name=name)
+        session.add(busStop)
         session.commit()
-        logExecutiveEvent(token, request_info, jsonable_encoder(bus_stop))
-        return bus_stop
+        logExecutiveEvent(token, request_info, jsonable_encoder(busStop))
+        return busStop
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -107,7 +107,7 @@ async def create_bus_stop(
     description="""
     Updates an existing bus stop with provided fields.
 
-    - Accepts optional updates to `name`, `location` (WKT).
+    - Accepts updates to `name` and `location` (WKT).
     - Ensures the WKT location is valid, SRID 4326, and inside the associated landmark boundary.
     - Only executives with the `update_bus_stop` permission can update bus stops.
     - Logs updates only if any field was changed.
@@ -133,11 +133,11 @@ async def update_bus_stop(
         if not canUpdateBusStop:
             raise exceptions.NoPermission()
 
-        bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
-        if bus_stop is None:
+        busStop = session.query(BusStop).filter(BusStop.id == id).first()
+        if busStop is None:
             raise exceptions.InvalidIdentifier()
-        if name is not None and bus_stop.name != name:
-            bus_stop.name = name
+        if name is not None and busStop.name != name:
+            busStop.name = name
 
         if location is not None:
             wktLocation = toWKTgeometry(location, Point)
@@ -147,7 +147,7 @@ async def update_bus_stop(
                 raise exceptions.InvalidSRID4326()
             landmark = (
                 session.query(Landmark)
-                .filter(Landmark.id == bus_stop.landmark_id)
+                .filter(Landmark.id == busStop.landmark_id)
                 .first()
             )
             location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
@@ -156,22 +156,19 @@ async def update_bus_stop(
             )
             if not withinBoundary:
                 raise exceptions.InvalidBusStopLocation()
-            bus_stop.location = location4326
+            busStop.location = location4326
 
-        if session.is_modified(bus_stop):
+        isModified = session.is_modified(busStop)
+        if isModified:
             session.commit()
-            session.refresh(bus_stop)
+            session.refresh(busStop)
 
-            logData = jsonable_encoder(bus_stop, exclude={"location"})
-            logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
-            logExecutiveEvent(token, request_info, logData)
-            return logData
+        busStopData = jsonable_encoder(busStop, exclude={"location"})
+        busStopData["location"] = session.scalar(func.ST_AsText(busStop.location))
 
-        else:
-            busStop = jsonable_encoder(bus_stop, exclude={"location"})
-            busStop["location"] = session.scalar(func.ST_AsText(bus_stop.location))
-            session.expunge(bus_stop)
-            return busStop
+        if isModified:
+            logExecutiveEvent(token, request_info, busStopData)
+        return busStopData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -211,13 +208,13 @@ async def delete_bus_stop(
         if not canDeleteBusStop:
             raise exceptions.NoPermission()
 
-        bus_stop = session.query(BusStop).filter(BusStop.id == id).first()
-        if bus_stop:
-            logData = jsonable_encoder(bus_stop, exclude={"location"})
-            logData["location"] = session.scalar(func.ST_AsText(bus_stop.location))
-            session.delete(bus_stop)
+        busStop = session.query(BusStop).filter(BusStop.id == id).first()
+        if busStop:
+            busStopData = jsonable_encoder(busStop, exclude={"location"})
+            busStopData["location"] = session.scalar(func.ST_AsText(busStop.location))
+            session.delete(busStop)
             session.commit()
-            logExecutiveEvent(token, request_info, logData)
+            logExecutiveEvent(token, request_info, busStopData)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
