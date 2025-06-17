@@ -105,6 +105,15 @@ class ExecutiveRole(ORMbase):
         delete_company (Boolean):
             Whether this role permits deletion of a company.
 
+        create_operator (Boolean):
+            Whether this role permits the creation of a new operator.
+
+        update_operator (Boolean):
+            Whether this role permits editing the existing operator.
+
+        delete_operator (Boolean):
+            Whether this role permits deletion of a operator.
+
         create_business (Boolean):
             Whether this role permits the creation of a new business.
 
@@ -144,6 +153,10 @@ class ExecutiveRole(ORMbase):
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
     delete_company = Column(Boolean, nullable=False)
+    # Operator management permission
+    create_operator = Column(Boolean, nullable=False)
+    update_operator = Column(Boolean, nullable=False)
+    delete_operator = Column(Boolean, nullable=False)
     # Business management permission
     create_business = Column(Boolean, nullable=False)
     update_business = Column(Boolean, nullable=False)
@@ -632,6 +645,15 @@ class OperatorRole(ORMbase):
         manage_op_token (Boolean):
             Determines whether the role grants permission to manage operator tokens.
 
+        create_operator (Boolean):
+            Whether this role permits the creation of a new operator.
+
+        update_operator (Boolean):
+            Whether this role permits editing the existing operator.
+
+        delete_operator (Boolean):
+            Whether this role permits deletion of a operator.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -654,6 +676,10 @@ class OperatorRole(ORMbase):
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
+    # Operator management permission
+    create_operator = Column(Boolean, nullable=False)
+    update_operator = Column(Boolean, nullable=False)
+    delete_operator = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

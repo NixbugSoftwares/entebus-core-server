@@ -5,7 +5,6 @@ from app.src.enums import (
     CompanyStatus,
     FareScope,
 )
-from app.src.enums import BusStatus
 from app.src.db import (
     Executive,
     ExecutiveRole,
@@ -85,6 +84,9 @@ def initDB():
         create_company=True,
         update_company=True,
         delete_company=True,
+        create_operator=True,
+        update_operator=True,
+        delete_operator=True,
         create_business=True,
         update_business=True,
         delete_business=True,
@@ -105,6 +107,9 @@ def initDB():
         create_company=False,
         update_company=False,
         delete_company=False,
+        create_operator=False,
+        update_operator=False,
+        delete_operator=False,
         create_business=False,
         update_business=False,
         delete_business=False,
@@ -148,11 +153,17 @@ def testDB():
         company_id=company.id,
         name="Admin",
         manage_op_token=True,
+        create_operator=True,
+        update_operator=True,
+        delete_operator=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
         name="Guest",
         manage_op_token=False,
+        create_operator=False,
+        update_operator=False,
+        delete_operator=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()

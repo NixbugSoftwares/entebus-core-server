@@ -297,6 +297,7 @@ async def delete_token(
     ),
     description=""" 
     Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.
+
     - Only executives with `manage_op_token` permission can access this endpoint.
     - Supports filtering by token ID, operator ID, platform type, client details, and creation timestamps.
     - Enables pagination using `offset` and `limit`.
