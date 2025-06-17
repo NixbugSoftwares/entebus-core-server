@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
 from pydantic_extra_types.phone_numbers import PhoneNumber
@@ -51,11 +51,11 @@ async def create_business(
     contact_person: Annotated[str, Form(min_length=4, max_length=64)],
     phone_number: Annotated[PhoneNumber, Form()],
     email_id: Annotated[EmailStr, Form()],
-    address: Annotated[Optional[str], Form(min_length=4, max_length=512)] = None,
+    address: Annotated[str | None, Form(min_length=4, max_length=512)] = None,
     location: Annotated[
-        Optional[str], Form(description="Optional WKT POINT with SRID 4326")
+        str | None, Form(description="Optional WKT POINT with SRID 4326")
     ] = None,
-    website: Annotated[Optional[str], Form()] = None,
+    website: Annotated[str | None, Form()] = None,
     status: Annotated[
         BusinessStatus, Form(description=enumStr(BusinessStatus))
     ] = BusinessStatus.ACTIVE,
