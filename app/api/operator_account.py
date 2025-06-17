@@ -71,7 +71,7 @@ class CreateFormForExecutive(CreateFormForOperator):
     """,
 )
 async def create_operator(
-    formParam: CreateFormForOperator = Depends(),
+    fParam: CreateFormForOperator = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
@@ -85,15 +85,15 @@ async def create_operator(
         if not canCreateOperator:
             raise exceptions.NoPermission()
 
-        password = argon2.makePassword(formParam.password)
+        password = argon2.makePassword(fParam.password)
         operator = Operator(
             company_id=token.company_id,
-            username=formParam.username,
+            username=fParam.username,
             password=password,
-            gender=formParam.gender,
-            full_name=formParam.full_name,
-            phone_number=formParam.phone_number,
-            email_id=formParam.email_id,
+            gender=fParam.gender,
+            full_name=fParam.full_name,
+            phone_number=fParam.phone_number,
+            email_id=fParam.email_id,
         )
         session.add(operator)
         session.commit()
@@ -132,7 +132,7 @@ async def create_operator(
     """,
 )
 async def create_operator(
-    formParam: CreateFormForExecutive = Depends(),
+    fParam: CreateFormForExecutive = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -146,15 +146,15 @@ async def create_operator(
         if not canCreateOperator:
             raise exceptions.NoPermission()
 
-        password = argon2.makePassword(formParam.password)
+        password = argon2.makePassword(fParam.password)
         operator = Operator(
-            company_id=formParam.company_id,
-            username=formParam.username,
+            company_id=fParam.company_id,
+            username=fParam.username,
             password=password,
-            gender=formParam.gender,
-            full_name=formParam.full_name,
-            phone_number=formParam.phone_number,
-            email_id=formParam.email_id,
+            gender=fParam.gender,
+            full_name=fParam.full_name,
+            phone_number=fParam.phone_number,
+            email_id=fParam.email_id,
         )
         session.add(operator)
         session.commit()
