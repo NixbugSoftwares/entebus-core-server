@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
 from pydantic_extra_types.phone_numbers import PhoneNumber
