@@ -106,11 +106,20 @@ class Company(BaseModel):
 
 
 class Route(BaseModel):
-    id:                 int
-    company_id:         int
-    landmark_id:        int
-    name:               str
-    status:             int
-    starting_time:      time
-    updated_on:         datetime
-    created_on:         Optional[datetime]
+    id: int
+    company_id: int
+    name: str
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+class LandmarkInRoute(BaseModel):
+    id: int
+    company_id: int
+    route_id: int
+    landmark_id: int
+    distance_from_start: int
+    arrival_delta: int
+    departure_delta: int
+    updated_on: Optional[datetime]
+    created_on: datetime
