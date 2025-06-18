@@ -316,14 +316,13 @@ async def delete_executive(
 
         executive = session.query(Executive).filter(Executive.id == id).first()
         if executive:
-            logData = jsonable_encoder(executive)
+            logData = jsonable_encoder(executive, exclude={"password"})
             session.delete(executive)
             session.commit()
             logExecutiveEvent(token, request_info, logData)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except Exception as e:
-        session.rollback()
         exceptions.handle(e)
     finally:
         session.close()
