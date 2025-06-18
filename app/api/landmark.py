@@ -251,7 +251,7 @@ async def create_landmark(
     - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
     - Ensures the boundary does not **overlap with existing landmarks** in the database.
     - Only executives with the required permission (`update_landmark`) can access this endpoint.
-    - Logs the landmark creation activity with the associated token.
+    - Logs landmark updates only if any field has changed, along with the associated token.
     """,
 )
 async def update_landmark(
