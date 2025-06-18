@@ -316,10 +316,10 @@ async def update_landmark(
                 if not withinBoundary:
                     raise exceptions.InvalidBusStopLocation()
             landmark.boundary = boundary
-        landmark.version += 1
 
         isModified = session.is_modified(landmark)
         if isModified:
+            landmark.version += 1
             session.commit()
             session.refresh(landmark)
 
