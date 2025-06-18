@@ -8,6 +8,7 @@ from shapely.geometry import Point
 from sqlalchemy import func
 from app.src.constants import EPSG_4326
 from shapely import wkt
+from sqlalchemy.orm.session import Session
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src import schemas, exceptions
@@ -32,41 +33,142 @@ route_operator = APIRouter()
 
 
 class CreateFormForExecutive(BaseModel):
-    name: Annotated[str, Form(min_length=4, max_length=32)]
-    address: Annotated[str, Form(min_length=4, max_length=512)]
-    location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")]
-    contact_person: Annotated[str, Form(min_length=4, max_length=32)]
-    phone_number: Annotated[PhoneNumber, Form()]
-    email_id: Annotated[EmailStr | None, Form()] = None
+    name: str = Field(Form(min_length=4, max_length=32))
+    address: str = Field(Form(min_length=4, max_length=512))
+    location: str = Field(Form(description="Accepts only SRID 4326 (WGS84)"))
+    contact_person: str = Field(Form(min_length=4, max_length=32))
+    phone_number: PhoneNumber = Field(Form())
+    email_id: EmailStr | None = Field(Form(default=None))
 
-    status: Annotated[CompanyStatus, Form(description=enumStr(CompanyStatus))] = (
-        CompanyStatus.UNDER_VERIFICATION
+    status: CompanyStatus = Field(
+        Form(
+            description=enumStr(CompanyStatus), default=CompanyStatus.UNDER_VERIFICATION
+        )
     )
 
-    company_type: Annotated[CompanyType, Form(description=enumStr(CompanyType))] = (
-        CompanyType.PRIVATE
+    company_type: CompanyType = Field(
+        Form(description=enumStr(CompanyType), default=CompanyType.PRIVATE)
     )
 
 
 class UpdateFormForExecutive(BaseModel):
-    id: Annotated[int, Form()]
-    name: Annotated[str | None, Form(min_length=4, max_length=32)] = None
-    address: Annotated[str | None, Form(min_length=4, max_length=512)] = None
-    location: Annotated[str | None, Form()] = None
-    contact_person: Annotated[str | None, Form(min_length=4, max_length=32)] = None
-    phone_number: Annotated[PhoneNumber | None, Form()] = None
-    email_id: Annotated[EmailStr | None, Form()] = None
-    status: Annotated[CompanyStatus | None, Form()] = None
-    type: Annotated[CompanyType | None, Form()] = None
+    id: int = Field(Form())
+    name: str | None = Field(Form(min_length=4, max_length=32, default=None))
+    address: str | None = Field(Form(min_length=4, max_length=512, default=None))
+    location: str | None = Field(Form(default=None))
+    contact_person: str | None = Field(Form(min_length=4, max_length=32, default=None))
+    phone_number: PhoneNumber | None = Field(Form(default=None))
+    email_id: EmailStr | None = Field(Form(default=None))
+    status: CompanyStatus | None = Field(Form(default=None))
+    type: CompanyType | None = Field(Form(default=None))
 
 
-class updateFormForOperator(BaseModel):
-    id: Annotated[int | None, Form()] = None
-    contact_person: Annotated[str | None, Form(min_length=4, max_length=32)] = None
-    location: Annotated[str | None, Form()] = None
-    phone_number: Annotated[PhoneNumber | None, Form()] = None
-    email_id: Annotated[EmailStr | None, Form()] = None
-    address: Annotated[str | None, Form(min_length=4, max_length=512)] = None
+## Function
+def updateExecutiveCompany(
+    session: Session, company: Company, fParam: UpdateFormForExecutive
+) -> bool:
+    is_modified = False
+
+    if fParam.name is not None and company.name != fParam.name:
+        company.name = fParam.name
+        is_modified = True
+
+    if fParam.address is not None and company.address != fParam.address:
+        company.address = fParam.address
+        is_modified = True
+
+    if (
+        fParam.contact_person is not None
+        and company.contact_person != fParam.contact_person
+    ):
+        company.contact_person = fParam.contact_person
+        is_modified = True
+
+    if fParam.phone_number is not None and company.phone_number != str(
+        fParam.phone_number
+    ):
+        company.phone_number = str(fParam.phone_number)
+        is_modified = True
+
+    if fParam.email_id is not None and company.email_id != fParam.email_id:
+        company.email_id = fParam.email_id
+        is_modified = True
+
+    if fParam.status is not None and company.status != fParam.status:
+        company.status = fParam.status
+        is_modified = True
+
+    if fParam.type is not None and company.type != fParam.type:
+        company.type = fParam.type
+        is_modified = True
+
+    if fParam.location is not None:
+        wkt_location = toWKTgeometry(fParam.location, Point)
+        if wkt_location is None:
+            raise exceptions.InvalidWKTStringOrType()
+        if not isSRID4326(wkt_location):
+            raise exceptions.InvalidSRID4326()
+
+        current_location = session.scalar(func.ST_AsText(company.location))
+        if current_location != fParam.location:
+            company.location = func.ST_SetSRID(
+                func.ST_GeomFromText(fParam.location), EPSG_4326
+            )
+            is_modified = True
+
+    return is_modified
+
+
+class UpdateFormForOperator(BaseModel):
+    id: int | None = Field(Form(default=None))
+    contact_person: str | None = Field(Form(min_length=4, max_length=32, default=None))
+    location: str | None = Field(Form(default=None))
+    phone_number: PhoneNumber | None = Field(Form(default=None))
+    email_id: EmailStr | None = Field(Form(default=None))
+    address: str | None = Field(Form(min_length=4, max_length=512, default=None))
+
+
+## Function
+def updateOperatorCompany(
+    session: Session, company: Company, fParam: UpdateFormForOperator
+) -> bool:
+    is_modified = False
+
+    if (
+        fParam.contact_person is not None
+        and company.contact_person != fParam.contact_person
+    ):
+        company.contact_person = fParam.contact_person
+        is_modified = True
+
+    if fParam.phone_number is not None and company.phone_number != str(
+        fParam.phone_number
+    ):
+        company.phone_number = str(fParam.phone_number)
+        is_modified = True
+
+    if fParam.email_id is not None and company.email_id != fParam.email_id:
+        company.email_id = fParam.email_id
+        is_modified = True
+
+    if fParam.address is not None and company.address != fParam.address:
+        company.address = fParam.address
+        is_modified = True
+
+    if fParam.location is not None:
+        wkt_location = toWKTgeometry(fParam.location, Point)
+        if wkt_location is None:
+            raise exceptions.InvalidWKTStringOrType()
+        if not isSRID4326(wkt_location):
+            raise exceptions.InvalidSRID4326()
+        current_location = session.scalar(func.ST_AsText(company.location))
+        if current_location != fParam.location:
+            company.location = func.ST_SetSRID(
+                func.ST_GeomFromText(fParam.location), EPSG_4326
+            )
+            is_modified = True
+
+    return is_modified
 
 
 ## API endpoints [Executive]
@@ -176,52 +278,20 @@ async def update_company(
         if company is None:
             raise exceptions.InvalidIdentifier()
 
-        if fParam.name is not None and company.name != fParam.name:
-            company.name = fParam.name
-        if fParam.address is not None and company.address != fParam.address:
-            company.address = fParam.address
-        if (
-            fParam.contact_person is not None
-            and company.contact_person != fParam.contact_person
-        ):
-            company.contact_person = fParam.contact_person
-        if fParam.phone_number is not None and company.phone_number != str(
-            fParam.phone_number
-        ):
-            company.phone_number = str(fParam.phone_number)
-        if fParam.email_id is not None and company.email_id != fParam.email_id:
-            company.email_id = fParam.email_id
-        if fParam.status is not None and company.status != fParam.status:
-            company.status = fParam.status
-        if fParam.type is not None and company.type != fParam.type:
-            company.type = fParam.type
+        is_modified = updateExecutiveCompany(session, company, fParam)
 
-        if fParam.location is not None:
-            wkt_location = toWKTgeometry(fParam.location, Point)
-            if wkt_location is None:
-                raise exceptions.InvalidWKTStringOrType()
-            if not isSRID4326(wkt_location):
-                raise exceptions.InvalidSRID4326()
-
-            current_location = session.scalar(func.ST_AsText(company.location))
-            if current_location != fParam.location:
-                company.location = func.ST_SetSRID(
-                    func.ST_GeomFromText(fParam.location), EPSG_4326
-                )
-
-        if session.is_modified(company):
+        if is_modified:
             session.commit()
             session.refresh(company)
-
             log_data = jsonable_encoder(company, exclude={"location"})
             log_data["location"] = session.scalar(func.ST_AsText(company.location))
             logExecutiveEvent(token, request_info, log_data)
             return log_data
-        else:
-            company_data = jsonable_encoder(company, exclude={"location"})
-            company_data["location"] = session.scalar(func.ST_AsText(company.location))
-            session.expunge(company)
-            return company_data
+
+        company_data = jsonable_encoder(company, exclude={"location"})
+        company_data["location"] = session.scalar(func.ST_AsText(company.location))
+        session.expunge(company)
+        return company_data
 
     except Exception as e:
         exceptions.handle(e)
@@ -244,20 +314,21 @@ async def update_company(
         ]
     ),
     description="""
-    Allows an operator to update their company's contact and location details.
+    Allows an operator to update their company's contact, address, location.
 
-    - Accepts optional updates to contact info, address, and location (WKT).
-    - Operators **cannot** update name or status.
-    - Validates WKT and SRID 4326 for location.
-    - Falls back to authenticated company if no ID is provided.
-    - Rejects updates to other companies' data.
+    - Partial updates allowed for contact info, address, WKT location.
+    - Operators cannot alter name or status.
+    - Validates WKT format and SRID 4326.
+    - Uses authenticated operator's company if no ID is provided.
+    - Rejects updates to other operators' companies.
     """,
 )
 async def update_company(
-    fParam: updateFormForOperator = Depends(),
+    fParam: UpdateFormForOperator = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
+
     try:
         session = sessionMaker()
         token = getOperatorToken(bearer.credentials, session)
@@ -265,57 +336,29 @@ async def update_company(
             raise exceptions.InvalidToken()
 
         role = getOperatorRole(token, session)
-        canCreateCompany = bool(role and role.create_company)
-        if not canCreateCompany:
+        if not (role and role.create_company):
             raise exceptions.NoPermission()
 
         operator_company_id = token.company_id
-        target_company_id = fParam.id if fParam.id is not None else operator_company_id
+        target_id = fParam.id or operator_company_id
 
-        company = session.query(Company).filter(Company.id == target_company_id).first()
-        if company is None or company.id != operator_company_id:
+        company = session.query(Company).filter(Company.id == target_id).first()
+        if not company or company.id != operator_company_id:
             raise exceptions.InvalidIdentifier()
 
-        if (
-            fParam.contact_person is not None
-            and company.contact_person != fParam.contact_person
-        ):
-            company.contact_person = fParam.contact_person
-        if fParam.phone_number is not None and company.phone_number != str(
-            fParam.phone_number
-        ):
-            company.phone_number = str(fParam.phone_number)
-        if fParam.email_id is not None and company.email_id != fParam.email_id:
-            company.email_id = fParam.email_id
-        if fParam.address is not None and company.address != fParam.address:
-            company.address = fParam.address
+        modified = updateOperatorCompany(session, company, fParam)
 
-        if fParam.location is not None:
-            wkt_location = toWKTgeometry(fParam.location, Point)
-            if wkt_location is None:
-                raise exceptions.InvalidWKTStringOrType()
-            if not isSRID4326(wkt_location):
-                raise exceptions.InvalidSRID4326()
-
-            current_location = session.scalar(func.ST_AsText(company.location))
-            if current_location != fParam.location:
-                company.location = func.ST_SetSRID(
-                    func.ST_GeomFromText(fParam.location), EPSG_4326
-                )
-
-        if session.is_modified(company):
+        if modified:
             session.commit()
             session.refresh(company)
-
             log_data = jsonable_encoder(company, exclude={"location"})
             log_data["location"] = session.scalar(func.ST_AsText(company.location))
             logOperatorEvent(token, request_info, log_data)
             return log_data
-        else:
-            company_data = jsonable_encoder(company, exclude={"location"})
-            company_data["location"] = session.scalar(func.ST_AsText(company.location))
-            session.expunge(company)
-            return company_data
+        company_data = jsonable_encoder(company, exclude={"location"})
+        company_data["location"] = session.scalar(func.ST_AsText(company.location))
+        session.expunge(company)
+        return company_data
 
     except Exception as e:
         exceptions.handle(e)
