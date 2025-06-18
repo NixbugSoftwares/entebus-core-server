@@ -117,6 +117,15 @@ class ExecutiveRole(ORMbase):
         delete_operator (Boolean):
             Whether this role permits deletion of a operator.
 
+        create_business (Boolean):
+            Whether this role permits the creation of a new business.
+
+        update_business (Boolean):
+            Whether this role permits editing the existing business.
+
+        delete_business (Boolean):
+            Whether this role permits deletion of a business.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -152,6 +161,10 @@ class ExecutiveRole(ORMbase):
     create_operator = Column(Boolean, nullable=False)
     update_operator = Column(Boolean, nullable=False)
     delete_operator = Column(Boolean, nullable=False)
+    # Business management permission
+    create_business = Column(Boolean, nullable=False)
+    update_business = Column(Boolean, nullable=False)
+    delete_business = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -955,7 +968,7 @@ class Business(ORMbase):
         address (TEXT):
             Optional physical address of the business.
             Used for communication or billing purposes.
-            Maximum 128 characters long.
+            Maximum 512 characters long.
 
         contact_person (TEXT):
             Name of the contact person for the business.
@@ -979,7 +992,7 @@ class Business(ORMbase):
             Maximum length is 256 characters.
 
         location (Geometry(Point)):
-            Represents the geographic location of the business in (latitude/longitude).
+            Optional geographical location of the business in (latitude/longitude).
             Stored as a POINT geometry with SRID 4326 (WGS 84).
             Useful for spatial queries, mapping, and proximity-based operations.
 

@@ -88,6 +88,9 @@ def initDB():
         create_operator=True,
         update_operator=True,
         delete_operator=True,
+        create_business=True,
+        update_business=True,
+        delete_business=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -109,6 +112,9 @@ def initDB():
         create_operator=False,
         update_operator=False,
         delete_operator=False,
+        create_business=False,
+        update_business=False,
+        delete_business=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
