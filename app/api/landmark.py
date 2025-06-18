@@ -241,7 +241,7 @@ async def create_landmark(
             exceptions.InvalidAABB,
             exceptions.OverlappingLandmarkBoundary,
             exceptions.InvalidLandmarkBoundaryArea,
-            exceptions.InvalidBusStopLocation,
+            exceptions.InvalidBusStopAssociation,
         ]
     ),
     description="""
@@ -314,7 +314,7 @@ async def update_landmark(
                     func.ST_Within(busStop.location, boundary4326)
                 )
                 if not withinBoundary:
-                    raise exceptions.InvalidBusStopLocation()
+                    raise exceptions.InvalidBusStopAssociation()
             landmark.boundary = boundary
 
         isModified = session.is_modified(landmark)
