@@ -292,23 +292,22 @@ async def update_landmark(
                 raise exceptions.InvalidSRID4326()
             if not isAABB(wktBoundary):
                 raise exceptions.InvalidAABB()
-
-            boundary4326 = func.ST_SetSRID(
-                func.ST_GeomFromText(boundary), EPSG_4326
-            )
+            boundary4326 = func.ST_SetSRID(func.ST_GeomFromText(boundary), EPSG_4326)
             boundary3857 = func.ST_Transform(boundary4326, EPSG_3857)
             areaInSQmeters = session.scalar(func.ST_Area(boundary3857))
             landmark3857 = func.ST_Transform(Landmark.boundary, EPSG_3857)
-            overlapping    = (session.query(Landmark)
-                              .filter(Landmark.id != id, func.ST_Intersects(landmark3857, boundary3857))
-                              .first())
+            overlapping = (
+                session.query(Landmark)
+                .filter(
+                    Landmark.id != id, func.ST_Intersects(landmark3857, boundary3857)
+                )
+                .first()
+            )
             if overlapping:
                 raise exceptions.OverlappingLandmarkBoundary()
             if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
                 raise exceptions.InvalidLandmarkBoundaryArea()
-            busStops = (
-                session.query(BusStop).filter(BusStop.landmark_id == id).all()
-            )
+            busStops = session.query(BusStop).filter(BusStop.landmark_id == id).all()
             for busStop in busStops:
                 withinBoundary = session.scalar(
                     func.ST_Within(busStop.location, boundary4326)
@@ -325,7 +324,7 @@ async def update_landmark(
 
         landmarkData = jsonable_encoder(landmark, exclude={"boundary"})
         landmarkData["boundary"] = session.scalar(func.ST_AsText(landmark.boundary))
-        
+
         if isModified:
             logExecutiveEvent(token, request_info, landmarkData)
         return landmarkData
