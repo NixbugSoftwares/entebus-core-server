@@ -3,10 +3,9 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, Form, status, Query
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from shapely import Polygon
+from shapely import Polygon, Point
 from sqlalchemy import func
 from enum import IntEnum
-from shapely import Point
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
@@ -17,7 +16,7 @@ from app.src.constants import (
     MAX_LANDMARK_AREA,
     MIN_LANDMARK_AREA,
 )
-from app.src.db import sessionMaker, Landmark
+from app.src.db import sessionMaker, Landmark, BusStop
 from app.src.enums import LandmarkType, OrderIn
 from app.src.functions import (
     enumStr,
@@ -228,9 +227,115 @@ async def create_landmark(
         session.close()
 
 
-@route_executive.patch("/landmark", tags=["Landmark"])
-async def update_landmark(bearer=Depends(bearer_executive)):
-    pass
+@route_executive.patch(
+    "/landmark",
+    tags=["Landmark"],
+    response_model=schemas.Landmark,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+            exceptions.InvalidAABB,
+            exceptions.OverlappingLandmarkBoundary,
+            exceptions.InvalidLandmarkBoundaryArea,
+            exceptions.InvalidBusStopLocation,
+        ]
+    ),
+    description="""
+    Update an existing landmark by the executive with a valid SRID 4326 boundary.
+
+    - Accepts a WKT polygon representing the landmark boundary. Only **AABB (axis-aligned bounding box)** geometries are allowed.
+    - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
+    - Ensures the boundary does not **overlap with existing landmarks** in the database.
+    - Only executives with the required permission (`update_landmark`) can access this endpoint.
+    - Logs the landmark creation activity with the associated token.
+    """,
+)
+async def update_landmark(
+    id: Annotated[int, Form()],
+    name: Annotated[str | None, Form(max_length=128)] = None,
+    boundary: Annotated[
+        str | None, Form(description="Accepts only SRID 4326 (WGS84)")
+    ] = None,
+    type: Annotated[
+        LandmarkType | None, Form(description=enumStr(LandmarkType))
+    ] = None,
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canUpdateLandmark = bool(role and role.update_landmark)
+        if not canUpdateLandmark:
+            raise exceptions.NoPermission()
+
+        landmark = session.query(Landmark).filter(Landmark.id == id).first()
+        if landmark is None:
+            raise exceptions.InvalidIdentifier()
+
+        if name is not None and landmark.name != name:
+            landmark.name = name
+        if type is not None and landmark.type != type:
+            landmark.type = type
+        if boundary is not None:
+            wktBoundary = toWKTgeometry(boundary, Polygon)
+            if wktBoundary is None:
+                raise exceptions.InvalidWKTStringOrType()
+            if not isSRID4326(wktBoundary):
+                raise exceptions.InvalidSRID4326()
+            if not isAABB(wktBoundary):
+                raise exceptions.InvalidAABB()
+
+            if landmark.boundary != boundary:
+                boundary4326 = func.ST_SetSRID(
+                    func.ST_GeomFromText(boundary), EPSG_4326
+                )
+                boundary3857 = func.ST_Transform(boundary4326, EPSG_3857)
+
+                areaInSQmeters = session.scalar(func.ST_Area(boundary3857))
+                landmark3857 = func.ST_Transform(Landmark.boundary, EPSG_3857)
+                overlapping    = (session.query(Landmark)
+                                  .filter(Landmark.id != id, func.ST_Intersects(landmark3857, boundary3857))
+                                  .first())
+                if overlapping:
+                    raise exceptions.OverlappingLandmarkBoundary()
+                if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
+                    raise exceptions.InvalidLandmarkBoundaryArea()
+
+                busStops = (
+                    session.query(BusStop).filter(BusStop.landmark_id == id).all()
+                )
+                for busStop in busStops:
+                    withinBoundary = session.scalar(
+                        func.ST_Within(busStop.location, boundary4326)
+                    )
+                    if not withinBoundary:
+                        raise exceptions.InvalidBusStopLocation()
+                landmark.boundary = boundary
+        landmark.version += 1
+
+        isModified = session.is_modified(landmark)
+        if isModified:
+            session.commit()
+            session.refresh(landmark)
+
+        landmarkData = jsonable_encoder(landmark, exclude={"boundary"})
+        landmarkData["boundary"] = session.scalar(func.ST_AsText(landmark.boundary))
+        
+        if isModified:
+            logExecutiveEvent(token, request_info, landmarkData)
+        return landmarkData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.get(
