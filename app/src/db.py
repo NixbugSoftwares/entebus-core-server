@@ -92,6 +92,12 @@ class ExecutiveRole(ORMbase):
 
         create_bus_stop (Boolean):
             Whether this role permits the creation of a new bus stop.
+        
+        update_bus_stop (Boolean):
+            Whether this role permits editing existing the bus stop.
+
+        delete_bus_stop (Boolean):
+            Whether this role permits deletion of a bus stop.
 
         create_company (Boolean):
             Whether this role permits the creation of a new company.
@@ -101,6 +107,24 @@ class ExecutiveRole(ORMbase):
 
         delete_company (Boolean):
             Whether this role permits deletion of a company.
+
+        create_operator (Boolean):
+            Whether this role permits the creation of a new operator.
+
+        update_operator (Boolean):
+            Whether this role permits editing the existing operator.
+
+        delete_operator (Boolean):
+            Whether this role permits deletion of a operator.
+
+        create_business (Boolean):
+            Whether this role permits the creation of a new business.
+
+        update_business (Boolean):
+            Whether this role permits editing the existing business.
+
+        delete_business (Boolean):
+            Whether this role permits deletion of a business.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
@@ -127,10 +151,20 @@ class ExecutiveRole(ORMbase):
     delete_landmark = Column(Boolean, nullable=False)
     # Bus Stop management permission
     create_bus_stop = Column(Boolean, nullable=False)
+    update_bus_stop = Column(Boolean, nullable=False)
+    delete_bus_stop = Column(Boolean, nullable=False)
     # Company management permission
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
     delete_company = Column(Boolean, nullable=False)
+    # Operator management permission
+    create_operator = Column(Boolean, nullable=False)
+    update_operator = Column(Boolean, nullable=False)
+    delete_operator = Column(Boolean, nullable=False)
+    # Business management permission
+    create_business = Column(Boolean, nullable=False)
+    update_business = Column(Boolean, nullable=False)
+    delete_business = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -615,6 +649,15 @@ class OperatorRole(ORMbase):
         manage_op_token (Boolean):
             Determines whether the role grants permission to manage operator tokens.
 
+        create_operator (Boolean):
+            Whether this role permits the creation of a new operator.
+
+        update_operator (Boolean):
+            Whether this role permits editing the existing operator.
+
+        delete_operator (Boolean):
+            Whether this role permits deletion of a operator.
+
         create_company (Boolean):
             Whether this role permits the creation of a new company.
 
@@ -646,6 +689,10 @@ class OperatorRole(ORMbase):
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
+    # Operator management permission
+    create_operator = Column(Boolean, nullable=False)
+    update_operator = Column(Boolean, nullable=False)
+    delete_operator = Column(Boolean, nullable=False)
     # Company management permission
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
@@ -934,7 +981,7 @@ class Business(ORMbase):
         address (TEXT):
             Optional physical address of the business.
             Used for communication or billing purposes.
-            Maximum 128 characters long.
+            Maximum 512 characters long.
 
         contact_person (TEXT):
             Name of the contact person for the business.
@@ -958,7 +1005,7 @@ class Business(ORMbase):
             Maximum length is 256 characters.
 
         location (Geometry(Point)):
-            Represents the geographic location of the business in (latitude/longitude).
+            Optional geographical location of the business in (latitude/longitude).
             Stored as a POINT geometry with SRID 4326 (WGS 84).
             Useful for spatial queries, mapping, and proximity-based operations.
 
