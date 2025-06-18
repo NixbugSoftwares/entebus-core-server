@@ -135,6 +135,11 @@ class ExecutiveRole(ORMbase):
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
     delete_company = Column(Boolean, nullable=False)
+    # Route management permission
+    create_route = Column(Boolean, nullable=False)
+    update_route = Column(Boolean, nullable=False)
+    delete_route = Column(Boolean, nullable=False)
+
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -641,6 +646,11 @@ class OperatorRole(ORMbase):
     )
     # Token management permission
     manage_op_token = Column(Boolean, nullable=False)
+    # Route management permission
+    create_route = Column(Boolean, nullable=False)
+    update_route = Column(Boolean, nullable=False)
+    delete_route = Column(Boolean, nullable=False)
+
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

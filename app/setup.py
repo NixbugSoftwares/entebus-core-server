@@ -1,17 +1,16 @@
 import argparse
 
 from app.src import argon2
-from datetime import time
 from app.src.enums import (
     CompanyStatus,
     FareScope,
 )
-from app.src.enums import BusStatus
 from app.src.db import (
     Executive,
     ExecutiveRole,
     ExecutiveRoleMap,
     Company,
+    LandmarkInRoute,
     Operator,
     OperatorRole,
     OperatorRoleMap,
@@ -87,6 +86,9 @@ def initDB():
         create_company=True,
         update_company=True,
         delete_company=True,
+        create_route=True,
+        update_route=True,
+        delete_route=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -104,6 +106,9 @@ def initDB():
         create_company=False,
         update_company=False,
         delete_company=False,
+        create_route=False,
+        update_route=False,
+        delete_route=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -127,6 +132,7 @@ def testDB():
     )
     session.add(company)
     session.flush()
+
     password = argon2.makePassword("password")
     admin = Operator(
         company_id=company.id,
@@ -144,14 +150,21 @@ def testDB():
         company_id=company.id,
         name="Admin",
         manage_op_token=True,
+        create_route=True,
+        update_route=True,
+        delete_route=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
         name="Guest",
         manage_op_token=False,
+        create_route=False,
+        update_route=False,
+        delete_route=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
+
     adminMapping = OperatorRoleMap(
         company_id=company.id, operator_id=admin.id, role_id=adminRole.id
     )
@@ -160,6 +173,7 @@ def testDB():
     )
     session.add_all([adminMapping, guestMapping])
     session.flush()
+
     landmark1 = Landmark(
         name="Varkala",
         boundary="POLYGON((76.7234906 8.7410323, \
@@ -178,6 +192,7 @@ def testDB():
     )
     session.add_all([landmark1, landmark2])
     session.flush()
+
     busStop1 = BusStop(
         name="Varkala",
         landmark_id=landmark1.id,
@@ -190,6 +205,7 @@ def testDB():
     )
     session.add_all([busStop1, busStop2])
     session.flush()
+
     fare = Fare(
         company_id=company.id,
         name="Test fare",
@@ -247,6 +263,33 @@ def testDB():
     )
     session.add(fare)
     session.flush()
+
+    route = Route(
+        company_id=company.id,
+        name="Varkala -> Edava",
+    )
+    session.add(route)
+    session.flush()
+
+    landmark1InRoute = LandmarkInRoute(
+        company_id=company.id,
+        route_id=route.id,
+        landmark_id=landmark1.id,
+        distance_from_start=0,
+        arrival_delta=0,
+        departure_delta=0,
+    )
+    landmark2InRoute = LandmarkInRoute(
+        company_id=company.id,
+        route_id=route.id,
+        landmark_id=landmark2.id,
+        distance_from_start=5000,
+        arrival_delta=30,
+        departure_delta=30,
+    )
+    session.add_all([landmark1InRoute, landmark2InRoute])
+    session.flush()
+
     business = Business(
         name="Test Business",
         contact_person="John Doe",
@@ -255,6 +298,7 @@ def testDB():
     )
     session.add(business)
     session.flush()
+
     adminRole = VendorRole(
         name="Admin",
         business_id=business.id,
@@ -298,6 +342,7 @@ def testDB():
         ]
     )
     session.flush()
+
     adminRoleMap = VendorRoleMap(
         business_id=business.id,
         role_id=adminRole.id,
@@ -310,6 +355,7 @@ def testDB():
     )
     session.add_all([adminRoleMap, guestRoleMap])
     session.flush()
+
     bus1 = Bus(
         company_id=company.id,
         registration_number="KL02WH3000",
@@ -334,14 +380,7 @@ def testDB():
     )
     session.add_all([bus1, bus2])
     session.flush()
-    route = Route(
-        company_id=company.id,
-        landmark_id=landmark1.id,
-        name="Test Route",
-        status=1,
-        starting_time=time(11, 2, 25),
-    )
-    session.add(route)
+
     session.commit()
     print("* Test population completed")
     session.close()
