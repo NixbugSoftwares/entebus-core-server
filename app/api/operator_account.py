@@ -4,16 +4,16 @@ from fastapi import (
     status,
     Form,
 )
+from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive, bearer_operator
-from app.src.enums import GenderType
-from app.src import argon2, exceptions, schemas
+from app.src.enums import GenderType, AccountStatus
 from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
-from app.src.db import sessionMaker, Operator
+from app.src.db import sessionMaker, Operator, OperatorToken
+from app.src import argon2, exceptions, schemas
 from app.src.functions import (
     enumStr,
     getRequestInfo,
@@ -43,6 +43,46 @@ class CreateFormForOperator(BaseModel):
 
 class CreateFormForExecutive(CreateFormForOperator):
     company_id: int = Field(Form())
+
+
+class UpdateFormForOperator(BaseModel):
+    id: int = Field(Form())
+    password: str | None = Field(
+        Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
+    )
+    gender: GenderType | None = Field(
+        Form(description=enumStr(GenderType), default=None)
+    )
+    full_name: str | None = Field(Form(max_length=32, default=None))
+    email_id: EmailStr | None = Field(Form(max_length=256, default=None))
+    phone_number: PhoneNumber | None = Field(Form(max_length=32, default=None))
+    status: AccountStatus | None = Field(
+        Form(description=enumStr(AccountStatus), default=None)
+    )
+
+
+## Function
+def updateOperator(session: Session, fParam: UpdateFormForOperator) -> Operator:
+    operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+    if operator is None:
+        raise exceptions.InvalidIdentifier()
+    if fParam.password is not None:
+        operator.password = argon2.makePassword(fParam.password)
+    if fParam.gender is not None and operator.gender != fParam.gender:
+        operator.gender = fParam.gender
+    if fParam.full_name is not None and operator.full_name != fParam.full_name:
+        operator.full_name = fParam.full_name
+    if fParam.email_id is not None and operator.email_id != fParam.email_id:
+        operator.email_id = fParam.email_id
+    if fParam.phone_number is not None and operator.phone_number != fParam.phone_number:
+        operator.phone_number = fParam.phone_number
+    if fParam.status is not None and operator.status != fParam.status:
+        if fParam.status == AccountStatus.SUSPENDED:
+            session.query(OperatorToken).filter(
+                OperatorToken.operator_id == fParam.id
+            ).delete()
+        operator.status = fParam.status
+    return operator
 
 
 ## API endpoints [Operator]
@@ -106,6 +146,67 @@ async def create_operator(
         session.close()
 
 
+@route_operator.patch(
+    "/company/account",
+    tags=["Account"],
+    response_model=schemas.Operator,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an existing operator account.
+
+    - Operator can update their own account details.
+    - Operator with `update_operator` permission can update other operators.
+    - An operator cannot update their own status.
+    - Follow patterns for smooth creation of password.
+    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
+    - Phone number must follow RFC3966 format.
+    - Email ID must follow RFC5322 format.
+    - Logs the operator account update activity with the associated token.
+    """,
+)
+async def update_operator(
+    fParam: UpdateFormForOperator = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getOperatorRole(token, session)
+        forSelf = False
+        if fParam.id == token.operator_id:
+            forSelf = True
+        canUpdateOperator = bool(role and role.update_operator)
+        if not forSelf and not canUpdateOperator:
+            raise exceptions.NoPermission()
+
+        if fParam.status == AccountStatus.SUSPENDED and forSelf:
+            raise exceptions.NoPermission()
+        operator = updateOperator(session, fParam)
+        if session.is_modified(operator):
+            session.commit()
+            session.refresh(operator)
+            logOperatorEvent(
+                token,
+                request_info,
+                jsonable_encoder(operator, exclude={"password"}),
+            )
+        session.expunge(operator)
+        return operator
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 ## API endpoints [Executive]
 @route_executive.post(
     "/company/account",
@@ -160,6 +261,60 @@ async def create_operator(
             request_info,
             jsonable_encoder(operator, exclude={"password"}),
         )
+        return operator
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.patch(
+    "/company/account",
+    tags=["Operator Account"],
+    response_model=schemas.Operator,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an existing operator account.
+
+    - Executive with `update_operator` permission can update other operators.
+    - Follow patterns for smooth creation of password.
+    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
+    - Phone number must follow RFC3966 format.
+    - Email ID must follow RFC5322 format.
+    - Logs the executive account update activity with the associated token.
+    """,
+)
+async def update_operator(
+    fParam: UpdateFormForOperator = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canUpdateOperator = bool(role and role.update_operator)
+        if not canUpdateOperator:
+            raise exceptions.NoPermission()
+
+        operator = updateOperator(session, fParam)
+        if session.is_modified(operator):
+            session.commit()
+            session.refresh(operator)
+            logExecutiveEvent(
+                token,
+                request_info,
+                jsonable_encoder(operator, exclude={"password"}),
+            )
+        session.expunge(operator)
         return operator
     except Exception as e:
         exceptions.handle(e)
