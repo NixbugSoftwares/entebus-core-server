@@ -328,7 +328,6 @@ async def update_company(
     bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
-
     try:
         session = sessionMaker()
         token = getOperatorToken(bearer.credentials, session)
