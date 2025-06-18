@@ -6,9 +6,9 @@ from fastapi import (
     Form,
 )
 from typing import Annotated
+from secrets import token_hex
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
-from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.bearer import bearer_executive, bearer_vendor
 from app.src import argon2, exceptions
@@ -23,6 +23,7 @@ from app.src.db import (
 from app.src.functions import (
     enumStr,
     getRequestInfo,
+    getVendorToken,
     logVendorEvent,
     makeExceptionResponses,
 )
@@ -33,7 +34,7 @@ route_executive = APIRouter()
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/vendor/merchant/account",
+    "/business/account/token",
     tags=["Token"],
     response_model=schemas.VendorToken,
     status_code=status.HTTP_201_CREATED,
@@ -43,7 +44,7 @@ route_executive = APIRouter()
     description="""
     Issues a new access token for an vendor after validating credentials.
 
-    - Accepts OAuth2-style form data for authentication.
+    - Accepts form data including the vendor's `business_id`, `username`, and `password` for credential verification.
     - Only vendors with an `ACTIVE` account status are permitted to receive a token.
     - Limits active tokens using `MAX_VENDOR_TOKENS` (token rotation).
     - Generates a token with an expiry time of `MAX_TOKEN_VALIDITY` seconds from creation.
@@ -52,6 +53,7 @@ route_executive = APIRouter()
     """,
 )
 async def token_creation(
+    business_id: Annotated[int, Form()],
     username: Annotated[str, Form(max_length=32)],
     password: Annotated[str, Form(max_length=32)],
     platform_type: Annotated[
@@ -62,7 +64,12 @@ async def token_creation(
 ):
     try:
         session = sessionMaker()
-        vendor = session.query(Vendor).filter(Vendor.username == username).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.username == username)
+            .filter(Vendor.business_id == business_id)
+            .first()
+        )
         if vendor is None:
             raise exceptions.InvalidCredentials()
 
@@ -86,7 +93,7 @@ async def token_creation(
         # Create a new token
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=MAX_TOKEN_VALIDITY)
         token = VendorToken(
-            business_id=vendor.business_id,
+            business_id=business_id,
             vendor_id=vendor.id,
             expires_in=MAX_TOKEN_VALIDITY,
             expires_at=expires_at,
@@ -105,9 +112,61 @@ async def token_creation(
         session.close()
 
 
-@route_vendor.patch("/business/account/token", tags=["Token"])
-async def update_token(credential=Depends(bearer_vendor)):
-    pass
+@route_vendor.patch(
+    "/business/account/token",
+    tags=["Token"],
+    response_model=schemas.VendorToken,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
+    description="""
+    Refreshes a vendor's existing access token to maintain authenticated access.
+
+    - If `id` is not given, refreshes only the current token (used in this request).
+    - If an `id` is provided: Must match the current token's `access_token` (prevents
+      unauthorized refreshes, even by the same vendor).
+    - Raises `InvalidIdentifier` if the token does not exist (avoids ID probing).
+    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
+    - Rotates the `access_token` value (invalidates the old token immediately).
+    - Logs the refresh event for auditability.
+    """,
+)
+async def refresh_token(
+    id: Annotated[int | None, Form()] = None,
+    bearer=Depends(bearer_vendor),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+
+        if id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(VendorToken).filter(VendorToken.id == id).first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
+
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
+        tokenToUpdate.access_token = token_hex(32)
+        session.commit()
+        session.refresh(tokenToUpdate)
+        logVendorEvent(
+            token,
+            request_info,
+            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
+        )
+        session.expunge(tokenToUpdate)
+        return tokenToUpdate
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_vendor.get("/business/account/token", tags=["Token"])
@@ -128,4 +187,9 @@ async def fetch_tokens(credential=Depends(bearer_executive)):
 
 @route_executive.delete("/business/account/token", tags=["Vendor token"])
 async def delete_tokens(credential=Depends(bearer_executive)):
+    pass
+
+
+@route_executive.patch("/business/account/token", tags=["Vendor Token"])
+async def update_token(credential=Depends(bearer_executive)):
     pass
