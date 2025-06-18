@@ -6,15 +6,14 @@ from fastapi import (
 )
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.enums import GenderType, AccountStatus
-from app.src import argon2, exceptions, schemas
 from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
 from app.src.db import sessionMaker, Operator, OperatorToken
+from app.src import argon2, exceptions, schemas
 from app.src.functions import (
     enumStr,
     getRequestInfo,
@@ -159,13 +158,16 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an operator account with an active status.
+    Updates an existing operator account.
 
-    - Only operator with `update_operator` permission can update operator.
-    - Logs the operator account update activity with the associated token.
+    - Operator can update their own account details.
+    - Operator with `update_operator` permission can update other operators.
+    - An operator cannot update their own status.
     - Follow patterns for smooth creation of password.
+    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
     - Phone number must follow RFC3966 format.
     - Email ID must follow RFC5322 format.
+    - Logs the operator account update activity with the associated token.
     """,
 )
 async def update_operator(
@@ -278,13 +280,14 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an operator account with an active status.
+    Updates an existing operator account.
 
-    - Only executive with `update_operator` permission can update operator.
-    - Logs the executive account update activity with the associated token.
+    - Executive with `update_operator` permission can update other operators.
     - Follow patterns for smooth creation of password.
+    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
     - Phone number must follow RFC3966 format.
     - Email ID must follow RFC5322 format.
+    - Logs the executive account update activity with the associated token.
     """,
 )
 async def update_operator(
