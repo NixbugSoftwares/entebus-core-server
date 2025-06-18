@@ -11,10 +11,10 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive, bearer_operator
-from app.src.enums import GenderType
+from app.src.enums import GenderType, AccountStatus
 from app.src import argon2, exceptions, schemas
 from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
-from app.src.db import sessionMaker, Operator
+from app.src.db import sessionMaker, Operator, OperatorToken
 from app.src.functions import (
     enumStr,
     getRequestInfo,
@@ -57,11 +57,13 @@ class UpdateFormForOperator(BaseModel):
     full_name: str | None = Field(Form(max_length=32, default=None))
     email_id: EmailStr | None = Field(Form(max_length=256, default=None))
     phone_number: PhoneNumber | None = Field(Form(max_length=32, default=None))
-    status: int | None = Field(Form(default=None))
+    status: AccountStatus | None = Field(
+        Form(description=enumStr(AccountStatus), default=None)
+    )
 
 
 ## Function
-def formOperator(session: Session, fParam: UpdateFormForOperator) -> Operator:
+def updateOperator(session: Session, fParam: UpdateFormForOperator) -> Operator:
     operator = session.query(Operator).filter(Operator.id == fParam.id).first()
     if operator is None:
         raise exceptions.InvalidIdentifier()
@@ -76,6 +78,10 @@ def formOperator(session: Session, fParam: UpdateFormForOperator) -> Operator:
     if fParam.phone_number is not None and operator.phone_number != fParam.phone_number:
         operator.phone_number = fParam.phone_number
     if fParam.status is not None and operator.status != fParam.status:
+        if fParam.status == AccountStatus.SUSPENDED:
+            session.query(OperatorToken).filter(
+                OperatorToken.operator_id == fParam.id
+            ).delete()
         operator.status = fParam.status
     return operator
 
@@ -180,7 +186,9 @@ async def update_operator(
         if not forSelf and not canUpdateOperator:
             raise exceptions.NoPermission()
 
-        operator = formOperator(session, fParam)
+        if fParam.status == AccountStatus.SUSPENDED and forSelf:
+            raise exceptions.NoPermission()
+        operator = updateOperator(session, fParam)
         if session.is_modified(operator):
             session.commit()
             session.refresh(operator)
@@ -294,7 +302,7 @@ async def update_operator(
         if not canUpdateOperator:
             raise exceptions.NoPermission()
 
-        operator = formOperator(session, fParam)
+        operator = updateOperator(session, fParam)
         if session.is_modified(operator):
             session.commit()
             session.refresh(operator)
