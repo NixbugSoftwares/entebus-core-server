@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Time,
     UniqueConstraint,
     create_engine,
     func,
@@ -92,7 +93,7 @@ class ExecutiveRole(ORMbase):
 
         create_bus_stop (Boolean):
             Whether this role permits the creation of a new bus stop.
-        
+
         update_bus_stop (Boolean):
             Whether this role permits editing existing the bus stop.
 
@@ -125,6 +126,15 @@ class ExecutiveRole(ORMbase):
 
         delete_business (Boolean):
             Whether this role permits deletion of a business.
+
+        create_route (Boolean):
+            Whether this role permits the creation of a new route.
+
+        update_route (Boolean):
+            Whether this role permits editing the existing route.
+
+        delete_route (Boolean):
+            Whether this role permits deletion of a route.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
@@ -165,6 +175,11 @@ class ExecutiveRole(ORMbase):
     create_business = Column(Boolean, nullable=False)
     update_business = Column(Boolean, nullable=False)
     delete_business = Column(Boolean, nullable=False)
+    # Route management permission
+    create_route = Column(Boolean, nullable=False)
+    update_route = Column(Boolean, nullable=False)
+    delete_route = Column(Boolean, nullable=False)
+
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -658,6 +673,15 @@ class OperatorRole(ORMbase):
         delete_operator (Boolean):
             Whether this role permits deletion of a operator.
 
+        create_route (Boolean):
+            Whether this role permits the creation of a new route.
+
+        update_route (Boolean):
+            Whether this role permits editing the existing route.
+
+        delete_route (Boolean):
+            Whether this role permits deletion of a route.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -684,6 +708,11 @@ class OperatorRole(ORMbase):
     create_operator = Column(Boolean, nullable=False)
     update_operator = Column(Boolean, nullable=False)
     delete_operator = Column(Boolean, nullable=False)
+    # Route management permission
+    create_route = Column(Boolean, nullable=False)
+    update_route = Column(Boolean, nullable=False)
+    delete_route = Column(Boolean, nullable=False)
+
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1458,6 +1487,7 @@ class Bus(ORMbase):
             Indexed for optimized grouping and filtering.
 
         registration_number (String(16)):
+            This should be an immutable value.
             Vehicle registration number.
             Must be unique per company and non-null.
             Indexed for fast lookup.
@@ -1524,6 +1554,123 @@ class Bus(ORMbase):
     fitness_upto = Column(DateTime(timezone=True))
     road_tax_upto = Column(DateTime(timezone=True))
     status = Column(Integer, nullable=False, default=BusStatus.ACTIVE)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Route(ORMbase):
+    """
+    Represents a route associated with a company.
+
+    Each route defines a path that begins at a specific landmark and ends at another landmark.
+    It is used for transportation or logistics operations.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the route.
+
+        company_id (Integer):
+            Foreign key referencing the company that owns or operates the route.
+            Must be non-null. Deletion of the company cascades to its routes.
+
+        name (String(4096)):
+            Descriptive name or label for the route.
+            Must be non-null and unique within the company.
+            ex:- Varkala -> Edava -> Kappil -> Paravoor
+
+        start_time (Time):
+            The time of day when the route operation starts.
+            Must be non-null. Used for scheduling and time-based operations.
+
+        updated_on (DateTime):
+            Timestamp automatically updated when the route record is modified.
+            Useful for audit logs, syncing, or change tracking.
+
+        created_on (DateTime):
+            Timestamp indicating when the route was initially created.
+            Must be non-null. Defaults to the current timestamp.
+    """
+
+    __tablename__ = "route"
+    __table_args__ = (UniqueConstraint("name", "company_id"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(4096), nullable=False)
+    start_time = Column(Time(timezone=True), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class LandmarkInRoute(ORMbase):
+    """
+    Represents a landmark positioned within a specific route.
+
+    This table defines the sequence and timing metadata of landmarks along a route.
+    It helps determine the structure and scheduling of transportation or logistics operations.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the landmark-in-route entry.
+
+        company_id (Integer):
+            Foreign key referencing the company that operates on the route.
+            Must be non-null. Deletion of the company cascades to its entries.
+            Indexed for optimized lookup.
+
+        route_id (Integer):
+            Foreign key referencing the associated route.
+            Must be non-null. Deletion of the route cascades to its landmarks.
+            Indexed for performance.
+
+        landmark_id (Integer):
+            Foreign key referencing the physical landmark.
+            Indicates the location this entry refers to.
+            Landmarks referenced here cannot be removed.
+
+        distance_from_start (Integer):
+            Distance in meters from the starting landmark of the route.
+            Must be non-null. Used to determine ordering and physical spacing.
+            Must be unique per route.
+
+        arrival_delta (Integer):
+            Time in minutes expected to arrive at this landmark from the start of the route.
+            Helps in estimating arrival schedules for route traversal.
+
+        departure_delta (Integer):
+            Time in minutes expected to depart from this landmark after the route starts.
+            Used to define dwell times or stop durations.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Useful for auditing and syncing operations.
+
+        created_on (DateTime):
+            Timestamp indicating when this record was created.
+            Must be non-null. Defaults to the current timestamp.
+    """
+
+    __tablename__ = "landmark_in_route"
+    __table_args__ = (UniqueConstraint("route_id", "distance_from_start"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    route_id = Column(
+        Integer, ForeignKey("route.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    landmark_id = Column(Integer, ForeignKey("landmark.id"))
+    distance_from_start = Column(Integer, nullable=False)
+    arrival_delta = Column(Integer, nullable=False)
+    departure_delta = Column(Integer, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

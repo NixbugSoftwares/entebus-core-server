@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from pydantic import BaseModel
 
@@ -131,3 +131,24 @@ class Business(BaseModel):
     type: int
     created_on: datetime
     updated_on: Optional[datetime]
+
+
+class Route(BaseModel):
+    id: int
+    company_id: int
+    name: str
+    start_time: time
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+class LandmarkInRoute(BaseModel):
+    id: int
+    company_id: int
+    route_id: int
+    landmark_id: int
+    distance_from_start: int
+    arrival_delta: int
+    departure_delta: int
+    updated_on: Optional[datetime]
+    created_on: datetime
