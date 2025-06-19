@@ -288,7 +288,7 @@ def testDB():
     route = Route(
         company_id=company.id,
         name="Varkala -> Edava",
-        starting_time=time(11, 0, 0),
+        start_time=time(11, 0, 0),
     )
     session.add(route)
     session.flush()
