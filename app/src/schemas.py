@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from pydantic import BaseModel
 
@@ -137,7 +137,7 @@ class Route(BaseModel):
     id: int
     company_id: int
     name: str
-    start_time: str
+    start_time: time
     updated_on: Optional[datetime]
     created_on: datetime
 

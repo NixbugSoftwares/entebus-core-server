@@ -1600,7 +1600,7 @@ class Route(ORMbase):
         Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
     )
     name = Column(String(4096), nullable=False)
-    starting_time = Column(Time(timezone=True), nullable=False)
+    start_time = Column(Time(timezone=True), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
