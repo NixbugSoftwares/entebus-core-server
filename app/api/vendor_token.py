@@ -249,9 +249,40 @@ async def refresh_token(
         session.close()
 
 
-@route_vendor.get("/business/account/token", tags=["Token"])
-async def fetch_tokens(credential=Depends(bearer_vendor)):
-    pass
+@route_vendor.get(
+    "/business/account/token",
+    tags=["Token"],
+    response_model=List[schemas.MaskedVendorToken],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of vendor tokens filtered by optional query parameters.
+    
+    - Vendors without `manage_token` permission can only retrieve their own tokens.
+    - Supports filtering by ID range, platform type, client details, creation timestamps and updating timestamps.
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_tokens(
+    qParam: VendorTokenQueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getVendorRole(token, session)
+        canManageToken = bool(role and role.manage_token)
+
+        qParam = VendorTokenQueryParamsForEx(**qParam.model_dump())
+        qParam.business_id = token.business_id
+        if not canManageToken:
+            qParam.business_id = token.business_id
+        return queryVendorTokens(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_vendor.delete("/business/account/token", tags=["Token"])
@@ -260,9 +291,40 @@ async def delete_tokens(credential=Depends(bearer_vendor)):
 
 
 ## API endpoints [Executive]
-@route_executive.get("/business/account/token", tags=["Vendor token"])
-async def fetch_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.get(
+    "/business/account/token",
+    tags=["Vendor token"],
+    response_model=List[schemas.MaskedVendorToken],
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description=""" 
+    Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.
+
+    - Only executives with `manage_ve_token` permission can access this endpoint.
+    - Supports filtering by token ID, operator ID, platform type, client details, updating timestamps and creation timestamps.
+    - Enables pagination using `offset` and `limit`.
+    - Allows sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_tokens(
+    qParam: VendorTokenQueryParamsForEx = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canManageToken = bool(role and role.manage_ve_token)
+        if not canManageToken:
+            raise exceptions.NoPermission()
+
+        return queryVendorTokens(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.delete("/business/account/token", tags=["Vendor token"])
