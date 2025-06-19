@@ -1,5 +1,10 @@
 from enum import IntEnum
 from sqlalchemy.orm.session import Session
+from typing import Annotated, List
+from secrets import token_hex
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta, timezone
 from fastapi import (
     APIRouter,
     Depends,
@@ -7,21 +12,12 @@ from fastapi import (
     Form,
     Query,
 )
-from typing import Annotated, List
-from secrets import token_hex
-from fastapi.encoders import jsonable_encoder
-from datetime import datetime, timedelta, timezone
 
 from app.api.bearer import bearer_executive, bearer_vendor
 from app.src import argon2, exceptions, schemas
 from app.src.constants import MAX_VENDOR_TOKENS, MAX_TOKEN_VALIDITY
 from app.src.enums import AccountStatus, PlatformType, OrderIn
-from pydantic import BaseModel, Field
-from app.src.db import (
-    sessionMaker,
-    Vendor,
-    VendorToken,
-)
+from app.src.db import sessionMaker, Vendor, VendorToken
 from app.src.functions import (
     enumStr,
     getRequestInfo,
