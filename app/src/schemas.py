@@ -137,6 +137,7 @@ class Route(BaseModel):
     id: int
     company_id: int
     name: str
+    start_time: str
     updated_on: Optional[datetime]
     created_on: datetime
 

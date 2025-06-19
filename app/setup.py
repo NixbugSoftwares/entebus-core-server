@@ -1,4 +1,5 @@
 import argparse
+from datetime import time
 
 from app.src import argon2
 from app.src.enums import (
@@ -287,6 +288,7 @@ def testDB():
     route = Route(
         company_id=company.id,
         name="Varkala -> Edava",
+        starting_time=time(11, 0, 0),
     )
     session.add(route)
     session.flush()

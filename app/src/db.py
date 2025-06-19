@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Time,
     UniqueConstraint,
     create_engine,
     func,
@@ -92,7 +93,7 @@ class ExecutiveRole(ORMbase):
 
         create_bus_stop (Boolean):
             Whether this role permits the creation of a new bus stop.
-        
+
         update_bus_stop (Boolean):
             Whether this role permits editing existing the bus stop.
 
@@ -1559,6 +1560,10 @@ class Route(ORMbase):
             Descriptive name or label for the route.
             Must be non-null and unique within the company.
             ex:- Varkala -> Edava -> Kappil -> Paravoor
+        
+        start_time (Time):
+            The time of day when the route operation starts.
+            Must be non-null. Used for scheduling and time-based operations.
 
         updated_on (DateTime):
             Timestamp automatically updated when the route record is modified.
@@ -1577,6 +1582,7 @@ class Route(ORMbase):
         Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
     )
     name = Column(String(4096), nullable=False)
+    starting_time = Column(Time(timezone=True), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1629,6 +1635,7 @@ class LandmarkInRoute(ORMbase):
             Timestamp indicating when this record was created.
             Must be non-null. Defaults to the current timestamp.
     """
+
     __tablename__ = "landmark_in_route"
     __table_args__ = (UniqueConstraint("route_id", "distance_from_start"),)
 
