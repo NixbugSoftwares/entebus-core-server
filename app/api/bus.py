@@ -5,6 +5,7 @@ from fastapi import (
     Form,
 )
 from pydantic import BaseModel, Field
+from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 
 from app.api.bearer import bearer_executive, bearer_operator
@@ -30,7 +31,7 @@ route_executive = APIRouter()
 class CreateBusFormForOp(BaseModel):
     registration_number: str = Field(Form(min_length=4, max_length=16))
     name: str = Field(Form(min_length=4, max_length=32))
-    capacity: int = Field(Form())
+    capacity: int = Field(Form(ge=1, le=120))
     manufactured_on: datetime = Field(Form())
     insurance_upto: datetime | None = Field(Form(default=None))
     pollution_upto: datetime | None = Field(Form(default=None))
@@ -68,7 +69,40 @@ async def create_bus(
     bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = getOperatorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getOperatorRole(token, session)
+        canCreateBus = bool(role and role.create_bus)
+        if not canCreateBus:
+            raise exceptions.NoPermission()
+
+        bus = Bus(
+            company_id=token.company_id,
+            registration_number=fParam.registration_number,
+            name=fParam.name,
+            capacity=fParam.capacity,
+            manufactured_on=fParam.manufactured_on,
+            insurance_upto=fParam.insurance_upto,
+            pollution_upto=fParam.pollution_upto,
+            fitness_upto=fParam.fitness_upto,
+            road_tax_upto=fParam.road_tax_upto,
+            status=fParam.status,
+        )
+        session.add(bus)
+        session.commit()
+        logOperatorEvent(
+            token,
+            request_info,
+            jsonable_encoder(bus),
+        )
+        return bus
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_operator.patch(
@@ -115,7 +149,7 @@ async def fetch_buses(
     """,
 )
 async def delete_bus(
-    bearer=Depends(bearer_executive),
+    bearer=Depends(bearer_operator),
     request_info=Depends(getRequestInfo),
 ):
     pass
@@ -144,7 +178,40 @@ async def create_bus(
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canCreateBus = bool(role and role.create_bus)
+        if not canCreateBus:
+            raise exceptions.NoPermission()
+
+        bus = Bus(
+            company_id=fParam.company_id,
+            registration_number=fParam.registration_number,
+            name=fParam.name,
+            capacity=fParam.capacity,
+            manufactured_on=fParam.manufactured_on,
+            insurance_upto=fParam.insurance_upto,
+            pollution_upto=fParam.pollution_upto,
+            fitness_upto=fParam.fitness_upto,
+            road_tax_upto=fParam.road_tax_upto,
+            status=fParam.status,
+        )
+        session.add(bus)
+        session.commit()
+        logExecutiveEvent(
+            token,
+            request_info,
+            jsonable_encoder(bus),
+        )
+        return bus
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.patch(
