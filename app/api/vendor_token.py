@@ -37,6 +37,81 @@ route_vendor = APIRouter()
 route_executive = APIRouter()
 
 
+## Schemas
+class OrderBy(IntEnum):
+    id = 1
+    created_on = 2
+    updated_on = 3
+
+
+class VendorTokenQueryParams(BaseModel):
+    id: int | None = Query(default=None)
+    id_ge: int | None = Query(default=None)
+    id_le: int | None = Query(default=None)
+    vendor_id: int | None = Query(default=None)
+    platform_type: PlatformType | None = Field(
+        Query(default=None, description=enumStr(PlatformType))
+    )
+    client_details: str | None = Query(default=None)
+    created_on: datetime | None = Query(default=None)
+    created_on_ge: datetime | None = Query(default=None)
+    created_on_le: datetime | None = Query(default=None)
+    updated_on: datetime | None = Query(default=None)
+    updated_on_ge: datetime | None = Query(default=None)
+    updated_on_le: datetime | None = Query(default=None)
+    offset: int = Query(default=0, ge=0)
+    limit: int = Query(default=20, gt=0, le=100)
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+
+
+class VendorTokenQueryParamsForEx(VendorTokenQueryParams):
+    business_id: int | None = Query(default=None)
+
+
+## Function
+def queryVendorTokens(
+    session: Session, qParam: VendorTokenQueryParamsForEx
+) -> List[VendorToken]:
+    query = session.query(VendorToken)
+    if qParam.business_id is not None:
+        query = query.filter(VendorToken.business_id == qParam.business_id)
+    if qParam.vendor_id is not None:
+        query = query.filter(VendorToken.vendor_id == qParam.vendor_id)
+    if qParam.id is not None:
+        query = query.filter(VendorToken.id == qParam.id)
+    if qParam.id_ge is not None:
+        query = query.filter(VendorToken.id >= qParam.id_ge)
+    if qParam.id_le is not None:
+        query = query.filter(VendorToken.id <= qParam.id_le)
+    if qParam.platform_type is not None:
+        query = query.filter(VendorToken.platform_type == qParam.platform_type)
+    if qParam.client_details is not None:
+        query = query.filter(
+            VendorToken.client_details.ilike(f"%{qParam.client_details}%")
+        )
+    if qParam.created_on is not None:
+        query = query.filter(VendorToken.created_on == qParam.created_on)
+    if qParam.created_on_ge is not None:
+        query = query.filter(VendorToken.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(VendorToken.created_on <= qParam.created_on_le)
+    if qParam.updated_on is not None:
+        query = query.filter(VendorToken.updated_on == qParam.updated_on)
+    if qParam.updated_on_ge is not None:
+        query = query.filter(VendorToken.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(VendorToken.updated_on <= qParam.updated_on_le)
+
+    # Apply ordering
+    orderQuery = getattr(VendorToken, OrderBy(qParam.order_by).name)
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderQuery.asc())
+    else:
+        query = query.order_by(orderQuery.desc())
+    return query.limit(qParam.limit).offset(qParam.offset).all()
+
+
 ## API endpoints [Vendor]
 @route_vendor.post(
     "/business/account/token",
