@@ -1,6 +1,12 @@
 from enum import IntEnum
 
 
+class AppID(IntEnum):
+    EXECUTIVE = 1
+    VENDOR = 2
+    OPERATOR = 3
+
+
 class OrderIn(IntEnum):
     ASC = 1
     DESC = 2
