@@ -1,6 +1,12 @@
-from datetime import datetime, time
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
+
+
+class RequestInfo(BaseModel):
+    method: str
+    path: str
+    app_id: int
 
 
 class HealthStatus(BaseModel):
@@ -131,15 +137,6 @@ class Business(BaseModel):
     type: int
     created_on: datetime
     updated_on: Optional[datetime]
-
-
-class Route(BaseModel):
-    id: int
-    company_id: int
-    name: str
-    start_time: time
-    updated_on: Optional[datetime]
-    created_on: datetime
 
 
 class LandmarkInRoute(BaseModel):
