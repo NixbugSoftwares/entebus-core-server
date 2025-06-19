@@ -26,8 +26,8 @@ from app.src.functions import (
     getVendorRole,
     logVendorEvent,
     getExecutiveToken,
-    logExecutiveEvent,
     getExecutiveRole,
+    logExecutiveEvent,
     makeExceptionResponses,
 )
 
@@ -381,6 +381,50 @@ async def fetch_tokens(
         session.close()
 
 
-@route_executive.delete("/business/account/token", tags=["Vendor token"])
-async def delete_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.delete(
+    "/business/account/token",
+    tags=["Vendor token"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Revokes an access token associated with an vendor account.
+
+    - This endpoint deletes an access token based on the vendor token ID.
+    - The executive with `manage_ve_token` permission can delete any vendor's token.
+    - If the token ID is invalid or already deleted, the operation is silently ignored.
+    - Returns 204 No Content upon success.
+    - Logs the token revocation event for audit tracking if the id is valid.
+    - Requires the vendor token ID as an input parameter.
+    """,
+)
+async def delete_token(
+    id: Annotated[int, Form()],
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canManageToken = bool(role and role.manage_ve_token)
+        if not canManageToken:
+            raise exceptions.NoPermission()
+
+        tokenToDelete = session.query(VendorToken).filter(VendorToken.id == id).first()
+        if tokenToDelete:
+            session.delete(tokenToDelete)
+            session.commit()
+            logExecutiveEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
