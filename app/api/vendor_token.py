@@ -299,10 +299,10 @@ async def delete_tokens(credential=Depends(bearer_vendor)):
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description=""" 
-    Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.
+    Fetches a list of vendor tokens belonging to a business, filtered by optional query parameters.
 
     - Only executives with `manage_ve_token` permission can access this endpoint.
-    - Supports filtering by token ID, operator ID, platform type, client details, updating timestamps and creation timestamps.
+    - Supports filtering by token ID, vendor ID, platform type, client details, updating timestamps and creation timestamps.
     - Enables pagination using `offset` and `limit`.
     - Allows sorting using `order_by` and `order_in`.
     """,
