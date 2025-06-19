@@ -277,7 +277,7 @@ async def fetch_tokens(
         qParam = VendorTokenQueryParamsForEx(**qParam.model_dump())
         qParam.business_id = token.business_id
         if not canManageToken:
-            qParam.business_id = token.business_id
+            qParam.vendor_id = token.vendor_id
         return queryVendorTokens(session, qParam)
     except Exception as e:
         exceptions.handle(e)
