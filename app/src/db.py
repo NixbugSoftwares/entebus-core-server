@@ -126,13 +126,13 @@ class ExecutiveRole(ORMbase):
 
         delete_business (Boolean):
             Whether this role permits deletion of a business.
-        
+
         create_route (Boolean):
             Whether this role permits the creation of a new route.
-        
+
         update_route (Boolean):
             Whether this role permits editing the existing route.
-        
+
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
@@ -675,10 +675,10 @@ class OperatorRole(ORMbase):
 
         create_route (Boolean):
             Whether this role permits the creation of a new route.
-        
+
         update_route (Boolean):
             Whether this role permits editing the existing route.
-        
+
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
@@ -1578,7 +1578,7 @@ class Route(ORMbase):
             Descriptive name or label for the route.
             Must be non-null and unique within the company.
             ex:- Varkala -> Edava -> Kappil -> Paravoor
-        
+
         start_time (Time):
             The time of day when the route operation starts.
             Must be non-null. Used for scheduling and time-based operations.
