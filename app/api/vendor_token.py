@@ -11,6 +11,7 @@ from fastapi import (
     status,
     Form,
     Query,
+    Response,
 )
 
 from app.api.bearer import bearer_executive, bearer_vendor
@@ -25,6 +26,7 @@ from app.src.functions import (
     getVendorRole,
     logVendorEvent,
     getExecutiveToken,
+    logExecutiveEvent,
     getExecutiveRole,
     makeExceptionResponses,
 )
@@ -281,9 +283,65 @@ async def fetch_tokens(
         session.close()
 
 
-@route_vendor.delete("/business/account/token", tags=["Token"])
-async def delete_tokens(credential=Depends(bearer_vendor)):
-    pass
+@route_vendor.delete(
+    "/business/account/token",
+    tags=["Token"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Revokes an active access token associated with an vendor account.
+
+    - This endpoint deletes an access token based on the token ID (optional).
+    - If no ID is provided, it deletes the token used in the request (self-revocation).
+    - If an ID is provided, the caller must either: 
+        Own the token being deleted, or have a role with `manage_token` permission.
+    - If the token ID is invalid or already deleted, the operation is silently ignored.
+    - Returns 204 No Content upon success.
+    - Logs the token revocation event for audit tracking.
+    """,
+)
+async def delete_token(
+    id: Annotated[int | None, Form()] = None,
+    bearer=Depends(bearer_vendor),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getVendorRole(token, session)
+
+        if id is None:
+            tokenToDelete = token
+        else:
+            tokenToDelete = (
+                session.query(VendorToken)
+                .filter(VendorToken.id == id)
+                .filter(VendorToken.business_id == token.business_id)
+                .first()
+            )
+            if tokenToDelete is not None:
+                forSelf = token.vendor_id == tokenToDelete.vendor_id
+                canManageToken = bool(role and role.manage_token)
+                if not forSelf and not canManageToken:
+                    raise exceptions.NoPermission()
+
+        if tokenToDelete:
+            session.delete(tokenToDelete)
+            session.commit()
+            logVendorEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 ## API endpoints [Executive]
