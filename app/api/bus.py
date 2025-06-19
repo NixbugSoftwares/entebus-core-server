@@ -59,9 +59,10 @@ class CreateBusFormForEx(CreateBusFormForOp):
         ]
     ),
     description="""
-    Create bus.
+    Creates a new bus for a company.
 
-    - Bus.
+    - Only operator with `create_bus` permission can create bus.
+    - Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
@@ -168,9 +169,10 @@ async def delete_bus(
         ]
     ),
     description="""
-    Create bus.
+    Creates a new bus for a company.
 
-    - Bus.
+    - Only executive with `create_bus` permission can create bus.
+    - Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
