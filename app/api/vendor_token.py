@@ -188,8 +188,3 @@ async def fetch_tokens(credential=Depends(bearer_executive)):
 @route_executive.delete("/business/account/token", tags=["Vendor token"])
 async def delete_tokens(credential=Depends(bearer_executive)):
     pass
-
-
-@route_executive.patch("/business/account/token", tags=["Vendor Token"])
-async def update_token(credential=Depends(bearer_executive)):
-    pass
