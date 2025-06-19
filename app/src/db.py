@@ -126,6 +126,15 @@ class ExecutiveRole(ORMbase):
 
         delete_business (Boolean):
             Whether this role permits deletion of a business.
+        
+        create_route (Boolean):
+            Whether this role permits the creation of a new route.
+        
+        update_route (Boolean):
+            Whether this role permits editing the existing route.
+        
+        delete_route (Boolean):
+            Whether this role permits deletion of a route.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
@@ -663,6 +672,15 @@ class OperatorRole(ORMbase):
 
         delete_operator (Boolean):
             Whether this role permits deletion of a operator.
+
+        create_route (Boolean):
+            Whether this role permits the creation of a new route.
+        
+        update_route (Boolean):
+            Whether this role permits editing the existing route.
+        
+        delete_route (Boolean):
+            Whether this role permits deletion of a route.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
