@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -30,25 +30,6 @@ from app.src.functions import (
 
 route_executive = APIRouter()
 route_operator = APIRouter()
-
-
-class CreateFormForExecutive(BaseModel):
-    name: str = Field(Form(min_length=4, max_length=32))
-    address: str = Field(Form(min_length=4, max_length=512))
-    location: str = Field(Form(description="Accepts only SRID 4326 (WGS84)"))
-    contact_person: str = Field(Form(min_length=4, max_length=32))
-    phone_number: PhoneNumber = Field(Form())
-    email_id: EmailStr | None = Field(Form(default=None))
-
-    status: CompanyStatus = Field(
-        Form(
-            description=enumStr(CompanyStatus), default=CompanyStatus.UNDER_VERIFICATION
-        )
-    )
-
-    company_type: CompanyType = Field(
-        Form(description=enumStr(CompanyType), default=CompanyType.PRIVATE)
-    )
 
 
 class UpdateFormForExecutive(BaseModel):
@@ -187,7 +168,6 @@ def updateOperatorCompany(
     ),
     description="""
     Creates a new company with geospatial point location using SRID 4326 (WGS84).
-
     - Accepts a WKT **POINT** representing the company's location.
     - Validates geometry format and SRID compliance (must be 4326).
     - Requires executives to have `create_company` permission.
@@ -196,7 +176,18 @@ def updateOperatorCompany(
     """,
 )
 async def create_company(
-    fParam: CreateFormForExecutive = Depends(),
+    name: Annotated[str, Form(min_length=4, max_length=32)],
+    address: Annotated[str, Form(min_length=4, max_length=512)],
+    location: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
+    contact_person: Annotated[str, Form(min_length=4, max_length=32)],
+    phone_number: Annotated[PhoneNumber, Form()],
+    email_id: Annotated[EmailStr | None, Form()] = None,
+    status: Annotated[
+        CompanyStatus, Form(description=enumStr(CompanyStatus))
+    ] = CompanyStatus.UNDER_VERIFICATION,
+    type: Annotated[
+        CompanyType, Form(description=enumStr(CompanyType))
+    ] = CompanyType.PRIVATE,
     bearer=Depends(bearer_executive),
     request_info=Depends(getRequestInfo),
 ):
@@ -206,31 +197,27 @@ async def create_company(
         if token is None:
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
-        canCreateCompany = bool(role and role.create_company)
-        if not canCreateCompany:
+        if not role or not role.create_company:
             raise exceptions.NoPermission()
-
-        wkt_location = toWKTgeometry(fParam.location, Point)
-        if wkt_location is None:
+        wktLocation = toWKTgeometry(location, Point)
+        if wktLocation is None:
             raise exceptions.InvalidWKTStringOrType()
-        if not isSRID4326(wkt_location):
+        if not isSRID4326(wktLocation):
             raise exceptions.InvalidSRID4326()
-
         company = Company(
-            name=fParam.name,
-            address=fParam.address,
-            location=wkt.dumps(wkt_location),
-            contact_person=fParam.contact_person,
-            phone_number=fParam.phone_number,
-            email_id=fParam.email_id,
-            status=fParam.status,
-            type=fParam.company_type,
+            name=name,
+            address=address,
+            location=location,
+            contact_person=contact_person,
+            phone_number=phone_number,
+            email_id=email_id,
+            status=status,
+            type=type,
         )
         session.add(company)
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(company))
         return company
-
     except Exception as e:
         exceptions.handle(e)
     finally:
