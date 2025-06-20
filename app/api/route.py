@@ -129,11 +129,11 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
         query = query.filter(Route.created_on <= qParam.created_on_le)
 
     # Ordering
-    order_attr = getattr(Route, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Route, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(order_attr.asc())
+        query = query.order_by(orderingAttribute.asc())
     else:
-        query = query.order_by(order_attr.desc())
+        query = query.order_by(orderingAttribute.desc())
 
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)

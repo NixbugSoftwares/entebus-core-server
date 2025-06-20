@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
+from shapely import Polygon, wkt
+from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
 
 from app.src.db import (
     ExecutiveRole,
@@ -79,3 +82,45 @@ def operatorPermission(role: OperatorRole, permission: Column) -> bool:
         return True
     else:
         raise exceptions.NoPermission()
+
+
+# Functions to validate WKT string (raise exceptions.InvalidWKTStringOrType())
+def WKTstring(wktString: str, type) -> BaseGeometry:
+    try:
+        wktGeometry = wkt.loads(wktString)
+        if not isinstance(wktGeometry, type):
+            raise exceptions.InvalidWKTStringOrType()
+        return wktGeometry
+    except Exception as e:
+        raise exceptions.InvalidWKTStringOrType()
+
+
+# Function to validate SRID 4326 (raise exceptions.InvalidSRID4326())
+def SRID4326(wktGeometry: BaseGeometry) -> bool:
+    if isinstance(wktGeometry, Point):
+        coords = [(wktGeometry.x, wktGeometry.y)]
+    else:
+        coords = wktGeometry.exterior.coords
+    for longitude, latitude in coords:
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            raise exceptions.InvalidSRID4326()
+    return True
+
+
+# Function to validate AABB (raise exceptions.InvalidAABB())
+def AABB(wktGeometry: BaseGeometry) -> bool:
+    if not isinstance(wktGeometry, Polygon):
+        raise exceptions.InvalidAABB()
+
+    coords = list(wktGeometry.exterior.coords)
+    if len(coords) != 5:
+        raise exceptions.InvalidAABB()
+    # Remove the duplicate last point
+    coords = coords[:-1]
+    # Check all sides are either horizontal or vertical
+    for i in range(4):
+        x1, y1 = coords[i]
+        x2, y2 = coords[(i + 1) % 4]
+        if not (x1 == x2 or y1 == y2):
+            raise exceptions.InvalidAABB()
+    return True
