@@ -12,6 +12,7 @@ from app.api.bearer import bearer_executive, bearer_operator
 from app.src.enums import BusStatus
 from app.src.db import sessionMaker, Bus
 from app.src import exceptions, schemas
+from app.src.constants import REGEX_REGISTRATION_NUMBER
 from app.src.functions import (
     enumStr,
     getRequestInfo,
@@ -29,8 +30,10 @@ route_executive = APIRouter()
 
 
 class CreateBusFormForOp(BaseModel):
-    registration_number: str = Field(Form(max_length=16))
-    name: str = Field(Form(max_length=32))
+    registration_number: str = Field(
+        Form(regex=REGEX_REGISTRATION_NUMBER, min_length=4, max_length=16)
+    )
+    name: str = Field(Form(min_length=4, max_length=32))
     capacity: int = Field(Form(ge=1, le=120))
     manufactured_on: datetime = Field(Form())
     insurance_upto: datetime | None = Field(Form(default=None))
