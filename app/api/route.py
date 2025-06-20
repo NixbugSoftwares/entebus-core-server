@@ -161,7 +161,7 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
 async def create_route(
     fParam: CreateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
@@ -206,7 +206,7 @@ async def create_route(
 async def update_route(
     fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
@@ -254,7 +254,7 @@ async def update_route(
 async def delete_route(
     fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
@@ -353,7 +353,7 @@ async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_ve
 async def create_route(
     fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
@@ -397,7 +397,7 @@ async def create_route(
 async def update_route(
     fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_operator),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
@@ -450,7 +450,7 @@ async def update_route(
 async def delete_route(
     fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_operator),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()

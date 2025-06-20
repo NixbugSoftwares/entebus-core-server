@@ -24,11 +24,8 @@ from app.src.exceptions import APIException
 
 
 def getRequestInfo(request: Request) -> schemas.RequestInfo:
-    return schemas.RequestInfo(
-        method=request.method,
-        path=request.url.path,
-        app_id=request.scope["app"].state.id,
-    )
+    app_id: int = request.scope["app"].state.id
+    return {"method": request.method, "path": request.url.path, "app_id": app_id}
 
 
 def logExecutiveEvent(token: ExecutiveToken, request: dict, data: dict):

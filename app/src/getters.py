@@ -1,5 +1,7 @@
+from fastapi import Request
 from sqlalchemy.orm.session import Session
 
+from app.src import schemas
 from app.src.db import (
     ExecutiveRole,
     ExecutiveRoleMap,
@@ -11,6 +13,14 @@ from app.src.db import (
     VendorRoleMap,
     VendorToken,
 )
+
+
+def requestInfo(request: Request) -> schemas.RequestInfo:
+    return schemas.RequestInfo(
+        method=request.method,
+        path=request.url.path,
+        app_id=request.scope["app"].state.id,
+    )
 
 
 def executiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole | None:
