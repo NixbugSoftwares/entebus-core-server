@@ -169,6 +169,14 @@ def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
         query = query.filter(Bus.company_id == qParam.company_id)
     if qParam.name is not None:
         query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
+    if qParam.updated_on_ge is not None:
+        query = query.filter(Bus.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(Bus.updated_on <= qParam.updated_on_le)
+    if qParam.created_on_ge is not None:
+        query = query.filter(Bus.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(Bus.created_on <= qParam.created_on_le)
 
     # Ordering
     order_attr = getattr(Bus, OrderBy(qParam.order_by).name)
@@ -332,7 +340,7 @@ async def delete_bus(
     "/company/bus",
     tags=["Bus"],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
-    response_model=BusSchema,
+    response_model=List[BusSchema],
     description="""
     Fetches a list of all buses for a company.
 
@@ -515,7 +523,7 @@ async def delete_bus(
 @route_operator.get(
     "/company/bus",
     tags=["Bus"],
-    response_model=BusSchema,
+    response_model=List[BusSchema],
     description="""
     Fetches a list of buses associated with the operator's company.
 
