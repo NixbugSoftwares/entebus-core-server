@@ -14,7 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import sessionMaker, Route
+from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, getRequestInfo, makeExceptionResponses
@@ -167,7 +167,7 @@ async def create_route(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, role.create_route)
+        validators.executivePermission(role, ExecutiveRole.create_route)
 
         route = Route(
             company_id=fParam.company_id, name=fParam.name, start_time=fParam.start_time
@@ -212,7 +212,7 @@ async def update_route(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, role.update_route)
+        validators.executivePermission(role, ExecutiveRole.update_route)
 
         route = session.query(Route).filter(Route.id == fParam.id).first()
         if route is None:
@@ -260,7 +260,7 @@ async def delete_route(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, role.delete_route)
+        validators.executivePermission(role, ExecutiveRole.delete_route)
 
         route = session.query(Route).filter(Route.id == fParam.id).first()
         if route is not None:
@@ -359,7 +359,7 @@ async def create_route(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, role.create_route)
+        validators.operatorPermission(role, OperatorRole.create_route)
 
         route = Route(
             company_id=token.company_id, name=fParam.name, start_time=fParam.start_time
@@ -403,7 +403,7 @@ async def update_route(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, role.update_route)
+        validators.operatorPermission(role, OperatorRole.update_route)
 
         route = (
             session.query(Route)
@@ -456,7 +456,7 @@ async def delete_route(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, role.delete_route)
+        validators.operatorPermission(role, OperatorRole.delete_route)
 
         route = (
             session.query(Route)
