@@ -497,7 +497,9 @@ async def fetch_routes(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id != token.company_id:
+        if qParam.company_id is None:
+            qParam.company_id = token.company_id
+        elif qParam.company_id != token.company_id:
             return []
         return searchRoute(session, qParam)
     except Exception as e:
