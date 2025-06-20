@@ -102,6 +102,13 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
     query = session.query(Route)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(Route.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
+    if qParam.start_time is not None:
+        query = query.filter(Route.start_time == qParam.start_time)
+    # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)
     if qParam.id_ge is not None:
@@ -110,16 +117,12 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
         query = query.filter(Route.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Route.id.in_(qParam.id_list))
-    if qParam.company_id is not None:
-        query = query.filter(Route.company_id == qParam.company_id)
-    if qParam.name is not None:
-        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
-    if qParam.start_time is not None:
-        query = query.filter(Route.start_time == qParam.start_time)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Route.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Route.updated_on <= qParam.updated_on_le)
+    # created_on based
     if qParam.created_on_ge is not None:
         query = query.filter(Route.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
