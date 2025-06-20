@@ -29,8 +29,8 @@ route_executive = APIRouter()
 
 
 class CreateBusFormForOp(BaseModel):
-    registration_number: str = Field(Form(min_length=4, max_length=16))
-    name: str = Field(Form(min_length=4, max_length=32))
+    registration_number: str = Field(Form(max_length=16))
+    name: str = Field(Form(max_length=32))
     capacity: int = Field(Form(ge=1, le=120))
     manufactured_on: datetime = Field(Form())
     insurance_upto: datetime | None = Field(Form(default=None))
