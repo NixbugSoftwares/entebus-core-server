@@ -146,7 +146,7 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.InvalidBusStopLocation,
+            exceptions.BusStopOutsideLandmark,
             exceptions.InvalidValue(BusStop.landmark_id),
         ]
     ),
@@ -190,7 +190,7 @@ async def create_bus_stop(
         location4326 = func.ST_SetSRID(func.ST_GeomFromText(location), EPSG_4326)
         withinBoundary = session.scalar(func.ST_Within(location4326, landmark.boundary))
         if not withinBoundary:
-            raise exceptions.InvalidBusStopLocation()
+            raise exceptions.BusStopOutsideLandmark()
 
         busStop = BusStop(landmark_id=landmark_id, location=location, name=name)
         session.add(busStop)
@@ -213,7 +213,7 @@ async def create_bus_stop(
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.InvalidBusStopLocation,
+            exceptions.BusStopOutsideLandmark,
             exceptions.InvalidIdentifier,
         ]
     ),
@@ -268,7 +268,7 @@ async def update_bus_stop(
                 func.ST_Within(location4326, landmark.boundary)
             )
             if not withinBoundary:
-                raise exceptions.InvalidBusStopLocation()
+                raise exceptions.BusStopOutsideLandmark()
             busStop.location = location4326
 
         isModified = session.is_modified(busStop)

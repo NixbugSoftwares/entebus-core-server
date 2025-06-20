@@ -1,35 +1,113 @@
-from fastapi import APIRouter, Depends
+from enum import IntEnum
+from sqlalchemy.orm.session import Session
+from typing import Annotated, List
+from secrets import token_hex
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta, timezone
 from fastapi import (
     APIRouter,
     Depends,
     status,
     Form,
+    Query,
+    Response,
 )
-from typing import Annotated
-from secrets import token_hex
-from fastapi.encoders import jsonable_encoder
-from datetime import datetime, timedelta, timezone
 
 from app.api.bearer import bearer_executive, bearer_vendor
-from app.src import argon2, exceptions
+from app.src import argon2, exceptions, schemas
 from app.src.constants import MAX_VENDOR_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.enums import AccountStatus, PlatformType
-from app.src import schemas
-from app.src.db import (
-    sessionMaker,
-    Vendor,
-    VendorToken,
-)
+from app.src.enums import AccountStatus, PlatformType, OrderIn
+from app.src.db import sessionMaker, Vendor, VendorToken
 from app.src.functions import (
     enumStr,
     getRequestInfo,
     getVendorToken,
+    getVendorRole,
     logVendorEvent,
+    getExecutiveToken,
+    getExecutiveRole,
+    logExecutiveEvent,
     makeExceptionResponses,
 )
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
+
+
+## Schemas
+class OrderBy(IntEnum):
+    id = 1
+    created_on = 2
+    updated_on = 3
+
+
+class VendorTokenQueryParams(BaseModel):
+    id: int | None = Query(default=None)
+    id_ge: int | None = Query(default=None)
+    id_le: int | None = Query(default=None)
+    vendor_id: int | None = Query(default=None)
+    platform_type: PlatformType | None = Field(
+        Query(default=None, description=enumStr(PlatformType))
+    )
+    client_details: str | None = Query(default=None)
+    created_on: datetime | None = Query(default=None)
+    created_on_ge: datetime | None = Query(default=None)
+    created_on_le: datetime | None = Query(default=None)
+    updated_on: datetime | None = Query(default=None)
+    updated_on_ge: datetime | None = Query(default=None)
+    updated_on_le: datetime | None = Query(default=None)
+    offset: int = Query(default=0, ge=0)
+    limit: int = Query(default=20, gt=0, le=100)
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+
+
+class VendorTokenQueryParamsForEx(VendorTokenQueryParams):
+    business_id: int | None = Query(default=None)
+
+
+## Function
+def queryVendorTokens(
+    session: Session, qParam: VendorTokenQueryParamsForEx
+) -> List[VendorToken]:
+    query = session.query(VendorToken)
+    if qParam.business_id is not None:
+        query = query.filter(VendorToken.business_id == qParam.business_id)
+    if qParam.vendor_id is not None:
+        query = query.filter(VendorToken.vendor_id == qParam.vendor_id)
+    if qParam.id is not None:
+        query = query.filter(VendorToken.id == qParam.id)
+    if qParam.id_ge is not None:
+        query = query.filter(VendorToken.id >= qParam.id_ge)
+    if qParam.id_le is not None:
+        query = query.filter(VendorToken.id <= qParam.id_le)
+    if qParam.platform_type is not None:
+        query = query.filter(VendorToken.platform_type == qParam.platform_type)
+    if qParam.client_details is not None:
+        query = query.filter(
+            VendorToken.client_details.ilike(f"%{qParam.client_details}%")
+        )
+    if qParam.created_on is not None:
+        query = query.filter(VendorToken.created_on == qParam.created_on)
+    if qParam.created_on_ge is not None:
+        query = query.filter(VendorToken.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(VendorToken.created_on <= qParam.created_on_le)
+    if qParam.updated_on is not None:
+        query = query.filter(VendorToken.updated_on == qParam.updated_on)
+    if qParam.updated_on_ge is not None:
+        query = query.filter(VendorToken.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(VendorToken.updated_on <= qParam.updated_on_le)
+
+    # Apply ordering
+    orderQuery = getattr(VendorToken, OrderBy(qParam.order_by).name)
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderQuery.asc())
+    else:
+        query = query.order_by(orderQuery.desc())
+    return query.limit(qParam.limit).offset(qParam.offset).all()
 
 
 ## API endpoints [Vendor]
@@ -169,27 +247,184 @@ async def refresh_token(
         session.close()
 
 
-@route_vendor.get("/business/account/token", tags=["Token"])
-async def fetch_tokens(credential=Depends(bearer_vendor)):
-    pass
+@route_vendor.get(
+    "/business/account/token",
+    tags=["Token"],
+    response_model=List[schemas.MaskedVendorToken],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of vendor tokens filtered by optional query parameters.
+    
+    - Vendors without `manage_token` permission can only retrieve their own tokens.
+    - Supports filtering by ID range, platform type, client details, creation timestamps and updating timestamps.
+    - Supports pagination with `offset` and `limit`.
+    - Supports sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_tokens(
+    qParam: VendorTokenQueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getVendorRole(token, session)
+        canManageToken = bool(role and role.manage_token)
+
+        qParam = VendorTokenQueryParamsForEx(**qParam.model_dump())
+        qParam.business_id = token.business_id
+        if not canManageToken:
+            qParam.vendor_id = token.vendor_id
+        return queryVendorTokens(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
-@route_vendor.delete("/business/account/token", tags=["Token"])
-async def delete_tokens(credential=Depends(bearer_vendor)):
-    pass
+@route_vendor.delete(
+    "/business/account/token",
+    tags=["Token"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Revokes an active access token associated with an vendor account.
+
+    - This endpoint deletes an access token based on the token ID (optional).
+    - If no ID is provided, it deletes the token used in the request (self-revocation).
+    - If an ID is provided, the caller must either: 
+        Own the token being deleted, or have a role with `manage_token` permission.
+    - If the token ID is invalid or already deleted, the operation is silently ignored.
+    - Returns 204 No Content upon success.
+    - Logs the token revocation event for audit tracking.
+    """,
+)
+async def delete_token(
+    id: Annotated[int | None, Form()] = None,
+    bearer=Depends(bearer_vendor),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getVendorToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getVendorRole(token, session)
+
+        if id is None:
+            tokenToDelete = token
+        else:
+            tokenToDelete = (
+                session.query(VendorToken)
+                .filter(VendorToken.id == id)
+                .filter(VendorToken.business_id == token.business_id)
+                .first()
+            )
+            if tokenToDelete is not None:
+                forSelf = token.vendor_id == tokenToDelete.vendor_id
+                canManageToken = bool(role and role.manage_token)
+                if not forSelf and not canManageToken:
+                    raise exceptions.NoPermission()
+
+        if tokenToDelete:
+            session.delete(tokenToDelete)
+            session.commit()
+            logVendorEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 ## API endpoints [Executive]
-@route_executive.get("/business/account/token", tags=["Vendor token"])
-async def fetch_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.get(
+    "/business/account/token",
+    tags=["Vendor token"],
+    response_model=List[schemas.MaskedVendorToken],
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description=""" 
+    Fetches a list of vendor tokens belonging to a business, filtered by optional query parameters.
+
+    - Only executives with `manage_ve_token` permission can access this endpoint.
+    - Supports filtering by token ID, vendor ID, platform type, client details, updating timestamps and creation timestamps.
+    - Enables pagination using `offset` and `limit`.
+    - Allows sorting using `order_by` and `order_in`.
+    """,
+)
+async def fetch_tokens(
+    qParam: VendorTokenQueryParamsForEx = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canManageToken = bool(role and role.manage_ve_token)
+        if not canManageToken:
+            raise exceptions.NoPermission()
+
+        return queryVendorTokens(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
-@route_executive.delete("/business/account/token", tags=["Vendor token"])
-async def delete_tokens(credential=Depends(bearer_executive)):
-    pass
+@route_executive.delete(
+    "/business/account/token",
+    tags=["Vendor token"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Revokes an access token associated with an vendor account.
 
+    - This endpoint deletes an access token based on the vendor token ID.
+    - The executive with `manage_ve_token` permission can delete any vendor's token.
+    - If the token ID is invalid or already deleted, the operation is silently ignored.
+    - Returns 204 No Content upon success.
+    - Logs the token revocation event for audit tracking if the id is valid.
+    - Requires the vendor token ID as an input parameter.
+    """,
+)
+async def delete_token(
+    id: Annotated[int, Form()],
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canManageToken = bool(role and role.manage_ve_token)
+        if not canManageToken:
+            raise exceptions.NoPermission()
 
-@route_executive.patch("/business/account/token", tags=["Vendor Token"])
-async def update_token(credential=Depends(bearer_executive)):
-    pass
+        tokenToDelete = session.query(VendorToken).filter(VendorToken.id == id).first()
+        if tokenToDelete:
+            session.delete(tokenToDelete)
+            session.commit()
+            logExecutiveEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
