@@ -36,7 +36,7 @@ class RouteSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(Form(min_length=4, max_length=4096))
+    name: str = Field(Form(max_length=4096))
     start_time: time = Field(Form())
 
 
@@ -46,7 +46,7 @@ class CreateFormForEX(CreateFormForOP):
 
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    name: str | None = Field(Form(min_length=4, max_length=4096, default=None))
+    name: str | None = Field(Form(max_length=4096, default=None))
     start_time: time | None = Field(Form(default=None))
 
 
