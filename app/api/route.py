@@ -17,7 +17,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, getRequestInfo, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
