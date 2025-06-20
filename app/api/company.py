@@ -168,6 +168,7 @@ def updateOperatorCompany(
     ),
     description="""
     Creates a new company with geospatial point location using SRID 4326 (WGS84).
+
     - Accepts a WKT **POINT** representing the company's location.
     - Validates geometry format and SRID compliance (must be 4326).
     - Requires executives to have `create_company` permission.

@@ -136,6 +136,15 @@ class ExecutiveRole(ORMbase):
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
+        create_bus (Boolean):
+            Whether this role permits the creation of a new bus.
+
+        update_bus (Boolean):
+            Whether this role permits editing the existing bus.
+
+        delete_bus (Boolean):
+            Whether this role permits deletion of a bus.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -179,7 +188,10 @@ class ExecutiveRole(ORMbase):
     create_route = Column(Boolean, nullable=False)
     update_route = Column(Boolean, nullable=False)
     delete_route = Column(Boolean, nullable=False)
-
+    # Bus management permission
+    create_bus = Column(Boolean, nullable=False)
+    update_bus = Column(Boolean, nullable=False)
+    delete_bus = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -691,6 +703,15 @@ class OperatorRole(ORMbase):
         delete_company (Boolean):
             Whether this role permits deletion of a company.
 
+        create_bus (Boolean):
+            Whether this role permits the creation of a new bus.
+
+        update_bus (Boolean):
+            Whether this role permits editing the existing bus.
+
+        delete_bus (Boolean):
+            Whether this role permits deletion of a bus.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -721,7 +742,10 @@ class OperatorRole(ORMbase):
     create_route = Column(Boolean, nullable=False)
     update_route = Column(Boolean, nullable=False)
     delete_route = Column(Boolean, nullable=False)
-
+    # Bus management permission
+    create_bus = Column(Boolean, nullable=False)
+    update_bus = Column(Boolean, nullable=False)
+    delete_bus = Column(Boolean, nullable=False)
     # Company management permission
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)

@@ -41,6 +41,7 @@ MAX_VENDOR_TOKENS = 1  # Maximum tokens per vendor
 # Regex constants
 REGEX_USERNAME = "^[a-zA-Z][a-zA-Z0-9-.@_]*$"
 REGEX_PASSWORD = "^[a-zA-Z0-9-+,.@_$%&*#!^=/?]*$"
+REGEX_REGISTRATION_NUMBER = "^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$"
 
 # Geometry type constants
 MAX_LANDMARK_AREA = 5 * 1000 * 1000  # 5 Square Kilometer in Square Meter

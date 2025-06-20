@@ -97,6 +97,9 @@ def initDB():
         create_route=True,
         update_route=True,
         delete_route=True,
+        create_bus=True,
+        update_bus=True,
+        delete_bus=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -124,6 +127,9 @@ def initDB():
         create_route=False,
         update_route=False,
         delete_route=False,
+        create_bus=False,
+        update_bus=False,
+        delete_bus=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -175,6 +181,9 @@ def testDB():
         update_company=True,
         delete_company=True,
 
+        create_bus=True,
+        update_bus=True,
+        delete_bus=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -189,6 +198,9 @@ def testDB():
         create_company=False,
         update_company=False,
         delete_company=False,
+        create_bus=False,
+        update_bus=False,
+        delete_bus=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
