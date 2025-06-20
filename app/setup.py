@@ -171,6 +171,10 @@ def testDB():
         create_route=True,
         update_route=True,
         delete_route=True,
+        create_company=True,
+        update_company=True,
+        delete_company=True,
+
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -182,6 +186,9 @@ def testDB():
         create_route=False,
         update_route=False,
         delete_route=False,
+        create_company=False,
+        update_company=False,
+        delete_company=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
