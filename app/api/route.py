@@ -218,7 +218,7 @@ async def update_route(
         if route is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRoute(session, route, fParam)
+        updateRoute(route, fParam)
         haveUpdates = session.is_modified(route)
         if haveUpdates:
             session.commit()
@@ -414,7 +414,7 @@ async def update_route(
         if route is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRoute(session, route, fParam)
+        updateRoute(route, fParam)
         haveUpdates = session.is_modified(route)
         if haveUpdates:
             session.commit()
