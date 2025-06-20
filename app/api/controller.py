@@ -57,3 +57,4 @@ app_operator.include_router(company.route_operator)
 
 app_executive.include_router(bus.route_executive)
 app_operator.include_router(bus.route_operator)
+app_vendor.include_router(bus.route_vendor)
