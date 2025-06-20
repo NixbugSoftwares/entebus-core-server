@@ -66,8 +66,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
-    company_id: int | None = Field(Query(default=None))
+class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
     start_time: time | None = Field(Query(default=None))
     # id based
@@ -89,16 +88,21 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+class QueryParams(QueryParamsForOP):
+    company_id: int | None = Field(Query(default=None))
+
+
 ## Function
 def updateRoute(route: Route, fParam: UpdateForm):
     if fParam.name is not None and route.name != fParam.name:
         route.name = fParam.name
     if fParam.start_time is not None and route.start_time != fParam.start_time:
         route.start_time = fParam.start_time
-    return route
 
 
-def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
+def searchRoute(
+    session: Session, qParam: QueryParams | QueryParamsForOP
+) -> List[Route]:
     query = session.query(Route)
 
     # Filters
@@ -489,21 +493,18 @@ async def delete_route(
 
     - Requires a valid operator token for authentication.
     - Supports query parameters for filtering routes.
-    - Returns an empty list if the requested company ID does not match the operator's company.
+    - Returns only routes belonging to the operator's company.
     - Provides a list of matching routes based on the applied filters.
     """,
 )
 async def fetch_routes(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id is None:
-            qParam.company_id = token.company_id
-        elif qParam.company_id != token.company_id:
-            return []
+        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
         return searchRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)
