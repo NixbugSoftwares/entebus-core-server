@@ -694,6 +694,15 @@ class OperatorRole(ORMbase):
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
+        create_company (Boolean):
+            Whether this role permits the creation of a new company.
+
+        update_company (Boolean):
+            Whether this role permits editing the existing company.
+
+        delete_company (Boolean):
+            Whether this role permits deletion of a company.
+
         create_bus (Boolean):
             Whether this role permits the creation of a new bus.
 
@@ -737,6 +746,10 @@ class OperatorRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
+    # Company management permission
+    create_company = Column(Boolean, nullable=False)
+    update_company = Column(Boolean, nullable=False)
+    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

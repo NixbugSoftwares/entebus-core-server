@@ -1,5 +1,5 @@
 from typing import Annotated, List
-from fastapi import APIRouter, Depends, Form, status, Query
+from fastapi import APIRouter, Depends, Form, status, Query, Response
 from fastapi.encoders import jsonable_encoder
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
@@ -275,6 +275,55 @@ async def update_executive(
             jsonable_encoder(executive, exclude={"password"}),
         )
         return executive
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.delete(
+    "/entebus/account",
+    tags=["Account"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Deletes an executive account.
+
+    - Executives **cannot delete their own account**.
+    - Executives with the `delete_executive` permission can delete **other executives'** accounts.
+    - Logs the deletion activity with the associated token details.
+    """,
+)
+async def delete_executive(
+    id: Annotated[int, Form()],
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canDeleteExecutive = bool(role and role.delete_executive)
+        if token.id == id:
+            raise exceptions.NoPermission()
+        if not canDeleteExecutive:
+            raise exceptions.NoPermission()
+
+        executive = session.query(Executive).filter(Executive.id == id).first()
+        if executive:
+            executiveData = jsonable_encoder(executive, exclude={"password"})
+            session.delete(executive)
+            session.commit()
+            logExecutiveEvent(token, request_info, executiveData)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
     except Exception as e:
         exceptions.handle(e)
     finally:
