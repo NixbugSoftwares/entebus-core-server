@@ -292,10 +292,10 @@ async def update_executive(
         ]
     ),
     description="""
-    Deletes executive account.
+    Deletes an executive account.
 
-    - Executives can delete their own account.
-    - Executives with the `delete_executive` permission can delete other executives.
+    - Executives **cannot delete their own account**.
+    - Executives with the `delete_executive` permission can delete **other executives'** accounts.
     - Logs the deletion activity with the associated token details.
     """,
 )
@@ -311,15 +311,17 @@ async def delete_executive(
             raise exceptions.InvalidToken()
         role = getExecutiveRole(token, session)
         canDeleteExecutive = bool(role and role.delete_executive)
+        if token.id == id:
+            raise exceptions.NoPermission()
         if not canDeleteExecutive:
             raise exceptions.NoPermission()
 
         executive = session.query(Executive).filter(Executive.id == id).first()
         if executive:
-            logData = jsonable_encoder(executive, exclude={"password"})
+            executiveData = jsonable_encoder(executive, exclude={"password"})
             session.delete(executive)
             session.commit()
-            logExecutiveEvent(token, request_info, logData)
+            logExecutiveEvent(token, request_info, executiveData)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except Exception as e:
