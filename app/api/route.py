@@ -68,12 +68,14 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
-    start_time: time | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # start_time based
+    start_time_ge: time | None = Field(Query(default=None))
+    start_time_le: time | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -110,8 +112,6 @@ def searchRoute(
         query = query.filter(Route.company_id == qParam.company_id)
     if qParam.name is not None:
         query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
-    if qParam.start_time is not None:
-        query = query.filter(Route.start_time == qParam.start_time)
     # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)
@@ -121,6 +121,11 @@ def searchRoute(
         query = query.filter(Route.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Route.id.in_(qParam.id_list))
+    # start_time based
+    if qParam.start_time_ge is not None:
+        query = query.filter(Route.start_time >= qParam.start_time_ge)
+    if qParam.start_time_le is not None:
+        query = query.filter(Route.start_time <= qParam.start_time_le)
     # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Route.updated_on >= qParam.updated_on_ge)
