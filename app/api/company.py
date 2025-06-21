@@ -269,6 +269,9 @@ def searchCompany(
         ]
     ),
     description="""
+    Create a new company.  
+    Requires executive permissions with `create_company` role.  
+    Validates location format and ensures all required fields are provided.
     """,
 )
 async def create_company(
@@ -321,6 +324,9 @@ async def create_company(
         ]
     ),
     description="""
+    Update an existing company record.  
+    Requires executive permissions with `update_company` role.  
+    Updates only the provided fields and validates the location if present.
     """,
 )
 async def update_company(
@@ -363,6 +369,9 @@ async def update_company(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete an existing company by ID.  
+    Requires executive permissions with `delete_company` role.  
+    Deletes the company and logs the deletion event.
     """,
 )
 async def delete_company(
@@ -402,6 +411,9 @@ async def delete_company(
         ]
     ),
     description="""
+    Fetch a list of companies with optional filters like ID, name, type, location, etc.  
+    Supports sorting and pagination.  
+    Requires a valid executive token.
     """,
 )
 async def fetch_company(
@@ -431,6 +443,9 @@ async def fetch_company(
         ]
     ),
     description="""
+    Fetch a list of verified companies for vendor view.  
+    Filters out sensitive fields like contact info.  
+    Requires a valid vendor token.
     """,
 )
 async def fetch_company(
@@ -470,6 +485,9 @@ async def fetch_company(
         ]
     ),
     description="""
+    Update the operator's own company profile.  
+    Requires operator permissions with `update_company` role.  
+    Only allows modifying the company associated with the operator.
     """,
 )
 async def update_company(
@@ -519,6 +537,9 @@ async def update_company(
         ]
     ),
     description="""
+    Fetch the company information associated with the current operator.  
+    Returns a list with a single item.  
+    Requires a valid operator token.
     """,
 )
 async def fetch_company(bearer=Depends(bearer_operator)):
