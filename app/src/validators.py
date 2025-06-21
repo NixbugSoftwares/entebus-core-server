@@ -124,3 +124,11 @@ def AABB(wktGeometry: BaseGeometry) -> bool:
         if not (x1 == x2 or y1 == y2):
             raise exceptions.InvalidAABB()
     return True
+
+
+# FUnction to check valid status transitions
+def stateTransition(transitions: dict, old_state, new_state, state: Column) -> bool:
+    if new_state in transitions.get(old_state, []):
+        return True
+    else:
+        raise exceptions.InvalidStateTransition(state.name)

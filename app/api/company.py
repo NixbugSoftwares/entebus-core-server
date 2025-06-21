@@ -157,10 +157,22 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Function
 def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
+    companyStatusTransition = {
+        CompanyStatus.UNDER_VERIFICATION: [
+            CompanyStatus.VERIFIED,
+            CompanyStatus.SUSPENDED,
+        ],
+        CompanyStatus.VERIFIED: [CompanyStatus.SUSPENDED],
+        CompanyStatus.SUSPENDED: [CompanyStatus.VERIFIED],
+    }
+
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and company.name != fParam.name:
             company.name = fParam.name
         if fParam.status is not None and company.status != fParam.status:
+            validators.stateTransition(
+                companyStatusTransition, company.status, fParam.status, Company.status
+            )
             company.status = fParam.status
         if fParam.type is not None and company.type != fParam.type:
             company.type = fParam.type

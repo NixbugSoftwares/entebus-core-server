@@ -151,3 +151,12 @@ class BusStopOutsideLandmark(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "The bus stop location is not within the landmark boundary"
     headers = {"X-Error": "BusStopOutsideLandmark"}
+
+
+class InvalidStateTransition(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidStateTransition"}
+
+    def __init__(self, state_name: str):
+        detail = f"The {state_name} cannot be set to the provided value"
+        super().__init__(detail=detail)
