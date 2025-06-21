@@ -506,3 +506,63 @@ async def fetch_company(
         exceptions.handle(e)
     finally:
         session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company",
+    tags=["Company"],
+    response_model=List[CompanySchemaForVE],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    """,
+)
+async def fetch_company(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(**qParam.model_dump(), status=CompanyStatus.VERIFIED)
+        return searchCompany(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Operator]
+@route_operator.get(
+    "/company",
+    tags=["Company"],
+    response_model=List[CompanySchemaForOP],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    """,
+)
+async def fetch_company(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        validators.operatorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(**qParam.model_dump(), status=CompanyStatus.VERIFIED)
+        return searchCompany(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
