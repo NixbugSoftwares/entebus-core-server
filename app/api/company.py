@@ -339,6 +339,11 @@ async def create_company(
     Update an existing company record.  
     Requires executive permissions with `update_company` role.  
     Updates only the provided fields and validates the location if present.
+    
+    Allowed status transitions:
+        UNDER_VERIFICATION → VERIFIED
+        UNDER_VERIFICATION → SUSPENDED
+        VERIFIED ↔ SUSPENDED
     """,
 )
 async def update_company(
