@@ -1020,7 +1020,7 @@ class Business(ORMbase):
 
         name (String(32)):
             Name of the business.
-            Must not be null.
+            Must be unique and not null.
             Maximum 32 characters long.
             Used for identification and display across the platform.
 
@@ -1035,58 +1035,54 @@ class Business(ORMbase):
             Defaults to `BusinessType.OTHER`.
 
         address (TEXT):
-            Optional physical address of the business.
-            Used for communication or billing purposes.
+            Physical or mailing address of the business.
+            Must not be null.
+            Used for communication or locating the business.
             Maximum 512 characters long.
 
         contact_person (TEXT):
-            Name of the contact person for the business.
+            Name of the primary contact person for the business.
             Must not be null.
             Maximum 32 characters long.
 
         phone_number (TEXT):
-            Contact number for the business, must not be null and unique.
+            Phone number associated with the business, must not be null
             Maximum 32 characters long.
             Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
             Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
-            Email address for the business, must not be null and unique.
-            Maximum length is 256 characters.
-            Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
+            Email address for business-related communication.
+            Must not be null.
+            Maximum 256 characters long
+            Enforce the format prescribed by RFC 5322
 
-        website (TEXT):
-            Optional URL to the business's website or landing page.
-            Should be a valid HTTP(S) address if provided.
-            Maximum length is 256 characters.
-
-        location (Geometry(Point)):
-            Optional geographical location of the business in (latitude/longitude).
-            Stored as a POINT geometry with SRID 4326 (WGS 84).
-            Useful for spatial queries, mapping, and proximity-based operations.
+        location (Geometry):
+            Geographical location of the business represented as a `POINT`
+            geometry with SRID 4326. Required for location-based features.
+            Must not be null.
 
         updated_on (DateTime):
-            Timestamp automatically updated when the business record is modified.
-            Useful for tracking the last administrative change.
+            Timestamp automatically updated whenever the business record is modified.
+            Useful for tracking updates and synchronization.
 
         created_on (DateTime):
-            Timestamp indicating when the business record was initially created.
-            Automatically set during insertion.
+            Timestamp indicating when the business record was created.
+            Automatically set to the current timestamp at insertion.
     """
 
     __tablename__ = "business"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(32), nullable=False, unique=True)
     status = Column(Integer, nullable=False, default=BusinessStatus.ACTIVE)
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
-    address = Column(TEXT)
+    address = Column(TEXT, nullable=False)
     contact_person = Column(TEXT, nullable=False)
-    phone_number = Column(TEXT, nullable=False, unique=True)
-    email_id = Column(TEXT, nullable=False, unique=True)
-    website = Column(TEXT)
-    location = Column(Geometry(geometry_type="POINT", srid=4326))
+    phone_number = Column(TEXT, nullable=False)
+    email_id = Column(TEXT, nullable=False)
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
