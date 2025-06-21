@@ -163,12 +163,9 @@ def searchRoute(
         ]
     ),
     description="""
-    Creates a new route for a specified company.
-
-    - Only executives with `create_route` permission can create routes.
-    - Logs the route creation activity with the associated token.
-    - Requires a valid company ID, route name, and start time.
-    - Ensures the route is correctly associated with the specified company.
+    Create a new route for a specified company.  
+    Requires executive role with `create_route` permission.  
+    Accepts route name and start time.
     """,
 )
 async def create_route(
@@ -207,13 +204,9 @@ async def create_route(
         ]
     ),
     description="""
-    Updates an existing route belonging to any company.
-
-    - Only executives with `update_route` permission can perform this operation.
-    - Validates the route ID before applying updates.
-    - Supports partial updates such as modifying the route name or start time.
-    - Changes are saved only if the route data has been modified.
-    - Logs the route updating activity with the associated token.
+    Update an existing route by ID.  
+    Requires executive role with `update_route` permission.  
+    Only provided fields (name, start_time) will be updated.
     """,
 )
 async def update_route(
@@ -255,13 +248,9 @@ async def update_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing route from any company.
-
-    - Only executives with `delete_route` permission can perform this operation.
-    - Validates the route ID before deletion.
-    - If the route exists, it is permanently removed from the system.
-    - Logs the deletion activity using the executive's token and request metadata.
-    - Returns HTTP 204 status code upon successful deletion.
+    Delete an existing route by ID.  
+    Requires executive role with `delete_route` permission.  
+    Deletes the route if it exists and logs the action.
     """,
 )
 async def delete_route(
@@ -293,12 +282,9 @@ async def delete_route(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes across companies based on provided query parameters.
-
-    - Requires a valid executive token for authentication.
-    - Allows unrestricted access to routes across multiple companies.
-    - Supports query parameters for filtering routes by ID, name, company ID, start time, and more.
-    - Returns all matching routes based on the provided filters.
+    Fetch a list of all routes across companies.  
+    Supports filtering by company ID, name, time, and metadata.  
+    Requires a valid executive token.
     """,
 )
 async def fetch_routes(
@@ -322,12 +308,9 @@ async def fetch_routes(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes across companies based on provided query parameters.
-
-    - Requires a valid vendor token for authentication.
-    - Supports flexible filtering using query parameters such as route ID, name, company ID, or start time.
-    - Returns all matching routes without restricting to a specific company.
-    - Enables vendors to access route data for authorized purposes.
+    Fetch a list of all routes across companies.  
+    Only available to users with a valid vendor token.  
+    Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
@@ -355,12 +338,9 @@ async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_ve
         ]
     ),
     description="""
-    Creates a new route under the operator's associated company.
-
-    - Only operators with `create_route` permission can create routes.
-    - Logs the route creation activity with the associated token and request metadata.
-    - The route must include a valid name and a defined start time.
-    - Automatically assigns the route to the company derived from the authenticated token.
+    Create a new route for the operator's own company.  
+    Requires operator role with `create_route` permission.  
+    The company ID is derived from the token, not user input.
     """,
 )
 async def create_route(
@@ -399,12 +379,9 @@ async def create_route(
         ]
     ),
     description="""
-    Updates an existing route belonging to the operator's associated company.
-
-    - Only operators with `update_route` permission can update routes.
-    - Validates route ID and ensures it belongs to the same company as the operator.
-    - Applies partial updates such as name or start time using the provided form data.
-    - Logs the update activity only if changes are detected.
+    Update an existing route belonging to the operator's company.  
+    Requires operator role with `update_route` permission.  
+    Ensures the route is owned by the operator's company.
     """,
 )
 async def update_route(
@@ -451,13 +428,9 @@ async def update_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing route belonging to the operator's associated company.
-
-    - Only operators with `delete_route` permission can delete routes.
-    - Validates the route ID and ensures it belongs to the operator's company.
-    - If the route exists, it is permanently removed from the system.
-    - Logs the deletion activity using the operator's token and request metadata.
-    - Returns HTTP 204 status code upon successful deletion.
+    Delete a route belonging to the operator's company.  
+    Requires operator role with `delete_route` permission.  
+    Only routes owned by the operator's company can be deleted.
     """,
 )
 async def delete_route(
@@ -495,12 +468,9 @@ async def delete_route(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes belonging to the operator's associated company.
-
-    - Requires a valid operator token for authentication.
-    - Supports query parameters for filtering routes.
-    - Returns only routes belonging to the operator's company.
-    - Provides a list of matching routes based on the applied filters.
+    Fetch a list of routes belonging to the operator's own company.  
+    Supports filters like ID, time, name, and creation timestamps.  
+    Requires a valid operator token.
     """,
 )
 async def fetch_routes(
