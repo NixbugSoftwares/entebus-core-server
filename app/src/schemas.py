@@ -125,18 +125,6 @@ class Business(BaseModel):
     updated_on: Optional[datetime]
 
 
-class LandmarkInRoute(BaseModel):
-    id: int
-    company_id: int
-    route_id: int
-    landmark_id: int
-    distance_from_start: int
-    arrival_delta: int
-    departure_delta: int
-    updated_on: Optional[datetime]
-    created_on: datetime
-
-
 class Bus(BaseModel):
     id: int
     company_id: int
