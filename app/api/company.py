@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import (
@@ -20,7 +20,7 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import Company, ExecutiveRole, OperatorRole, sessionMaker, Route
+from app.src.db import Company, ExecutiveRole, OperatorRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
@@ -29,86 +29,6 @@ from app.src.functions import enumStr, makeExceptionResponses
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
-
-
-# class Company(ORMbase):
-#     """
-#     Represents a company registered in the system, along with its status,
-#     type, contact information, and geographical location.
-
-#     This table stores core organizational data and is linked to other entities
-#     such as operators, roles, and tokens. It supports categorization, status tracking,
-#     and location-based operations.
-
-#     Columns:
-#         id (Integer):
-#             Primary key. Unique identifier for the company.
-
-#         name (String):
-#             Name of the company.
-#             Must be unique and is required.
-#             Maximum 32 characters long.
-
-#         status (Integer):
-#             Enum representing the verification status of the company
-#             Defaults to `CompanyStatus.UNDER_VERIFICATION`.
-
-#         type (Integer):
-#             Enum representing the type/category of the company.
-#             Defaults to `CompanyType.OTHER`.
-
-#         address (TEXT):
-#             Physical or mailing address of the company.
-#             Must not be null.
-#             Used for communication or locating the company.
-#             Maximum 512 characters long.
-
-#         contact_person (TEXT):
-#             Name of the primary contact person for the company.
-#             Must not be null.
-#             Maximum 32 characters long.
-
-#         phone_number (TEXT):
-#             Phone number associated with the company, must not be null
-#             Maximum 32 characters long.
-#             Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
-#             Phone number start with a plus sign followed by country code and local number.
-
-#         email_id (TEXT):
-#             Email address for company-related communication.
-#             Must not be null.
-#             Maximum 256 characters long
-#             Enforce the format prescribed by RFC 5322
-
-#         location (Geometry):
-#             Geographical location of the company represented as a `POINT`
-#             geometry with SRID 4326. Required for location-based features.
-#             Must not be null.
-
-#         updated_on (DateTime):
-#             Timestamp automatically updated whenever the company record is modified.
-#             Useful for tracking updates and synchronization.
-
-#         created_on (DateTime):
-#             Timestamp indicating when the company record was created.
-#             Automatically set to the current timestamp at insertion.
-#     """
-
-#     __tablename__ = "company"
-
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(32), nullable=False, unique=True)
-#     status = Column(Integer, nullable=False, default=CompanyStatus.UNDER_VERIFICATION)
-#     type = Column(Integer, nullable=False, default=CompanyType.OTHER)
-#     # Contact details
-#     address = Column(TEXT, nullable=False)
-#     contact_person = Column(TEXT, nullable=False)
-#     phone_number = Column(TEXT, nullable=False)
-#     email_id = Column(TEXT, nullable=False)
-#     location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
-#     # Metadata
-#     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
-#     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
 ## Output Schema
@@ -120,15 +40,7 @@ class CompanySchemaForVE(BaseModel):
     created_on: datetime
 
 
-class CompanySchemaForOP(CompanySchemaForVE):
-    address: Optional[str]
-    contact_person: Optional[str]
-    phone_number: Optional[str]
-    email_id: Optional[str]
-    location: Optional[str]
-
-
-class CompanySchemaForEX(CompanySchemaForVE):
+class CompanySchema(CompanySchemaForVE):
     status: int
     address: str
     contact_person: str
@@ -160,7 +72,7 @@ class CreateForm(BaseModel):
 
 
 class UpdateFormForOP(BaseModel):
-    id: int = Field(Form())
+    id: int | None = Field(Form(default=None))
     address: str | None = Field(Form(max_length=512, default=None))
     contact_person: str | None = Field(Form(max_length=32, default=None))
     phone_number: PhoneNumber | None = Field(
@@ -175,6 +87,7 @@ class UpdateFormForOP(BaseModel):
 
 
 class UpdateFormForEX(UpdateFormForOP):
+    id: int = Field(Form())
     name: str | None = Field(Form(max_length=32, default=None))
     status: CompanyStatus | None = Field(
         Form(description=enumStr(CompanyStatus), default=None)
@@ -228,7 +141,10 @@ class QueryParamsForVE(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForOP(QueryParamsForVE):
+class QueryParamsForEX(QueryParamsForVE):
+    status: CompanyStatus | None = Field(
+        Query(default=None, description=enumStr(CompanyStatus))
+    )
     address: str | None = Field(Query(default=None))
     contact_person: str | None = Field(Query(default=None))
     phone_number: PhoneNumber | None = Field(
@@ -236,12 +152,6 @@ class QueryParamsForOP(QueryParamsForVE):
     )
     email_id: EmailStr | None = Field(
         Query(default=None, description="Email in RFC 5322 format")
-    )
-
-
-class QueryParamsForEX(QueryParamsForOP):
-    status: CompanyStatus | None = Field(
-        Query(default=None, description=enumStr(CompanyStatus))
     )
 
 
@@ -277,7 +187,7 @@ def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
 
 
 def searchCompany(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
+    session: Session, qParam: QueryParamsForEX | QueryParamsForVE
 ) -> List[Company]:
     query = session.query(Company)
 
@@ -348,7 +258,7 @@ def searchCompany(
 @route_executive.post(
     "/company",
     tags=["Company"],
-    response_model=CompanySchemaForEX,
+    response_model=CompanySchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -400,7 +310,7 @@ async def create_company(
 @route_executive.patch(
     "/company",
     tags=["Company"],
-    response_model=CompanySchemaForEX,
+    response_model=CompanySchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -483,7 +393,7 @@ async def delete_company(
 @route_executive.get(
     "/company",
     tags=["Company"],
-    response_model=List[CompanySchemaForEX],
+    response_model=List[CompanySchema],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -530,7 +440,14 @@ async def fetch_company(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), status=CompanyStatus.VERIFIED)
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            status=CompanyStatus.VERIFIED,
+            address=None,
+            contact_person=None,
+            phone_number=None,
+            email_id=None,
+        )
         return searchCompany(session, qParam)
     except Exception as e:
         exceptions.handle(e)
@@ -539,10 +456,61 @@ async def fetch_company(
 
 
 ## API endpoints [Operator]
+@route_operator.patch(
+    "/company",
+    tags=["Company"],
+    response_model=CompanySchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    """,
+)
+async def update_company(
+    fParam: UpdateFormForOP = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_company)
+
+        if fParam.id is None:
+            fParam.id = token.company_id
+
+        company = session.query(Company).filter(Company.id == fParam.id).first()
+        if company is None or company.id != token.company_id:
+            raise exceptions.InvalidIdentifier()
+
+        updateCompany(company, fParam)
+        haveUpdates = session.is_modified(company)
+        if haveUpdates:
+            session.commit()
+            session.refresh(company)
+
+        companyData = jsonable_encoder(company, exclude={"location"})
+        companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+        if haveUpdates:
+            logEvent(token, request_info, companyData)
+        return companyData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 @route_operator.get(
     "/company",
     tags=["Company"],
-    response_model=List[CompanySchemaForOP],
+    response_model=List[CompanySchema],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -553,15 +521,15 @@ async def fetch_company(
     description="""
     """,
 )
-async def fetch_company(
-    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
-):
+async def fetch_company(bearer=Depends(bearer_operator)):
     try:
         session = sessionMaker()
-        validators.operatorToken(bearer.credentials, session)
+        token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), status=CompanyStatus.VERIFIED)
-        return searchCompany(session, qParam)
+        company = session.query(Company).filter(Company.id == token.company_id).first()
+        companyData = jsonable_encoder(company, exclude={"location"})
+        companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+        return [companyData]
     except Exception as e:
         exceptions.handle(e)
     finally:
