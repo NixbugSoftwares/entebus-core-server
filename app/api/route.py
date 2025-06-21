@@ -17,7 +17,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, getRequestInfo, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -36,7 +36,7 @@ class RouteSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(Form(min_length=4, max_length=4096))
+    name: str = Field(Form(max_length=4096))
     start_time: time = Field(Form())
 
 
@@ -46,7 +46,7 @@ class CreateFormForEX(CreateFormForOP):
 
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    name: str | None = Field(Form(min_length=4, max_length=4096, default=None))
+    name: str | None = Field(Form(max_length=4096, default=None))
     start_time: time | None = Field(Form(default=None))
 
 
@@ -66,8 +66,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
-    company_id: int | None = Field(Query(default=None))
+class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
     start_time: time | None = Field(Query(default=None))
     # id based
@@ -89,19 +88,31 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+class QueryParams(QueryParamsForOP):
+    company_id: int | None = Field(Query(default=None))
+
+
 ## Function
 def updateRoute(route: Route, fParam: UpdateForm):
     if fParam.name is not None and route.name != fParam.name:
         route.name = fParam.name
     if fParam.start_time is not None and route.start_time != fParam.start_time:
         route.start_time = fParam.start_time
-    return route
 
 
-def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
+def searchRoute(
+    session: Session, qParam: QueryParams | QueryParamsForOP
+) -> List[Route]:
     query = session.query(Route)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(Route.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
+    if qParam.start_time is not None:
+        query = query.filter(Route.start_time == qParam.start_time)
+    # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)
     if qParam.id_ge is not None:
@@ -110,27 +121,23 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
         query = query.filter(Route.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Route.id.in_(qParam.id_list))
-    if qParam.company_id is not None:
-        query = query.filter(Route.company_id == qParam.company_id)
-    if qParam.name is not None:
-        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
-    if qParam.start_time is not None:
-        query = query.filter(Route.start_time == qParam.start_time)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Route.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Route.updated_on <= qParam.updated_on_le)
+    # created_on based
     if qParam.created_on_ge is not None:
         query = query.filter(Route.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
         query = query.filter(Route.created_on <= qParam.created_on_le)
 
     # Ordering
-    order_attr = getattr(Route, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Route, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(order_attr.asc())
+        query = query.order_by(orderingAttribute.asc())
     else:
-        query = query.order_by(order_attr.desc())
+        query = query.order_by(orderingAttribute.desc())
 
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
@@ -486,21 +493,18 @@ async def delete_route(
 
     - Requires a valid operator token for authentication.
     - Supports query parameters for filtering routes.
-    - Returns an empty list if the requested company ID does not match the operator's company.
+    - Returns only routes belonging to the operator's company.
     - Provides a list of matching routes based on the applied filters.
     """,
 )
 async def fetch_routes(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id is None:
-            qParam.company_id = token.company_id
-        elif qParam.company_id != token.company_id:
-            return []
+        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
         return searchRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)
