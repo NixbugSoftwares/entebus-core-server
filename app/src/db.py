@@ -1674,3 +1674,125 @@ class LandmarkInRoute(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class BusinessWallet(ORMbase):
+    """
+    Represents a digital wallet linked to a specific vendor.
+
+    - Each vendor can have only one BusinessWallet.
+    - Automatically deleted if the associated wallet or vendor is removed (via ON DELETE CASCADE).
+    - Used to map a vendor to their respective wallet.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bank account record.
+
+        business_id (Integer):
+            Foreign key referencing the associated business entity, its indexed.
+            Identifies the business this wallet belongs to.
+            Enforces cascading delete — if the business is deleted, the wallet is also removed.
+
+        account_number (String):
+            The account number for the bank account.
+            Must be between 9 and 32 characters in length.
+            This field is required.
+
+        account_name (String):
+            The name of the account holder.
+            Must be between 4 and 64 characters in length.
+            This field is required.
+
+        ifsc_code (String):
+            The IFSC code identifying the bank branch.
+            Must be between 11 and 16 characters in length.
+            This field is required.
+
+        balance (Integer):
+            The current balance in the account.
+            Must be greater than or equal to 1.
+            This field is required.
+
+        bank_name (String, Optional):
+            The name of the bank.
+            Must be between 4 and 64 characters if provided.
+            This field is optional.
+
+        created_on (DateTime):
+            The timestamp when the bank account was created.
+            Automatically set when the record is inserted into the database.
+    """
+
+    __tablename__ = "business_wallet"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer, ForeignKey("vendor.id", ondelete="CASCADE"), nullable=False
+    )
+    account_number = Column(String(32), nullable=False)
+    account_name = Column(String(64), nullable=False)
+    ifsc_code = Column(String(16), nullable=False)
+    balance = Column(Integer, nullable=False)
+    bank_name = Column(String(64), nullable=True)
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class CompanyWallet(ORMbase):
+    """
+    Represents a digital wallet linked to a specific company.
+
+    - Each company can have only one CompanyWallet.
+    - Automatically deleted if the associated wallet or company is removed (via ON DELETE CASCADE).
+    - Used to map a company to their respective wallet.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the bank account record.
+
+        company_id (Integer):
+            Foreign key referencing the associated company entity, its indexed.
+            Identifies the company this wallet belongs to.
+            Enforces cascading delete — if the company is deleted, the wallet is also removed.
+
+        account_number (String):
+            The account number for the bank account.
+            Must be between 9 and 32 characters in length.
+            This field is required.
+
+        account_name (String):
+            The name of the account holder.
+            Must be between 4 and 64 characters in length.
+            This field is required.
+
+        ifsc_code (String):
+            The IFSC code identifying the bank branch.
+            Must be between 11 and 16 characters in length.
+            This field is required.
+
+        balance (Integer):
+            The current balance in the account.
+            Must be greater than or equal to 1.
+            This field is required.
+
+        bank_name (String, Optional):
+            The name of the bank.
+            Must be between 4 and 64 characters if provided.
+            This field is optional.
+
+        created_on (DateTime):
+            The timestamp when the bank account was created.
+            Automatically set when the record is inserted into the database.
+    """
+
+    __tablename__ = "company_wallet"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    account_number = Column(String(32), nullable=False)
+    account_name = Column(String(64), nullable=False)
+    ifsc_code = Column(String(16), nullable=False)
+    balance = Column(Integer, nullable=False)
+    bank_name = Column(String(64), nullable=True)
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

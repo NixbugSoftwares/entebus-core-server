@@ -151,3 +151,9 @@ class BusStopOutsideLandmark(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "The bus stop location is not within the landmark boundary"
     headers = {"X-Error": "BusStopOutsideLandmark"}
+
+
+class WalletAlreadyExists(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    detail = "A wallet exists for this account."
+    headers = {"X-Error": "WalletAlredyExists"}

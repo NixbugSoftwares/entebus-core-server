@@ -24,6 +24,8 @@ from app.src.db import (
     BusStop,
     Bus,
     Route,
+    BusinessWallet,
+    CompanyWallet,
     sessionMaker,
     engine,
     ORMbase,
@@ -321,6 +323,26 @@ def testDB():
     session.add(business)
     session.flush()
 
+    vendor = Vendor(
+        business_id=business.id,
+        username="tester",
+        password="password",
+        full_name="Test Vendor",
+    )
+    session.add(vendor)
+    session.flush()
+
+    business_wallet = BusinessWallet(
+        business_id=business.id,
+        account_number="885845455157474",
+        account_name="Test Business",
+        ifsc_code="SBI334546546",
+        balance=1000,
+        bank_name="SBI Bank",
+    )
+    session.add(business_wallet)
+    session.flush()
+
     adminRole = VendorRole(
         name="Admin",
         business_id=business.id,
@@ -401,6 +423,17 @@ def testDB():
         road_tax_upto="2026-03-25T11:24:33.649Z",
     )
     session.add_all([bus1, bus2])
+    session.flush()
+
+    company_wallet = CompanyWallet(
+        company_id=company.id,
+        account_number="915468945265478",
+        account_name="Test Company Wallet",
+        ifsc_code="UTIB0000123",
+        balance=10000,
+        bank_name="HDFC Bank",
+    )
+    session.add(company_wallet)
     session.flush()
 
     session.commit()

@@ -7,7 +7,7 @@ from shapely.geometry import Point
 
 from app.api.bearer import bearer_executive
 from app.src import schemas, exceptions
-from app.src.db import sessionMaker, Business
+from app.src.db import sessionMaker, Business, BusinessWallet
 from app.src.enums import BusinessStatus, BusinessType
 from app.src.functions import (
     enumStr,
@@ -96,6 +96,70 @@ async def create_business(
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(business))
         return business
+    finally:
+        session.close()
+
+
+# Business Wallet
+@route_executive.post(
+    "/business_wallet",
+    tags=["BusinessWallet"],
+    response_model=schemas.BusinessWallet,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.WalletAlreadyExists,
+        ]
+    ),
+    description="""
+    Creates a business wallet.
+
+    - Requires a valid access token with `create_business_wallet` permission.
+    - Logs the wallet creation event tied to the authenticated business.
+    - One business can have one wallet.
+    """,
+)
+async def create_wallet(
+    business_id: Annotated[int, Form()],
+    account_number: Annotated[str, Form(min_length=9, max_length=32)],
+    account_name: Annotated[str, Form(min_length=4, max_length=64)],
+    ifsc_code: Annotated[str, Form(min_length=11, max_length=16)],
+    balance: Annotated[int, Form()],
+    bank_name: Annotated[str | None, Form(min_length=4, max_length=64)] = None,
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canCreateWallet = bool(role and role.create_executive)
+        if not canCreateWallet:
+            raise exceptions.NoPermission()
+
+        existing_wallet = (
+            session.query(BusinessWallet).filter_by(business_id=business_id).first()
+        )
+        if existing_wallet:
+            raise exceptions.WalletAlreadyExists()
+
+        business_wallet = BusinessWallet(
+            business_id=business_id,
+            account_number=account_number,
+            account_name=account_name,
+            ifsc_code=ifsc_code,
+            balance=balance,
+            bank_name=bank_name,
+        )
+        session.add(business_wallet)
+        session.commit()
+        logExecutiveEvent(token, request_info, jsonable_encoder(business_wallet))
+        return business_wallet
     except Exception as e:
         exceptions.handle(e)
     finally:

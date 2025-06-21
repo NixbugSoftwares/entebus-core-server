@@ -8,7 +8,7 @@ from typing import Annotated, Optional
 
 from app.api.bearer import bearer_executive
 from app.src import schemas, exceptions
-from app.src.db import sessionMaker, Company
+from app.src.db import sessionMaker, Company, CompanyWallet
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.functions import (
     enumStr,
@@ -93,6 +93,72 @@ async def create_company(
         session.commit()
         logExecutiveEvent(token, request_info, jsonable_encoder(company))
         return company
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+# Company Wallet
+@route_executive.post(
+    "/company_wallet",
+    tags=["CompanyWallet"],
+    response_model=schemas.CompanyWallet,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.WalletAlreadyExists,
+        ]
+    ),
+    description="""
+    Creates a company wallet.
+
+    - Requires a valid access token with `create_company_wallet` permission.
+    - Logs the wallet creation event tied to the authenticated company.
+    - One company can have one wallet.
+    """,
+)
+async def create_wallet(
+    company_id: Annotated[int, Form()],
+    account_number: Annotated[str, Form(min_length=9, max_length=32)],
+    account_name: Annotated[str, Form(min_length=4, max_length=64)],
+    ifsc_code: Annotated[str, Form(min_length=11, max_length=16)],
+    balance: Annotated[int, Form()],
+    bank_name: Annotated[str | None, Form(min_length=4, max_length=64)] = None,
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getRequestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = getExecutiveToken(bearer.credentials, session)
+
+        if token is None:
+            raise exceptions.InvalidToken()
+        role = getExecutiveRole(token, session)
+        canCreateWallet = bool(role and role.create_executive)
+        if not canCreateWallet:
+            raise exceptions.NoPermission()
+
+        existing_wallet = (
+            session.query(CompanyWallet).filter_by(company_id=company_id).first()
+        )
+        if existing_wallet:
+            raise exceptions.WalletAlreadyExists()
+
+        company_wallet = CompanyWallet(
+            company_id=company_id,
+            account_number=account_number,
+            account_name=account_name,
+            ifsc_code=ifsc_code,
+            balance=balance,
+            bank_name=bank_name,
+        )
+        session.add(company_wallet)
+        session.commit()
+        logExecutiveEvent(token, request_info, jsonable_encoder(company_wallet))
+        return company_wallet
     except Exception as e:
         exceptions.handle(e)
     finally:

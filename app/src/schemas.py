@@ -152,3 +152,25 @@ class LandmarkInRoute(BaseModel):
     departure_delta: int
     updated_on: Optional[datetime]
     created_on: datetime
+
+
+class BusinessWallet(BaseModel):
+    id: int
+    business_id: int
+    account_number: str
+    account_name: str
+    ifsc_code: str
+    balance: int
+    bank_name: Optional[str]
+    created_on: datetime
+
+
+class CompanyWallet(BaseModel):
+    id: int
+    company_id: int
+    account_number: str
+    account_name: str
+    ifsc_code: str
+    balance: int
+    bank_name: Optional[str]
+    created_on: datetime
