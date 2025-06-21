@@ -223,6 +223,9 @@ def searchLandmarkInRoute(
         ]
     ),
     description="""
+    Create a new landmark assignment within a route for a company.  
+    Requires `create_route` or `update_route` permission.  
+    Validates route and landmark existence before creation.
     """,
 )
 async def create_landmark_in_route(
@@ -264,6 +267,9 @@ async def create_landmark_in_route(
         ]
     ),
     description="""
+    Update properties of a landmark within a route.  
+    Requires `create_route` or `update_route` permission.  
+    Only updates fields that are explicitly provided.
     """,
 )
 async def update_landmark_in_route(
@@ -310,6 +316,9 @@ async def update_landmark_in_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete a specific landmark assigned to a route by ID.  
+    Requires `create_route` or `update_route` permission.  
+    Deletes the record if it exists.
     """,
 )
 async def delete_landmark_in_route(
@@ -346,6 +355,9 @@ async def delete_landmark_in_route(
     response_model=List[LandmarkInRouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch all landmarks assigned to routes.  
+    Supports filtering by route ID, landmark ID, distance, delta times, etc.  
+    Requires a valid executive token.
     """,
 )
 async def fetch_landmarks_in_route(
@@ -369,6 +381,9 @@ async def fetch_landmarks_in_route(
     response_model=List[LandmarkInRouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch all landmark-in-route records viewable by vendors.  
+    Supports filters like route ID, landmark ID, timing offsets, etc.  
+    Requires a valid vendor token.
     """,
 )
 async def fetch_landmarks_in_route(
@@ -398,6 +413,9 @@ async def fetch_landmarks_in_route(
         ]
     ),
     description="""
+    Create a landmark assignment within a route owned by the operator's company.  
+    Requires `create_route` or `update_route` permission.  
+    Validates that the route belongs to the operator's company.
     """,
 )
 async def create_landmark_in_route(
@@ -444,6 +462,9 @@ async def create_landmark_in_route(
         ]
     ),
     description="""
+    Update details of a landmark in a route within the operator's company.  
+    Requires `create_route` or `update_route` permission.  
+    Fields not provided are ignored.
     """,
 )
 async def update_landmark_in_route(
@@ -491,6 +512,9 @@ async def update_landmark_in_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete a landmark from a route, only if it belongs to the operator's company.  
+    Requires `create_route` or `update_route` permission.  
+    Deletes if found and authorized.
     """,
 )
 async def delete_landmark_in_route(
@@ -528,6 +552,9 @@ async def delete_landmark_in_route(
     response_model=List[LandmarkInRouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch all landmark-route mappings that belong to the operator's company.  
+    Supports filtering by route ID, landmark ID, and time-based metrics.  
+    Requires a valid operator token.
     """,
 )
 async def fetch_landmarks_in_route(
