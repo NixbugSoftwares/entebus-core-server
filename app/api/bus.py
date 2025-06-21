@@ -27,12 +27,14 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class BusSchema(BaseModel):
+class MaskedBusSchema(BaseModel):
     id: int
     company_id: int
     registration_number: str
     name: str
     capacity: int
+
+class BusSchema(MaskedBusSchema):
     manufactured_on: datetime
     insurance_upto: Optional[datetime]
     pollution_upto: Optional[datetime]
@@ -43,21 +45,12 @@ class BusSchema(BaseModel):
     created_on: datetime
 
 
-class MaskedBusSchema(BaseModel):
-    id: int
-    company_id: int
-    registration_number: str
-    name: str
-    capacity: int
-    status: int
-
-
 ## Input Forms
 class CreateFormForOP(BaseModel):
     registration_number: str = Field(
-        Form(regex=REGEX_REGISTRATION_NUMBER, min_length=4, max_length=16)
+        Form(regex=REGEX_REGISTRATION_NUMBER, max_length=16)
     )
-    name: str = Field(Form(min_length=4, max_length=32))
+    name: str = Field(Form(max_length=32))
     capacity: int = Field(Form(ge=1, le=120))
     manufactured_on: datetime = Field(Form())
     insurance_upto: datetime | None = Field(Form(default=None))
@@ -75,7 +68,7 @@ class CreateFormForEX(CreateFormForOP):
 
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    name: str | None = Field(Form(min_length=4, max_length=32, default=None))
+    name: str | None = Field(Form(max_length=32, default=None))
     capacity: int | None = Field(Form(ge=1, le=120, default=None))
     manufactured_on: datetime | None = Field(Form(default=None))
     insurance_upto: datetime | None = Field(Form(default=None))
