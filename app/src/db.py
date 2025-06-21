@@ -676,8 +676,11 @@ class OperatorRole(ORMbase):
             Indicates the company to which this role is assigned.
             Cascades on delete — deleting the company removes related roles.
 
-        manage_op_token (Boolean):
+        manage_token (Boolean):
             Determines whether the role grants permission to manage operator tokens.
+
+        update_company (Boolean):
+            Whether this role permits editing the company details.
 
         create_operator (Boolean):
             Whether this role permits the creation of a new operator.
@@ -696,15 +699,6 @@ class OperatorRole(ORMbase):
 
         delete_route (Boolean):
             Whether this role permits deletion of a route.
-
-        create_company (Boolean):
-            Whether this role permits the creation of a new company.
-
-        update_company (Boolean):
-            Whether this role permits editing the existing company.
-
-        delete_company (Boolean):
-            Whether this role permits deletion of a company.
 
         create_bus (Boolean):
             Whether this role permits the creation of a new bus.
@@ -736,7 +730,10 @@ class OperatorRole(ORMbase):
         index=True,
     )
     # Token management permission
-    manage_op_token = Column(Boolean, nullable=False)
+    manage_token = Column(Boolean, nullable=False)
+    # Company management permission
+    update_company = Column(Boolean, nullable=False)
+
     # Operator management permission
     create_operator = Column(Boolean, nullable=False)
     update_operator = Column(Boolean, nullable=False)
@@ -749,10 +746,6 @@ class OperatorRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
-    # Company management permission
-    create_company = Column(Boolean, nullable=False)
-    update_company = Column(Boolean, nullable=False)
-    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1287,6 +1280,9 @@ class VendorRole(ORMbase):
         manage_token (Boolean):
             Indicates whether the role permits listing and deletion of vendor tokens.
 
+        update_business (Boolean):
+            Whether this role permits editing the business details.
+
         create_vendor (Boolean):
             Whether this role allows creation of new vendor accounts.
 
@@ -1325,6 +1321,9 @@ class VendorRole(ORMbase):
     )
     # Vendor token management permission
     manage_token = Column(Boolean, nullable=False)
+    # Business management permission
+    update_business = Column(Boolean, nullable=False)
+
     # Vendor management permission
     create_vendor = Column(Boolean, nullable=False)
     update_vendor = Column(Boolean, nullable=False)
