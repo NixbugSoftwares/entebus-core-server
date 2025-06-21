@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import (
@@ -14,7 +14,12 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
+from app.src.db import (
+    Landmark,
+    LandmarkInRoute,
+    sessionMaker,
+    Route,
+)
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
@@ -25,7 +30,7 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class LandmarkInRoute(BaseModel):
+class LandmarkInRouteSchema(BaseModel):
     id: int
     company_id: int
     route_id: int
@@ -40,7 +45,7 @@ class LandmarkInRoute(BaseModel):
 ## Input Forms
 class CreateForm(BaseModel):
     route_id: int = Field(Form())
-    landmark_id: time = Field(Form())
+    landmark_id: int = Field(Form())
     distance_from_start: int = Field(Form(gt=-1))
     arrival_delta: int = Field(Form(gt=-1))
     departure_delta: int = Field(Form(gt=-1))
@@ -106,22 +111,36 @@ class QueryParams(QueryParamsForOP):
 
 
 ## Function
-def updateLandmarkInRoute(landmark: LandmarkInRoute, fParam: UpdateForm):
+def createLandmarkInRoute(session: Session, route: Route, fParam: CreateForm):
+    landmark = session.query(Landmark).filter(Landmark.id == fParam.landmark_id).first()
+    if landmark is None:
+        raise exceptions.InvalidValue(LandmarkInRoute.landmark_id)
+    return LandmarkInRoute(
+        company_id=route.company_id,
+        route_id=fParam.route_id,
+        landmark_id=fParam.landmark_id,
+        distance_from_start=fParam.distance_from_start,
+        arrival_delta=fParam.arrival_delta,
+        departure_delta=fParam.departure_delta,
+    )
+
+
+def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
     if (
         fParam.distance_from_start is not None
-        and landmark.distance_from_start != fParam.distance_from_start
+        and landmarkInRoute.distance_from_start != fParam.distance_from_start
     ):
-        landmark.distance_from_start = fParam.distance_from_start
+        landmarkInRoute.distance_from_start = fParam.distance_from_start
     if (
         fParam.arrival_delta is not None
-        and landmark.arrival_delta != fParam.arrival_delta
+        and landmarkInRoute.arrival_delta != fParam.arrival_delta
     ):
-        landmark.arrival_delta = fParam.arrival_delta
+        landmarkInRoute.arrival_delta = fParam.arrival_delta
     if (
         fParam.departure_delta is not None
-        and landmark.departure_delta != fParam.departure_delta
+        and landmarkInRoute.departure_delta != fParam.departure_delta
     ):
-        landmark.departure_delta = fParam.departure_delta
+        landmarkInRoute.departure_delta = fParam.departure_delta
 
 
 def searchLandmarkInRoute(
@@ -189,3 +208,338 @@ def searchLandmarkInRoute(
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
     return query.all()
+
+
+## API endpoints [Executive]
+@route_executive.post(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=LandmarkInRouteSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    """,
+)
+async def create_landmark_in_route(
+    fParam: CreateForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        route = session.query(Route).filter(Route.id == fParam.route_id).first()
+        if route is None:
+            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+        landmarkInRoute = createLandmarkInRoute(session, route, fParam)
+
+        session.add(landmarkInRoute)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+        return landmarkInRoute
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.patch(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=LandmarkInRouteSchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    """,
+)
+async def update_landmark_in_route(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        landmarkInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.id == fParam.id)
+            .first()
+        )
+        if landmarkInRoute is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateLandmarkInRoute(landmarkInRoute, fParam)
+        haveUpdates = session.is_modified(landmarkInRoute)
+        if haveUpdates:
+            session.commit()
+            session.refresh(landmarkInRoute)
+
+        landmarkInRouteData = jsonable_encoder(landmarkInRoute)
+        if haveUpdates:
+            logEvent(token, request_info, landmarkInRouteData)
+        return landmarkInRouteData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.delete(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    """,
+)
+async def delete_landmark_in_route(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        landmarkInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.id == fParam.id)
+            .first()
+        )
+        if landmarkInRoute is not None:
+            session.delete(landmarkInRoute)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.get(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=List[LandmarkInRouteSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    """,
+)
+async def fetch_landmarks_in_route(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        validators.executiveToken(bearer.credentials, session)
+
+        return searchLandmarkInRoute(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=List[LandmarkInRouteSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    """,
+)
+async def fetch_landmarks_in_route(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
+
+        return searchLandmarkInRoute(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Operator]
+@route_operator.post(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=LandmarkInRouteSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    """,
+)
+async def create_landmark_in_route(
+    fParam: CreateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        route = (
+            session.query(Route)
+            .filter(Route.id == fParam.route_id)
+            .filter(Route.company_id == token.company_id)
+            .first()
+        )
+        if route is None:
+            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+        landmarkInRoute = createLandmarkInRoute(session, route, fParam)
+
+        session.add(landmarkInRoute)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+        return landmarkInRoute
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.patch(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=LandmarkInRouteSchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    """,
+)
+async def update_landmark_in_route(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        landmarkInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.id == fParam.id)
+            .filter(LandmarkInRoute.company_id == token.company_id)
+            .first()
+        )
+        if landmarkInRoute is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateLandmarkInRoute(landmarkInRoute, fParam)
+        haveUpdates = session.is_modified(landmarkInRoute)
+        if haveUpdates:
+            session.commit()
+            session.refresh(landmarkInRoute)
+
+        landmarkInRouteData = jsonable_encoder(landmarkInRoute)
+        if haveUpdates:
+            logEvent(token, request_info, landmarkInRouteData)
+        return landmarkInRouteData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.delete(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    """,
+)
+async def delete_landmark_in_route(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        if not (role.create_route | role.update_route):
+            raise exceptions.NoPermission()
+
+        landmarkInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.id == fParam.id)
+            .filter(LandmarkInRoute.company_id == token.company_id)
+            .first()
+        )
+        if landmarkInRoute is not None:
+            session.delete(landmarkInRoute)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.get(
+    "/company/route/landmark",
+    tags=["Landmark In Route"],
+    response_model=List[LandmarkInRouteSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    """,
+)
+async def fetch_landmarks_in_route(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
+        return searchLandmarkInRoute(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
