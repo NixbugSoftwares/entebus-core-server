@@ -59,7 +59,7 @@ class CreateForm(BaseModel):
 
 
 class DeleteForm(BaseModel):
-    id: int = Field(Form())
+    id: int | None = Field(Form(default=None))
 
 
 ## Query Parameters
@@ -234,9 +234,8 @@ async def delete_token(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.manage_ex_token)
 
-        if id is None:
+        if fParam.id is None:
             tokenToDelete = token
         else:
             tokenToDelete = (
