@@ -7,6 +7,9 @@ from shapely import Polygon, wkt
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 from typing import Optional
+from shapely.geometry import Polygon
+from shapely.ops import transform
+import pyproj
 
 from app.src import openobserve, schemas
 from app.src.db import (
@@ -214,3 +217,12 @@ def isAABB(wktGeom: BaseGeometry) -> bool:
         if not (x1 == x2 or y1 == y2):
             return False
     return True
+
+
+def getArea(geom: BaseGeometry) -> float:
+    projection = pyproj.Transformer.from_crs(
+        "EPSG:4326", "EPSG:3857", always_xy=True
+    ).transform
+    castedGeom = Polygon(geom) if isinstance(geom, Polygon) else geom
+    projectedGeom = transform(projection, castedGeom)
+    return projectedGeom.area
