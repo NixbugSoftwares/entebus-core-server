@@ -74,7 +74,6 @@ class OrderBy(IntEnum):
 
 class QueryParams(BaseModel):
     name: str | None = Field(Query(default=None))
-    landmark_id: int | None = Field(Query(default=None))
     location: str | None = Field(
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
     )
@@ -83,6 +82,9 @@ class QueryParams(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # landmark_id based
+    landmark_id: int | None = Field(Query(default=None))
+    landmark_id_list: List[int] | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -110,8 +112,6 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
     # Filters
     if qParam.name is not None:
         query = query.filter(BusStop.name.ilike(f"%{qParam.name}%"))
-    if qParam.landmark_id is not None:
-        query = query.filter(BusStop.landmark_id == qParam.landmark_id)
     # id based
     if qParam.id is not None:
         query = query.filter(BusStop.id == qParam.id)
@@ -121,6 +121,11 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
         query = query.filter(BusStop.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(BusStop.id.in_(qParam.id_list))
+    # landmark_id based
+    if qParam.landmark_id is not None:
+        query = query.filter(BusStop.landmark_id == qParam.landmark_id)
+    if qParam.landmark_id_list is not None:
+        query = query.filter(BusStop.landmark_id.in_(qParam.landmark_id_list))
     # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(BusStop.updated_on >= qParam.updated_on_ge)
@@ -149,8 +154,8 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
     busStops = query.all()
 
     # Post-processing
-    for busStops in busStops:
-        busStops.location = (wkb.loads(bytes(busStops.location.data))).wkt
+    for busStop in busStops:
+        busStop.location = (wkb.loads(bytes(busStop.location.data))).wkt
     return busStops
 
 
@@ -246,7 +251,7 @@ async def update_bus_stop(
         busStop = session.query(BusStop).filter(BusStop.id == fParam.id).first()
         if busStop is None:
             raise exceptions.InvalidIdentifier()
-                
+
         if fParam.name is not None and busStop.name != fParam.name:
             busStop.name = fParam.name
         if fParam.location is not None:
@@ -257,9 +262,11 @@ async def update_bus_stop(
             currentLocation = (wkb.loads(bytes(busStop.location.data))).wkt
             if currentLocation != fParam.location:
                 landmark = (
-                    session.query(Landmark).filter(Landmark.id == busStop.landmark_id).first()
+                    session.query(Landmark)
+                    .filter(Landmark.id == busStop.landmark_id)
+                    .first()
                 )
-                
+
                 boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
                 if not boundaryGeom.contains(locationGeom):
                     raise exceptions.BusStopOutsideLandmark()
@@ -346,73 +353,58 @@ async def fetch_bus_stop(
 
 
 # ## API endpoints [Vendor]
-# @route_vendor.get(
-#     "/landmark/bus_stop",
-#     tags=["Bus Stop"],
-#     response_model=List[BusStopSchemaForVE],
-#     responses=makeExceptionResponses(
-#         [
-#             exceptions.InvalidToken,
-#             exceptions.InvalidWKTStringOrType,
-#             exceptions.InvalidSRID4326,
-#         ]
-#     ),
-#     description="""
-#     Fetch a list of verified companies for vendor view.
-#     Filters out sensitive fields like contact info.
-#     Requires a valid vendor token.
-#     """,
-# )
-# async def fetch_bus_stop(
-#     qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
-# ):
-#     try:
-#         session = sessionMaker()
-#         validators.vendorToken(bearer.credentials, session)
+@route_vendor.get(
+    "/landmark/bus_stop",
+    tags=["Bus Stop"],
+    response_model=List[BusStopSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    """,
+)
+async def fetch_bus_stop(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
 
-#         qParam = QueryParamsForEX(
-#             **qParam.model_dump(),
-#             status=BusStopStatus.VERIFIED,
-#             address=None,
-#             contact_person=None,
-#             phone_number=None,
-#             email_id=None,
-#         )
-#         return searchBusStop(session, qParam)
-#     except Exception as e:
-#         exceptions.handle(e)
-#     finally:
-#         session.close()
+        return searchBusStop(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 # ## API endpoints [Operator]
-# @route_operator.get(
-#     "/landmark/bus_stop",
-#     tags=["Bus Stop"],
-#     response_model=List[BusStopSchema],
-#     responses=makeExceptionResponses(
-#         [
-#             exceptions.InvalidToken,
-#             exceptions.InvalidWKTStringOrType,
-#             exceptions.InvalidSRID4326,
-#         ]
-#     ),
-#     description="""
-#     Fetch the company information associated with the current operator.
-#     Returns a list with a single item.
-#     Requires a valid operator token.
-#     """,
-# )
-# async def fetch_bus_stop(bearer=Depends(bearer_operator)):
-#     try:
-#         session = sessionMaker()
-#         token = validators.operatorToken(bearer.credentials, session)
+@route_operator.get(
+    "/landmark/bus_stop",
+    tags=["Bus Stop"],
+    response_model=List[BusStopSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    """,
+)
+async def fetch_bus_stop(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        validators.operatorToken(bearer.credentials, session)
 
-#         company = session.query(BusStop).filter(BusStop.id == token.company_id).first()
-#         companyData = jsonable_encoder(company, exclude={"location"})
-#         companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
-#         return [companyData]
-#     except Exception as e:
-#         exceptions.handle(e)
-#     finally:
-#         session.close()
+        return searchBusStop(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
