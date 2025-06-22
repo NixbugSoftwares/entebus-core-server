@@ -287,7 +287,7 @@ async def delete_route(
     Requires a valid executive token.
     """,
 )
-async def fetch_routes(
+async def fetch_route(
     qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
@@ -313,7 +313,7 @@ async def fetch_routes(
     Supports filtering, sorting, and pagination.
     """,
 )
-async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
+async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
@@ -473,7 +473,7 @@ async def delete_route(
     Requires a valid operator token.
     """,
 )
-async def fetch_routes(
+async def fetch_route(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
