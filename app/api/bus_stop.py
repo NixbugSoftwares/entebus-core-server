@@ -12,15 +12,13 @@ from fastapi import (
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
-from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 from shapely.geometry import Point
 from shapely import wkt, wkb
 from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import BusStop, ExecutiveRole, Landmark, OperatorRole, sessionMaker
+from app.src.db import BusStop, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
@@ -176,6 +174,9 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
         ]
     ),
     description="""
+    Create a new bus stop within a landmark boundary.  
+    Validates location SRID and ensures the bus stop is geographically inside the target landmark.  
+    Requires `create_landmark` or `update_landmark` permission.
     """,
 )
 async def create_bus_stop(
@@ -234,6 +235,9 @@ async def create_bus_stop(
         ]
     ),
     description="""
+    Update an existing bus stop's name and/or location.  
+    If location is updated, it is validated against the landmark's boundary.  
+    Requires `create_landmark` or `update_landmark` permission.
     """,
 )
 async def update_bus_stop(
@@ -296,6 +300,9 @@ async def update_bus_stop(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete a bus stop by ID.  
+    Requires `create_landmark` or `update_landmark` permission.  
+    Removes the record if it exists and logs the deletion event.
     """,
 )
 async def delete_bus_stop(
@@ -336,6 +343,9 @@ async def delete_bus_stop(
         ]
     ),
     description="""
+    Retrieve bus stops based on flexible query filters.  
+    Supports pagination and distance-based sorting when location is provided.  
+    Requires a valid executive token.
     """,
 )
 async def fetch_bus_stop(
@@ -365,6 +375,9 @@ async def fetch_bus_stop(
         ]
     ),
     description="""
+    Retrieve bus stops based on flexible query filters.  
+    Supports pagination and distance-based sorting when location is provided.  
+    Requires a valid vendor token.
     """,
 )
 async def fetch_bus_stop(
@@ -394,6 +407,9 @@ async def fetch_bus_stop(
         ]
     ),
     description="""
+    Retrieve bus stops based on flexible query filters.  
+    Supports pagination and distance-based sorting when location is provided.  
+    Requires a valid operator token.
     """,
 )
 async def fetch_bus_stop(
