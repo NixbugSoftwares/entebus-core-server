@@ -141,6 +141,13 @@ class QueryParams(BaseModel):
         ]
     ),
     description="""
+    Create a new executive account.
+
+    This endpoint allows authorized users to create a new executive.
+
+    - Requires `create_executive` permission.
+    - The password is hashed using Argon2 before storing.
+    - Duplicate usernames are not allowed.
     """,
 )
 async def create_executive(
@@ -186,6 +193,15 @@ async def create_executive(
         ]
     ),
     description="""
+    Update an existing executive account.
+
+    This endpoint allows:
+    - Executives to update their own account.
+    - Authorized users (with `update_executive` permission) to update any executive.
+
+    - Executives cannot update their own `status`.
+    - Password changes are securely hashed.
+    - Modifications are only saved if changes are detected.
     """,
 )
 async def update_executive(
@@ -261,6 +277,13 @@ async def update_executive(
         ]
     ),
     description="""
+    Delete an executive account.
+
+    Only users with the `delete_executive` permission can delete executive accounts. 
+    Self-deletion is not allowed for safety reasons.
+
+    - If the specified executive exists, it will be deleted permanently.
+    - The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_executive(
@@ -296,6 +319,15 @@ async def delete_executive(
     response_model=List[ExecutiveSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch executive accounts with filtering, sorting, and pagination.
+
+    Supports the following features:
+    - Filter by username, gender, designation, contact details, status, and creation/update timestamps.
+    - Filter by ID ranges or lists.
+    - Sort by ID, creation date, or update date in ascending or descending order.
+    - Paginate using `offset` and `limit`.
+
+    Returns a list of executive accounts matching the criteria.
     """,
 )
 async def fetch_executives(
