@@ -360,7 +360,7 @@ async def delete_landmark_in_route(
     Requires a valid executive token.
     """,
 )
-async def fetch_landmarks_in_route(
+async def fetch_landmark_in_route(
     qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
@@ -386,7 +386,7 @@ async def fetch_landmarks_in_route(
     Requires a valid vendor token.
     """,
 )
-async def fetch_landmarks_in_route(
+async def fetch_landmark_in_route(
     qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
 ):
     try:
@@ -557,7 +557,7 @@ async def delete_landmark_in_route(
     Requires a valid operator token.
     """,
 )
-async def fetch_landmarks_in_route(
+async def fetch_landmark_in_route(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
