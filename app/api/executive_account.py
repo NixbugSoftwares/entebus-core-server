@@ -44,6 +44,7 @@ class ExecutiveSchema(BaseModel):
     created_on: datetime
 
 
+## Input Forms
 class CreateForm(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
