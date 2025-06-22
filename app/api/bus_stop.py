@@ -281,11 +281,11 @@ async def update_bus_stop(
             session.commit()
             session.refresh(busStop)
 
-        companyData = jsonable_encoder(busStop, exclude={"location"})
-        companyData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
+        busStopData = jsonable_encoder(busStop, exclude={"location"})
+        busStopData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
         if haveUpdates:
-            logEvent(token, request_info, companyData)
-        return companyData
+            logEvent(token, request_info, busStopData)
+        return busStopData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -321,9 +321,9 @@ async def delete_bus_stop(
         if busStop is not None:
             session.delete(busStop)
             session.commit()
-            companyData = jsonable_encoder(busStop, exclude={"location"})
-            companyData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
-            logEvent(token, request_info, companyData)
+            busStopData = jsonable_encoder(busStop, exclude={"location"})
+            busStopData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
+            logEvent(token, request_info, busStopData)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
