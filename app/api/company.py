@@ -189,9 +189,9 @@ def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
     if fParam.email_id is not None and company.email_id != fParam.email_id:
         company.email_id = fParam.email_id
     if fParam.location is not None:
-        geometry = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(geometry)
-        fParam.location = wkt.dumps(geometry)
+        locationGeom = validators.WKTstring(fParam.location, Point)
+        validators.SRID4326(locationGeom)
+        fParam.location = wkt.dumps(locationGeom)
 
         currentLocation = (wkb.loads(bytes(company.location.data))).wkt
         if currentLocation != fParam.location:
@@ -297,10 +297,9 @@ async def create_company(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_company)
 
-        if fParam.location is not None:
-            geometry = validators.WKTstring(fParam.location, Point)
-            validators.SRID4326(geometry)
-            fParam.location = wkt.dumps(geometry)
+        locationGeom = validators.WKTstring(fParam.location, Point)
+        validators.SRID4326(locationGeom)
+        fParam.location = wkt.dumps(locationGeom)
 
         company = Company(
             name=fParam.name,

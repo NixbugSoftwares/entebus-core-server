@@ -171,9 +171,9 @@ def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateForm):
     if fParam.email_id is not None and business.email_id != fParam.email_id:
         business.email_id = fParam.email_id
     if fParam.location is not None:
-        geometry = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(geometry)
-        fParam.location = wkt.dumps(geometry)
+        locationGeom = validators.WKTstring(fParam.location, Point)
+        validators.SRID4326(locationGeom)
+        fParam.location = wkt.dumps(locationGeom)
 
         currentLocation = (wkb.loads(bytes(business.location.data))).wkt
         if currentLocation != fParam.location:
@@ -279,10 +279,9 @@ async def create_business(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_business)
 
-        if fParam.location is not None:
-            geometry = validators.WKTstring(fParam.location, Point)
-            validators.SRID4326(geometry)
-            fParam.location = wkt.dumps(geometry)
+        locationGeom = validators.WKTstring(fParam.location, Point)
+        validators.SRID4326(locationGeom)
+        fParam.location = wkt.dumps(locationGeom)
 
         business = Business(
             name=fParam.name,
