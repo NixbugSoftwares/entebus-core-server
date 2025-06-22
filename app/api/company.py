@@ -147,12 +147,8 @@ class QueryParamsForEX(QueryParamsForVE):
     )
     address: str | None = Field(Query(default=None))
     contact_person: str | None = Field(Query(default=None))
-    phone_number: PhoneNumber | None = Field(
-        Query(default=None, description="Phone number in RFC3966 format")
-    )
-    email_id: EmailStr | None = Field(
-        Query(default=None, description="Email in RFC 5322 format")
-    )
+    phone_number: str | None = Field(Query(default=None))
+    email_id: str | None = Field(Query(default=None))
 
 
 ## Function

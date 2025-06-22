@@ -121,12 +121,8 @@ class QueryParams(BaseModel):
     )
     address: str | None = Field(Query(default=None))
     contact_person: str | None = Field(Query(default=None))
-    phone_number: PhoneNumber | None = Field(
-        Query(default=None, description="Phone number in RFC3966 format")
-    )
-    email_id: EmailStr | None = Field(
-        Query(default=None, description="Email in RFC 5322 format")
-    )
+    phone_number: str | None = Field(Query(default=None))
+    email_id: str | None = Field(Query(default=None))
     location: str | None = Field(
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
     )
@@ -500,7 +496,9 @@ async def fetch_business(bearer=Depends(bearer_vendor)):
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
 
-        business = session.query(Business).filter(Business.id == token.business_id).first()
+        business = (
+            session.query(Business).filter(Business.id == token.business_id).first()
+        )
         businessData = jsonable_encoder(business, exclude={"location"})
         businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
         return [businessData]
