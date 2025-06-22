@@ -12,7 +12,7 @@ from fastapi import (
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from shapely import wkt, wkb
 from sqlalchemy import func
 from geoalchemy2 import Geography
@@ -201,6 +201,9 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
         ]
     ),
     description="""
+    Create a new landmark by specifying its name, type, and spatial boundary.  
+    The boundary must be a valid AABB polygon in SRID 4326 (WGS84), and its area must be within an acceptable range.  
+    Only executives with `create_landmark` permission can perform this operation.
     """,
 )
 async def create_landmark(
@@ -247,6 +250,9 @@ async def create_landmark(
         ]
     ),
     description="""
+    Update the details of an existing landmark including name, type, or boundary.  
+    If the boundary is changed, all associated bus stops must remain within the new boundary.  
+    Only executives with `update_landmark` permission can perform this operation.
     """,
 )
 async def update_landmark(
@@ -309,6 +315,9 @@ async def update_landmark(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete an existing landmark by ID.  
+    Only executives with `delete_landmark` permission can perform this action.  
+    If the landmark exists, it will be permanently removed.
     """,
 )
 async def delete_landmark(
@@ -348,6 +357,9 @@ async def delete_landmark(
         ]
     ),
     description="""
+    Retrieve a list of landmarks with advanced filtering, sorting, and pagination.  
+    Supports spatial queries using a reference location in SRID 4326, and ordering by proximity or metadata fields.  
+    Only accessible to authenticated executives.
     """,
 )
 async def fetch_landmark(
@@ -377,6 +389,8 @@ async def fetch_landmark(
         ]
     ),
     description="""
+    Retrieve a list of landmarks with filtering and sorting options available to vendor accounts.  
+    Supports spatial filters like proximity to a point, and constraints on metadata fields such as creation date or type.
     """,
 )
 async def fetch_landmark(
@@ -406,6 +420,8 @@ async def fetch_landmark(
         ]
     ),
     description="""
+    Retrieve a list of landmarks available to operators.  
+    Supports spatial and metadata-based querying with optional sorting and pagination features.
     """,
 )
 async def fetch_landmark(
