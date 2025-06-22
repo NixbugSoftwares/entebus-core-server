@@ -20,7 +20,6 @@ from app.src.constants import (
 )
 from app.src.db import (
     Executive,
-    ExecutiveRole,
     ExecutiveToken,
     sessionMaker,
 )
