@@ -67,7 +67,7 @@ class DeleteFormForEX(BaseModel):
 
 
 class DeleteForm(BaseModel):
-    id: int | None = Field(Form())
+    id: int | None = Field(Form(default=None))
 
 
 ## Query Parameters
