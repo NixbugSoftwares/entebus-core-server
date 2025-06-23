@@ -14,15 +14,10 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
-from shapely.geometry import Point
-from shapely import wkt, wkb
-from sqlalchemy import func
-from geoalchemy2 import Geography
 
-from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
+from app.api.bearer import bearer_executive, bearer_operator
 from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
 from app.src.db import (
-    Company,
     ExecutiveRole,
     Operator,
     OperatorRole,
@@ -30,7 +25,7 @@ from app.src.db import (
     sessionMaker,
 )
 from app.src import argon2, exceptions, validators, getters
-from app.src.enums import AccountStatus, CompanyStatus, CompanyType, GenderType
+from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
 
