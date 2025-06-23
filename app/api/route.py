@@ -17,7 +17,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, getRequestInfo, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -36,7 +36,7 @@ class RouteSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(Form(min_length=4, max_length=4096))
+    name: str = Field(Form(max_length=4096))
     start_time: time = Field(Form())
 
 
@@ -46,7 +46,7 @@ class CreateFormForEX(CreateFormForOP):
 
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    name: str | None = Field(Form(min_length=4, max_length=4096, default=None))
+    name: str | None = Field(Form(max_length=4096, default=None))
     start_time: time | None = Field(Form(default=None))
 
 
@@ -64,17 +64,19 @@ class OrderBy(IntEnum):
     id = 1
     updated_on = 2
     created_on = 3
+    start_time = 4
 
 
-class QueryParams(BaseModel):
-    company_id: int | None = Field(Query(default=None))
+class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
-    start_time: time | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # start_time based
+    start_time_ge: time | None = Field(Query(default=None))
+    start_time_le: time | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -89,19 +91,33 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+class QueryParamsForEX(QueryParamsForOP):
+    company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
+
+
 ## Function
 def updateRoute(route: Route, fParam: UpdateForm):
     if fParam.name is not None and route.name != fParam.name:
         route.name = fParam.name
     if fParam.start_time is not None and route.start_time != fParam.start_time:
         route.start_time = fParam.start_time
-    return route
 
 
-def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
+def searchRoute(
+    session: Session, qParam: QueryParamsForVE | QueryParamsForOP | QueryParamsForEX
+) -> List[Route]:
     query = session.query(Route)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(Route.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
+    # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)
     if qParam.id_ge is not None:
@@ -110,27 +126,28 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
         query = query.filter(Route.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Route.id.in_(qParam.id_list))
-    if qParam.company_id is not None:
-        query = query.filter(Route.company_id == qParam.company_id)
-    if qParam.name is not None:
-        query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
-    if qParam.start_time is not None:
-        query = query.filter(Route.start_time == qParam.start_time)
+    # start_time based
+    if qParam.start_time_ge is not None:
+        query = query.filter(Route.start_time >= qParam.start_time_ge)
+    if qParam.start_time_le is not None:
+        query = query.filter(Route.start_time <= qParam.start_time_le)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Route.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Route.updated_on <= qParam.updated_on_le)
+    # created_on based
     if qParam.created_on_ge is not None:
         query = query.filter(Route.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
         query = query.filter(Route.created_on <= qParam.created_on_le)
 
     # Ordering
-    order_attr = getattr(Route, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Route, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(order_attr.asc())
+        query = query.order_by(orderingAttribute.asc())
     else:
-        query = query.order_by(order_attr.desc())
+        query = query.order_by(orderingAttribute.desc())
 
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
@@ -150,12 +167,8 @@ def searchRoute(session: Session, qParam: QueryParams) -> List[Route]:
         ]
     ),
     description="""
-    Creates a new route for a specified company.
-
-    - Only executives with `create_route` permission can create routes.
-    - Logs the route creation activity with the associated token.
-    - Requires a valid company ID, route name, and start time.
-    - Ensures the route is correctly associated with the specified company.
+    Create a new route for a specified company.  
+    Requires executive role with `create_route` permission.  
     """,
 )
 async def create_route(
@@ -194,13 +207,9 @@ async def create_route(
         ]
     ),
     description="""
-    Updates an existing route belonging to any company.
-
-    - Only executives with `update_route` permission can perform this operation.
-    - Validates the route ID before applying updates.
-    - Supports partial updates such as modifying the route name or start time.
-    - Changes are saved only if the route data has been modified.
-    - Logs the route updating activity with the associated token.
+    Update an existing route by ID.  
+    Requires executive role with `update_route` permission.  
+    Only provided fields (name, start_time) will be updated.
     """,
 )
 async def update_route(
@@ -242,13 +251,9 @@ async def update_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing route from any company.
-
-    - Only executives with `delete_route` permission can perform this operation.
-    - Validates the route ID before deletion.
-    - If the route exists, it is permanently removed from the system.
-    - Logs the deletion activity using the executive's token and request metadata.
-    - Returns HTTP 204 status code upon successful deletion.
+    Delete an existing route by ID.  
+    Requires executive role with `delete_route` permission.  
+    Deletes the route if it exists and logs the action.
     """,
 )
 async def delete_route(
@@ -280,16 +285,13 @@ async def delete_route(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes across companies based on provided query parameters.
-
-    - Requires a valid executive token for authentication.
-    - Allows unrestricted access to routes across multiple companies.
-    - Supports query parameters for filtering routes by ID, name, company ID, start time, and more.
-    - Returns all matching routes based on the provided filters.
+    Fetch a list of all routes across companies.  
+    Supports filtering by company ID, name, time, and metadata.  
+    Requires a valid executive token.
     """,
 )
 async def fetch_routes(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -309,15 +311,14 @@ async def fetch_routes(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes across companies based on provided query parameters.
-
-    - Requires a valid vendor token for authentication.
-    - Supports flexible filtering using query parameters such as route ID, name, company ID, or start time.
-    - Returns all matching routes without restricting to a specific company.
-    - Enables vendors to access route data for authorized purposes.
+    Fetch a list of all routes across companies.  
+    Only available to users with a valid vendor token.  
+    Supports filtering, sorting, and pagination.
     """,
 )
-async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
+async def fetch_tokens(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
     try:
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
@@ -342,12 +343,9 @@ async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_ve
         ]
     ),
     description="""
-    Creates a new route under the operator's associated company.
-
-    - Only operators with `create_route` permission can create routes.
-    - Logs the route creation activity with the associated token and request metadata.
-    - The route must include a valid name and a defined start time.
-    - Automatically assigns the route to the company derived from the authenticated token.
+    Create a new route for the operator's own company.  
+    Requires operator role with `create_route` permission.  
+    The company ID is derived from the token, not user input.
     """,
 )
 async def create_route(
@@ -386,12 +384,9 @@ async def create_route(
         ]
     ),
     description="""
-    Updates an existing route belonging to the operator's associated company.
-
-    - Only operators with `update_route` permission can update routes.
-    - Validates route ID and ensures it belongs to the same company as the operator.
-    - Applies partial updates such as name or start time using the provided form data.
-    - Logs the update activity only if changes are detected.
+    Update an existing route belonging to the operator's company.  
+    Requires operator role with `update_route` permission.  
+    Ensures the route is owned by the operator's company.
     """,
 )
 async def update_route(
@@ -438,13 +433,9 @@ async def update_route(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing route belonging to the operator's associated company.
-
-    - Only operators with `delete_route` permission can delete routes.
-    - Validates the route ID and ensures it belongs to the operator's company.
-    - If the route exists, it is permanently removed from the system.
-    - Logs the deletion activity using the operator's token and request metadata.
-    - Returns HTTP 204 status code upon successful deletion.
+    Delete a route belonging to the operator's company.  
+    Requires operator role with `delete_route` permission.  
+    Only routes owned by the operator's company can be deleted.
     """,
 )
 async def delete_route(
@@ -482,25 +473,19 @@ async def delete_route(
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of routes belonging to the operator's associated company.
-
-    - Requires a valid operator token for authentication.
-    - Supports query parameters for filtering routes.
-    - Returns an empty list if the requested company ID does not match the operator's company.
-    - Provides a list of matching routes based on the applied filters.
+    Fetch a list of routes belonging to the operator's own company.  
+    Supports filters like ID, time, name, and creation timestamps.  
+    Requires a valid operator token.
     """,
 )
 async def fetch_routes(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id is None:
-            qParam.company_id = token.company_id
-        elif qParam.company_id != token.company_id:
-            return []
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)
