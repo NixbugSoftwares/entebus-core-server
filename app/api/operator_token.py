@@ -315,7 +315,7 @@ async def create_token(
 
 
 @route_operator.patch(
-    "/entebus/account/token",
+    "/company/account/token",
     tags=["Token"],
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_200_OK,
