@@ -136,6 +136,15 @@ class ExecutiveRole(ORMbase):
         delete_bus (Boolean):
             Whether this role permits deletion of a bus.
 
+        create_vendor (Boolean):
+            Whether this role permits the creation of a new vendor.
+
+        update_vendor (Boolean):
+            Whether this role permits editing the existing vendor.
+
+        delete_vendor (Boolean):
+            Whether this role permits deletion of a vendor.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -179,6 +188,10 @@ class ExecutiveRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
+    # Vendor management permission
+    create_vendor = Column(Boolean, nullable=False)
+    update_vendor = Column(Boolean, nullable=False)
+    delete_vendor = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
