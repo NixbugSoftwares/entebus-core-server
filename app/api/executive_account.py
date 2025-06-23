@@ -167,7 +167,7 @@ async def create_executive(
         )
         session.add(executive)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(executive))
+        logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
         return executive
     except Exception as e:
         exceptions.handle(e)
@@ -241,7 +241,7 @@ async def update_executive(
             session.commit()
             session.refresh(executive)
 
-        executiveData = jsonable_encoder(executive)
+        executiveData = jsonable_encoder(executive, exclude={"password"})
         if haveUpdates:
             logEvent(token, request_info, executiveData)
         return executiveData
@@ -283,7 +283,7 @@ async def delete_executive(
         if executive is not None:
             session.delete(executive)
             session.commit()
-            logEvent(token, request_info, jsonable_encoder(executive))
+            logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
@@ -299,7 +299,7 @@ async def delete_executive(
     description="""
     """,
 )
-async def fetch_executives(
+async def fetch_executive(
     qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
