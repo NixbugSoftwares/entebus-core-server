@@ -18,50 +18,6 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
-class MaskedVendorToken(BaseModel):
-    id: int
-    business_id: int
-    vendor_id: int
-    expires_in: int
-    platform_type: int
-    client_details: Optional[str]
-    created_on: datetime
-    updated_on: Optional[datetime]
-
-
-class VendorToken(MaskedVendorToken):
-    access_token: str
-    token_type: Optional[str] = "bearer"
-
-
-class Operator(BaseModel):
-    id: int
-    company_id: int
-    username: str
-    gender: int
-    full_name: Optional[str]
-    phone_number: Optional[str]
-    email_id: Optional[str]
-    status: int
-    updated_on: Optional[datetime]
-    created_on: datetime
-
-
-class Business(BaseModel):
-    id: int
-    name: str
-    address: Optional[str]
-    location: Optional[str]
-    contact_person: str
-    phone_number: str
-    email_id: str
-    website: Optional[str]
-    status: int
-    type: int
-    created_on: datetime
-    updated_on: Optional[datetime]
-
-
 class Bus(BaseModel):
     id: int
     company_id: int
