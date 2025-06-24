@@ -83,7 +83,7 @@ class UpdateFormForVE(BaseModel):
     )
 
 
-class UpdateForm(UpdateFormForVE):
+class UpdateFormForEX(UpdateFormForVE):
     id: int = Field(Form())
     name: str | None = Field(Form(max_length=32, default=None))
     status: BusinessStatus | None = Field(
@@ -150,8 +150,8 @@ class QueryParams(BaseModel):
 
 
 ## Function
-def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateForm):
-    if isinstance(fParam, UpdateForm):
+def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateFormForEX):
+    if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and business.name != fParam.name:
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
@@ -324,7 +324,7 @@ async def create_business(
     """,
 )
 async def update_business(
-    fParam: UpdateForm = Depends(),
+    fParam: UpdateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
