@@ -114,7 +114,11 @@ class OrderBy(IntEnum):
     created_on = 4
 
 
-class QueryParamsForVE(BaseModel):
+class QueryParamsForOP(BaseModel):
+    id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForOP):
     name: str | None = Field(Query(default=None))
     type: CompanyType | None = Field(
         Query(default=None, description=enumStr(CompanyType))
@@ -123,7 +127,6 @@ class QueryParamsForVE(BaseModel):
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
     )
     # id based
-    id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
@@ -333,6 +336,7 @@ async def create_company(
             exceptions.InvalidIdentifier,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
+            exceptions.InvalidStateTransition,
         ]
     ),
     description="""
@@ -549,24 +553,31 @@ async def update_company(
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidIdentifier,
         ]
     ),
     description="""
     Fetch the company information associated with the current operator.  
-    Returns a list with a single item.  
+    Returns operator's own company if no ID provided.    
+    If ID provided, must match operator's company.     
     Requires a valid operator token.
     """,
 )
-async def fetch_company(bearer=Depends(bearer_operator)):
+async def fetch_company(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        company = session.query(Company).filter(Company.id == token.company_id).first()
-        companyData = jsonable_encoder(company, exclude={"location"})
-        companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+        if qParam.id is None:
+            qParam.id = token.company_id
+        if qParam.id != token.company_id:
+            raise exceptions.InvalidIdentifier()
+        company = session.query(Company).filter(Company.id == qParam.id).first()
+        if company is not None:
+            companyData = jsonable_encoder(company, exclude={"location"})
+            companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
         return [companyData]
     except Exception as e:
         exceptions.handle(e)
