@@ -333,6 +333,7 @@ async def create_company(
             exceptions.InvalidIdentifier,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
+            exceptions.InvalidStateTransition,
         ]
     ),
     description="""
@@ -549,8 +550,6 @@ async def update_company(
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
         ]
     ),
     description="""
