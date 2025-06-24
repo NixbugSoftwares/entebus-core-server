@@ -108,9 +108,7 @@ def updateRoute(route: Route, fParam: UpdateForm):
 
 
 def searchRoute(
-    
     session: Session, qParam: QueryParamsForVE | QueryParamsForOP | QueryParamsForEX
- | QueryParamsForOP
 ) -> List[Route]:
     query = session.query(Route)
 
