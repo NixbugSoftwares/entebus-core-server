@@ -491,13 +491,13 @@ async def update_business(
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidIdentifier,
         ]
     ),
     description="""
     Fetch the business information associated with the current vendor.  
-    Returns a list with a single item.  
+    Returns vendors's own business if no ID provided.    
+    If ID provided, must match vendors's business.  
     Requires a valid vendor token.
     """,
 )
