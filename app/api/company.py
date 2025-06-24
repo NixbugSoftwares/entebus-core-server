@@ -553,6 +553,7 @@ async def update_company(
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
+            exceptions.InvalidIdentifier,
         ]
     ),
     description="""
