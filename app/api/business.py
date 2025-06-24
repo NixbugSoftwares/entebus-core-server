@@ -151,7 +151,7 @@ class QueryParams(BaseModel):
 
 ## Function
 def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateForm):
-    if not isinstance(fParam, UpdateFormForVE):
+    if isinstance(fParam, UpdateForm):
         if fParam.name is not None and business.name != fParam.name:
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
