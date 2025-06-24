@@ -54,10 +54,13 @@ def initDB():
         status=CompanyStatus.VERIFIED,
         contact_person="Managing director",
         phone_number="+919496801157",
-        address="Edava, Thiruvananthapuram, Kerala",
+        address="Edava, Thiruvananthapuram, Kerala 695311",
+        email_id="contact@nixbug.com",
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
     password = argon2.makePassword("password")
     admin = Executive(
         username="admin",
@@ -133,9 +136,12 @@ def initDB():
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
+
     adminToRoleMapping = ExecutiveRoleMap(executive_id=admin.id, role_id=adminRole.id)
     guestToRoleMapping = ExecutiveRoleMap(executive_id=guest.id, role_id=guestRole.id)
     session.add_all([adminToRoleMapping, guestToRoleMapping])
+    session.flush()
+
     session.commit()
     print("* Initialization completed")
     session.close()
@@ -148,7 +154,8 @@ def testDB():
         status=CompanyStatus.VERIFIED,
         contact_person="Bismilla Motors(Edava)",
         phone_number="+911212121212",
-        address="Edava, TVM",
+        address="Test, Test, Test 695311",
+        email_id="example@test.com",
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
@@ -180,7 +187,6 @@ def testDB():
         create_company=True,
         update_company=True,
         delete_company=True,
-
         create_bus=True,
         update_bus=True,
         delete_bus=True,
