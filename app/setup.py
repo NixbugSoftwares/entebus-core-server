@@ -85,9 +85,6 @@ def initDB():
         create_landmark=True,
         update_landmark=True,
         delete_landmark=True,
-        create_bus_stop=True,
-        update_bus_stop=True,
-        delete_bus_stop=True,
         create_company=True,
         update_company=True,
         delete_company=True,
@@ -103,6 +100,9 @@ def initDB():
         create_bus=True,
         update_bus=True,
         delete_bus=True,
+        create_vendor=True,
+        update_vendor=True,
+        delete_vendor=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -115,9 +115,6 @@ def initDB():
         create_landmark=False,
         update_landmark=False,
         delete_landmark=False,
-        create_bus_stop=False,
-        update_bus_stop=False,
-        delete_bus_stop=False,
         create_company=False,
         update_company=False,
         delete_company=False,
@@ -133,6 +130,9 @@ def initDB():
         create_bus=False,
         update_bus=False,
         delete_bus=False,
+        create_vendor=False,
+        update_vendor=False,
+        delete_vendor=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -177,16 +177,14 @@ def testDB():
     adminRole = OperatorRole(
         company_id=company.id,
         name="Admin",
-        manage_op_token=True,
+        manage_token=True,
+        update_company=True,
         create_operator=True,
         update_operator=True,
         delete_operator=True,
         create_route=True,
         update_route=True,
         delete_route=True,
-        create_company=True,
-        update_company=True,
-        delete_company=True,
         create_bus=True,
         update_bus=True,
         delete_bus=True,
@@ -194,16 +192,14 @@ def testDB():
     guestRole = OperatorRole(
         company_id=company.id,
         name="Guest",
-        manage_op_token=False,
+        manage_token=False,
+        update_company=False,
         create_operator=False,
         update_operator=False,
         delete_operator=False,
         create_route=False,
         update_route=False,
         delete_route=False,
-        create_company=False,
-        update_company=False,
-        delete_company=False,
         create_bus=False,
         update_bus=False,
         delete_bus=False,
@@ -337,11 +333,39 @@ def testDB():
     session.add_all([landmark1InRoute, landmark2InRoute])
     session.flush()
 
+    bus1 = Bus(
+        company_id=company.id,
+        registration_number="KL02WH3000",
+        name="Test Bus 1",
+        capacity=100,
+        manufactured_on="2025-03-25T11:24:33.649Z",
+        insurance_upto="2027-10-25T11:24:33.649Z",
+        pollution_upto="2026-03-25T11:24:33.649Z",
+        fitness_upto="2026-03-25T11:24:33.649Z",
+        road_tax_upto="2026-03-25T11:24:33.649Z",
+    )
+    bus2 = Bus(
+        company_id=company.id,
+        registration_number="KL01HW2000",
+        name="Test Bus 2",
+        capacity=10,
+        manufactured_on="2024-03-25T11:24:33.649Z",
+        insurance_upto="2028-10-25T11:24:33.649Z",
+        pollution_upto="2026-03-25T11:24:33.649Z",
+        fitness_upto="2026-03-25T11:24:33.649Z",
+        road_tax_upto="2026-03-25T11:24:33.649Z",
+    )
+    session.add_all([bus1, bus2])
+    session.flush()
+
     business = Business(
-        name="Test Business",
-        contact_person="John Doe",
-        phone_number="+911234567890",
-        email_id="testbusiness@gmail.com",
+        name="Test business",
+        status=CompanyStatus.VERIFIED,
+        contact_person="RedBus Pvt Ltd",
+        phone_number="+911212121212",
+        address="Test, Test, Test 695311",
+        email_id="example@test.com",
+        location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(business)
     session.flush()
@@ -350,6 +374,7 @@ def testDB():
         name="Admin",
         business_id=business.id,
         manage_token=True,
+        update_business=True,
         create_vendor=True,
         update_vendor=True,
         delete_vendor=True,
@@ -361,6 +386,7 @@ def testDB():
         name="Guest",
         business_id=business.id,
         manage_token=False,
+        update_business=False,
         create_vendor=False,
         update_vendor=False,
         delete_vendor=False,
@@ -401,31 +427,6 @@ def testDB():
         vendor_id=guestVendor.id,
     )
     session.add_all([adminRoleMap, guestRoleMap])
-    session.flush()
-
-    bus1 = Bus(
-        company_id=company.id,
-        registration_number="KL02WH3000",
-        name="Test Bus 1",
-        capacity=100,
-        manufactured_on="2025-03-25T11:24:33.649Z",
-        insurance_upto="2027-10-25T11:24:33.649Z",
-        pollution_upto="2026-03-25T11:24:33.649Z",
-        fitness_upto="2026-03-25T11:24:33.649Z",
-        road_tax_upto="2026-03-25T11:24:33.649Z",
-    )
-    bus2 = Bus(
-        company_id=company.id,
-        registration_number="KL01HW2000",
-        name="Test Bus 2",
-        capacity=10,
-        manufactured_on="2024-03-25T11:24:33.649Z",
-        insurance_upto="2028-10-25T11:24:33.649Z",
-        pollution_upto="2026-03-25T11:24:33.649Z",
-        fitness_upto="2026-03-25T11:24:33.649Z",
-        road_tax_upto="2026-03-25T11:24:33.649Z",
-    )
-    session.add_all([bus1, bus2])
     session.flush()
 
     session.commit()

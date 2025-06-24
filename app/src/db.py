@@ -91,15 +91,6 @@ class ExecutiveRole(ORMbase):
         delete_landmark (Boolean):
             Whether this role permits deletion of a landmark.
 
-        create_bus_stop (Boolean):
-            Whether this role permits the creation of a new bus stop.
-
-        update_bus_stop (Boolean):
-            Whether this role permits editing existing the bus stop.
-
-        delete_bus_stop (Boolean):
-            Whether this role permits deletion of a bus stop.
-
         create_company (Boolean):
             Whether this role permits the creation of a new company.
 
@@ -145,6 +136,15 @@ class ExecutiveRole(ORMbase):
         delete_bus (Boolean):
             Whether this role permits deletion of a bus.
 
+        create_vendor (Boolean):
+            Whether this role permits the creation of a new vendor.
+
+        update_vendor (Boolean):
+            Whether this role permits editing the existing vendor.
+
+        delete_vendor (Boolean):
+            Whether this role permits deletion of a vendor.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -168,10 +168,6 @@ class ExecutiveRole(ORMbase):
     create_landmark = Column(Boolean, nullable=False)
     update_landmark = Column(Boolean, nullable=False)
     delete_landmark = Column(Boolean, nullable=False)
-    # Bus Stop management permission
-    create_bus_stop = Column(Boolean, nullable=False)
-    update_bus_stop = Column(Boolean, nullable=False)
-    delete_bus_stop = Column(Boolean, nullable=False)
     # Company management permission
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
@@ -192,6 +188,10 @@ class ExecutiveRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
+    # Vendor management permission
+    create_vendor = Column(Boolean, nullable=False)
+    update_vendor = Column(Boolean, nullable=False)
+    delete_vendor = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -676,8 +676,11 @@ class OperatorRole(ORMbase):
             Indicates the company to which this role is assigned.
             Cascades on delete — deleting the company removes related roles.
 
-        manage_op_token (Boolean):
+        manage_token (Boolean):
             Determines whether the role grants permission to manage operator tokens.
+
+        update_company (Boolean):
+            Whether this role permits editing the company details.
 
         create_operator (Boolean):
             Whether this role permits the creation of a new operator.
@@ -696,15 +699,6 @@ class OperatorRole(ORMbase):
 
         delete_route (Boolean):
             Whether this role permits deletion of a route.
-
-        create_company (Boolean):
-            Whether this role permits the creation of a new company.
-
-        update_company (Boolean):
-            Whether this role permits editing the existing company.
-
-        delete_company (Boolean):
-            Whether this role permits deletion of a company.
 
         create_bus (Boolean):
             Whether this role permits the creation of a new bus.
@@ -736,7 +730,10 @@ class OperatorRole(ORMbase):
         index=True,
     )
     # Token management permission
-    manage_op_token = Column(Boolean, nullable=False)
+    manage_token = Column(Boolean, nullable=False)
+    # Company management permission
+    update_company = Column(Boolean, nullable=False)
+
     # Operator management permission
     create_operator = Column(Boolean, nullable=False)
     update_operator = Column(Boolean, nullable=False)
@@ -749,10 +746,6 @@ class OperatorRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
-    # Company management permission
-    create_company = Column(Boolean, nullable=False)
-    update_company = Column(Boolean, nullable=False)
-    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1020,7 +1013,7 @@ class Business(ORMbase):
 
         name (String(32)):
             Name of the business.
-            Must not be null.
+            Must be unique and not null.
             Maximum 32 characters long.
             Used for identification and display across the platform.
 
@@ -1035,58 +1028,54 @@ class Business(ORMbase):
             Defaults to `BusinessType.OTHER`.
 
         address (TEXT):
-            Optional physical address of the business.
-            Used for communication or billing purposes.
+            Physical or mailing address of the business.
+            Must not be null.
+            Used for communication or locating the business.
             Maximum 512 characters long.
 
         contact_person (TEXT):
-            Name of the contact person for the business.
+            Name of the primary contact person for the business.
             Must not be null.
             Maximum 32 characters long.
 
         phone_number (TEXT):
-            Contact number for the business, must not be null and unique.
+            Phone number associated with the business, must not be null
             Maximum 32 characters long.
             Saved and processed in RFC3966 format (https://datatracker.ietf.org/doc/html/rfc3966).
             Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
-            Email address for the business, must not be null and unique.
-            Maximum length is 256 characters.
-            Enforce the format prescribed by RFC 5322 (https://en.wikipedia.org/wiki/Email_address).
+            Email address for business-related communication.
+            Must not be null.
+            Maximum 256 characters long
+            Enforce the format prescribed by RFC 5322
 
-        website (TEXT):
-            Optional URL to the business's website or landing page.
-            Should be a valid HTTP(S) address if provided.
-            Maximum length is 256 characters.
-
-        location (Geometry(Point)):
-            Optional geographical location of the business in (latitude/longitude).
-            Stored as a POINT geometry with SRID 4326 (WGS 84).
-            Useful for spatial queries, mapping, and proximity-based operations.
+        location (Geometry):
+            Geographical location of the business represented as a `POINT`
+            geometry with SRID 4326. Required for location-based features.
+            Must not be null.
 
         updated_on (DateTime):
-            Timestamp automatically updated when the business record is modified.
-            Useful for tracking the last administrative change.
+            Timestamp automatically updated whenever the business record is modified.
+            Useful for tracking updates and synchronization.
 
         created_on (DateTime):
-            Timestamp indicating when the business record was initially created.
-            Automatically set during insertion.
+            Timestamp indicating when the business record was created.
+            Automatically set to the current timestamp at insertion.
     """
 
     __tablename__ = "business"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(32), nullable=False, unique=True)
     status = Column(Integer, nullable=False, default=BusinessStatus.ACTIVE)
     type = Column(Integer, nullable=False, default=BusinessType.OTHER)
     # Contact details
-    address = Column(TEXT)
+    address = Column(TEXT, nullable=False)
     contact_person = Column(TEXT, nullable=False)
-    phone_number = Column(TEXT, nullable=False, unique=True)
-    email_id = Column(TEXT, nullable=False, unique=True)
-    website = Column(TEXT)
-    location = Column(Geometry(geometry_type="POINT", srid=4326))
+    phone_number = Column(TEXT, nullable=False)
+    email_id = Column(TEXT, nullable=False)
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1291,6 +1280,9 @@ class VendorRole(ORMbase):
         manage_token (Boolean):
             Indicates whether the role permits listing and deletion of vendor tokens.
 
+        update_business (Boolean):
+            Whether this role permits editing the business details.
+
         create_vendor (Boolean):
             Whether this role allows creation of new vendor accounts.
 
@@ -1329,6 +1321,9 @@ class VendorRole(ORMbase):
     )
     # Vendor token management permission
     manage_token = Column(Boolean, nullable=False)
+    # Business management permission
+    update_business = Column(Boolean, nullable=False)
+
     # Vendor management permission
     create_vendor = Column(Boolean, nullable=False)
     update_vendor = Column(Boolean, nullable=False)

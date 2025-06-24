@@ -1,43 +1,139 @@
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, Form, status, Query, Response
+from datetime import datetime
+from enum import IntEnum
+from typing import List, Optional
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    Response,
+    status,
+    Form,
+)
 from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
-from enum import IntEnum
-from datetime import datetime
 
 from app.api.bearer import bearer_executive
-from app.src.enums import GenderType, OrderIn, AccountStatus
-from app.src import schemas, exceptions, argon2
-from app.src.constants import REGEX_USERNAME, REGEX_PASSWORD
+from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
 from app.src.db import (
-    sessionMaker,
     Executive,
+    ExecutiveRole,
     ExecutiveToken,
+    sessionMaker,
 )
-from app.src.functions import (
-    enumStr,
-    getExecutiveRole,
-    getExecutiveToken,
-    getRequestInfo,
-    logExecutiveEvent,
-    makeExceptionResponses,
-)
+from app.src import argon2, exceptions, validators, getters
+from app.src.enums import AccountStatus, GenderType
+from app.src.loggers import logEvent
+from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 
 
-## Schemas
+## Output Schema
+class ExecutiveSchema(BaseModel):
+    id: int
+    username: str
+    gender: int
+    full_name: Optional[str]
+    designation: Optional[str]
+    phone_number: Optional[str]
+    email_id: Optional[str]
+    status: int
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+## Input Forms
+class CreateForm(BaseModel):
+    username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
+    password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
+    gender: GenderType = Field(
+        Form(description=enumStr(GenderType), default=GenderType.OTHER)
+    )
+    full_name: str | None = Field(Form(max_length=32, default=None))
+    designation: str | None = Field(Form(max_length=32, default=None))
+    phone_number: PhoneNumber | None = Field(
+        Form(max_length=32, default=None, description="Phone number in RFC3966 format")
+    )
+    email_id: EmailStr | None = Field(
+        Form(max_length=256, default=None, description="Email in RFC 5322 format")
+    )
+
+
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+    password: str | None = Field(
+        Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
+    )
+    gender: GenderType | None = Field(
+        Form(description=enumStr(GenderType), default=None)
+    )
+    full_name: str | None = Field(Form(max_length=32, default=None))
+    designation: str | None = Field(Form(max_length=32, default=None))
+    phone_number: PhoneNumber | None = Field(
+        Form(max_length=32, default=None, description="Phone number in RFC3966 format")
+    )
+    email_id: EmailStr | None = Field(
+        Form(max_length=256, default=None, description="Email in RFC 5322 format")
+    )
+    status: AccountStatus | None = Field(
+        Form(description=enumStr(AccountStatus), default=None)
+    )
+
+
+class DeleteForm(BaseModel):
+    id: int = Field(Form())
+
+
+## Query Parameters
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
+
+
 class OrderBy(IntEnum):
     id = 1
-    created_on = 2
+    updated_on = 2
+    created_on = 3
+
+
+class QueryParams(BaseModel):
+    username: str | None = Field(Query(default=None))
+    gender: GenderType | None = Field(
+        Query(default=None, description=enumStr(GenderType))
+    )
+    full_name: str | None = Field(Query(default=None))
+    designation: str | None = Field(Query(default=None))
+    phone_number: str | None = Field(Query(default=None))
+    email_id: str | None = Field(Query(default=None))
+    status: AccountStatus | None = Field(
+        Query(default=None, description=enumStr(AccountStatus))
+    )
+    # id based
+    id: int | None = Field(Query(default=None))
+    id_ge: int | None = Field(Query(default=None))
+    id_le: int | None = Field(Query(default=None))
+    id_list: List[int] | None = Field(Query(default=None))
+    # updated_on based
+    updated_on_ge: datetime | None = Field(Query(default=None))
+    updated_on_le: datetime | None = Field(Query(default=None))
+    # created_on based
+    created_on_ge: datetime | None = Field(Query(default=None))
+    created_on_le: datetime | None = Field(Query(default=None))
+    # Ordering
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+    # Pagination
+    offset: int = Field(Query(default=0, ge=0))
+    limit: int = Field(Query(default=20, gt=0, le=100))
 
 
 ## API endpoints [Executive]
 @route_executive.post(
     "/entebus/account",
     tags=["Account"],
-    response_model=schemas.Executive,
+    response_model=ExecutiveSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -46,147 +142,33 @@ class OrderBy(IntEnum):
         ]
     ),
     description="""
-    Creates a new executive account with an active status.
-
-    - Only executives with `create_executive` permission can create executives.
-    - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
     """,
 )
 async def create_executive(
-    username: Annotated[str, Form(pattern=REGEX_USERNAME, min_length=4, max_length=32)],
-    password: Annotated[str, Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32)],
-    gender: Annotated[
-        GenderType, Form(description=enumStr(GenderType))
-    ] = GenderType.OTHER,
-    full_name: Annotated[str | None, Form(max_length=32)] = None,
-    designation: Annotated[str | None, Form(max_length=32)] = None,
-    phone_number: Annotated[PhoneNumber | None, Form(max_length=32)] = None,
-    email_id: Annotated[EmailStr | None, Form(max_length=256)] = None,
+    fParam: CreateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        canCreateExecutive = bool(role and role.create_executive)
-        if not canCreateExecutive:
-            raise exceptions.NoPermission()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.create_executive)
 
-        password = argon2.makePassword(password)
+        fParam.password = argon2.makePassword(fParam.password)
         executive = Executive(
-            username=username,
-            password=password,
-            gender=gender,
-            full_name=full_name,
-            designation=designation,
-            phone_number=phone_number,
-            email_id=email_id,
+            username=fParam.username,
+            password=fParam.password,
+            gender=fParam.gender,
+            full_name=fParam.full_name,
+            designation=fParam.designation,
+            phone_number=fParam.phone_number,
+            email_id=fParam.email_id,
         )
         session.add(executive)
         session.commit()
-        logExecutiveEvent(
-            token,
-            request_info,
-            jsonable_encoder(executive, exclude={"password"}),
-        )
+        logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
         return executive
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-@route_executive.get(
-    "/entebus/account",
-    tags=["Account"],
-    response_model=List[schemas.Executive],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description="""
-    Retrieves a list of executive account filtered by optional query parameters.
-
-    - Any authorized executive can access the endpoint.
-    - Supports filtering by executive ID range, ID list, gender list, creation timestamps.
-    - Enables pagination using `offset` and `limit`  query parameters.
-    - Supports ordering by `id` or `created_on`, in ascending or descending order.
-    """,
-)
-async def fetch_executives(
-    id: Annotated[int | None, Query()] = None,
-    id_ge: Annotated[int | None, Query()] = None,
-    id_le: Annotated[int | None, Query()] = None,
-    id_list: Annotated[List[int], Query()] = None,
-    username: Annotated[str | None, Query()] = None,
-    gender: Annotated[GenderType | None, Query(description=enumStr(GenderType))] = None,
-    gender_list: Annotated[
-        List[GenderType | None], Query(description=enumStr(GenderType))
-    ] = None,
-    status: Annotated[AccountStatus | None, Query()] = None,
-    full_name: Annotated[str | None, Query()] = None,
-    designation: Annotated[str | None, Query()] = None,
-    phone_number: Annotated[str | None, Query()] = None,
-    email_id: Annotated[str | None, Query()] = None,
-    created_on: Annotated[datetime | None, Query()] = None,
-    created_on_ge: Annotated[datetime | None, Query()] = None,
-    created_on_le: Annotated[datetime | None, Query()] = None,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(gt=0, le=100)] = 20,
-    order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
-    order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
-    bearer=Depends(bearer_executive),
-):
-    try:
-        session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-
-        query = session.query(Executive)
-        if id is not None:
-            query = query.filter(Executive.id == id)
-        if id_ge is not None:
-            query = query.filter(Executive.id >= id_ge)
-        if id_le is not None:
-            query = query.filter(Executive.id <= id_le)
-        if id_list is not None:
-            query = query.filter(Executive.id.in_(id_list))
-        if username is not None:
-            query = query.filter(Executive.username.ilike(f"%{username}%"))
-        if gender is not None:
-            query = query.filter(Executive.gender == gender)
-        if gender_list is not None:
-            query = query.filter(Executive.gender.in_(gender_list))
-        if status is not None:
-            query = query.filter(Executive.status == status)
-        if full_name is not None:
-            query = query.filter(Executive.full_name.ilike(f"%{full_name}%"))
-        if designation is not None:
-            query = query.filter(Executive.designation.ilike(f"%{designation}%"))
-        if phone_number is not None:
-            query = query.filter(Executive.phone_number.ilike(f"%{phone_number}%"))
-        if email_id is not None:
-            query = query.filter(Executive.email_id.ilike(f"%{email_id}%"))
-        if created_on is not None:
-            query = query.filter(Executive.created_on == created_on)
-        if created_on_ge is not None:
-            query = query.filter(Executive.created_on >= created_on_ge)
-        if created_on_le is not None:
-            query = query.filter(Executive.created_on <= created_on_le)
-
-        # Apply ordering
-        orderQuery = getattr(Executive, OrderBy(order_by).name)
-        if order_in == OrderIn.ASC:
-            query = query.order_by(orderQuery.asc())
-        else:
-            query = query.order_by(orderQuery.desc())
-
-        executives = query.limit(limit).offset(offset).all()
-        return executives
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -196,7 +178,7 @@ async def fetch_executives(
 @route_executive.patch(
     "/entebus/account",
     tags=["Account"],
-    response_model=schemas.Executive,
+    response_model=ExecutiveSchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -205,76 +187,64 @@ async def fetch_executives(
         ]
     ),
     description="""
-    Updates an existing executive account.
-
-    - Executives can update their own account details.
-    - Executives with the `update_executive` permission can update other executives.
-    - An executive cannot update their own status.
-    - If the status is set to `SUSPENDED`, all tokens associated with that executive are revoked.
-    - Logs the update activity along with the associated token details.
     """,
 )
 async def update_executive(
-    id: Annotated[int, Form()],
-    password: Annotated[
-        str | None, Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32)
-    ] = None,
-    gender: Annotated[GenderType | None, Form(description=enumStr(GenderType))] = None,
-    full_name: Annotated[str | None, Form(max_length=32)] = None,
-    designation: Annotated[str | None, Form(max_length=32)] = None,
-    phone_number: Annotated[PhoneNumber | None, Form(max_length=32)] = None,
-    email_id: Annotated[EmailStr | None, Form(max_length=256)] = None,
-    status: Annotated[
-        AccountStatus | None, Form(description=enumStr(AccountStatus))
-    ] = None,
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        forSelf = False
-        if id == token.executive_id:
-            forSelf = True
-        canUpdateExecutive = bool(role and role.update_executive)
-        if not forSelf and not canUpdateExecutive:
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+
+        isSelfUpdate = fParam.id == token.executive_id
+        hasUpdatePermission = bool(role and role.update_executive)
+        if not isSelfUpdate and not hasUpdatePermission:
             raise exceptions.NoPermission()
 
-        executive = session.query(Executive).filter(Executive.id == id).first()
+        executive = session.query(Executive).filter(Executive.id == fParam.id).first()
         if executive is None:
             raise exceptions.InvalidIdentifier()
-        if password is not None:
-            password = argon2.makePassword(password)
-            executive.password = password
-        if gender is not None and executive.gender != gender:
-            executive.gender = gender
-        if full_name is not None and executive.full_name != full_name:
-            executive.full_name = full_name
-        if designation is not None and executive.designation != designation:
-            executive.designation = designation
-        if phone_number is not None and executive.phone_number != phone_number:
-            executive.phone_number = phone_number
-        if email_id is not None and executive.email_id != email_id:
-            executive.email_id = email_id
-        if status is not None and executive.status != status:
-            if forSelf or not canUpdateExecutive:
+
+        if fParam.password is not None:
+            executive.password = argon2.makePassword(fParam.password)
+        if fParam.gender is not None and executive.gender != fParam.gender:
+            executive.gender = fParam.gender
+        if fParam.full_name is not None and executive.full_name != fParam.full_name:
+            executive.full_name = fParam.full_name
+        if (
+            fParam.designation is not None
+            and executive.designation != fParam.designation
+        ):
+            executive.designation = fParam.designation
+        if (
+            fParam.phone_number is not None
+            and executive.phone_number != fParam.phone_number
+        ):
+            executive.phone_number = fParam.phone_number
+        if fParam.email_id is not None and executive.email_id != fParam.email_id:
+            executive.email_id = fParam.email_id
+        if fParam.status is not None and executive.status != fParam.status:
+            if isSelfUpdate or not hasUpdatePermission:
                 raise exceptions.NoPermission()
-            if status == AccountStatus.SUSPENDED:
+            # Remove all the tokens
+            if fParam.status == AccountStatus.SUSPENDED:
                 session.query(ExecutiveToken).filter(
-                    ExecutiveToken.executive_id == id
+                    ExecutiveToken.executive_id == fParam.id
                 ).delete()
-            executive.status = status
-        session.commit()
-        session.refresh(executive)
-        logExecutiveEvent(
-            token,
-            request_info,
-            jsonable_encoder(executive, exclude={"password"}),
-        )
-        return executive
+            executive.status = fParam.status
+
+        haveUpdates = session.is_modified(executive)
+        if haveUpdates:
+            session.commit()
+            session.refresh(executive)
+
+        executiveData = jsonable_encoder(executive, exclude={"password"})
+        if haveUpdates:
+            logEvent(token, request_info, executiveData)
+        return executiveData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -292,38 +262,99 @@ async def update_executive(
         ]
     ),
     description="""
-    Deletes an executive account.
-
-    - Executives **cannot delete their own account**.
-    - Executives with the `delete_executive` permission can delete **other executives'** accounts.
-    - Logs the deletion activity with the associated token details.
     """,
 )
 async def delete_executive(
-    id: Annotated[int, Form()],
+    fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        canDeleteExecutive = bool(role and role.delete_executive)
-        if token.id == id:
-            raise exceptions.NoPermission()
-        if not canDeleteExecutive:
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.delete_executive)
+
+        # Prevent self deletion
+        if token.id == fParam.id:
             raise exceptions.NoPermission()
 
-        executive = session.query(Executive).filter(Executive.id == id).first()
-        if executive:
-            executiveData = jsonable_encoder(executive, exclude={"password"})
+        executive = session.query(Executive).filter(Executive.id == fParam.id).first()
+        if executive is not None:
             session.delete(executive)
             session.commit()
-            logExecutiveEvent(token, request_info, executiveData)
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+            logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
+
+@route_executive.get(
+    "/entebus/account",
+    tags=["Account"],
+    response_model=List[ExecutiveSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    """,
+)
+async def fetch_executive(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        validators.executiveToken(bearer.credentials, session)
+
+        query = session.query(Executive)
+
+        # Filters
+        if qParam.username is not None:
+            query = query.filter(Executive.username.ilike(f"%{qParam.username}%"))
+        if qParam.gender is not None:
+            query = query.filter(Executive.gender == qParam.gender)
+        if qParam.full_name is not None:
+            query = query.filter(Executive.full_name.ilike(f"%{qParam.full_name}%"))
+        if qParam.designation is not None:
+            query = query.filter(Executive.designation.ilike(f"%{qParam.designation}%"))
+        if qParam.phone_number is not None:
+            query = query.filter(
+                Executive.phone_number.ilike(f"%{qParam.phone_number}%")
+            )
+        if qParam.email_id is not None:
+            query = query.filter(Executive.email_id.ilike(f"%{qParam.email_id}%"))
+        if qParam.status is not None:
+            query = query.filter(Executive.status == qParam.status)
+        # id based
+        if qParam.id is not None:
+            query = query.filter(Executive.id == qParam.id)
+        if qParam.id_ge is not None:
+            query = query.filter(Executive.id >= qParam.id_ge)
+        if qParam.id_le is not None:
+            query = query.filter(Executive.id <= qParam.id_le)
+        if qParam.id_list is not None:
+            query = query.filter(Executive.id.in_(qParam.id_list))
+        # updated_on based
+        if qParam.updated_on_ge is not None:
+            query = query.filter(Executive.updated_on >= qParam.updated_on_ge)
+        if qParam.updated_on_le is not None:
+            query = query.filter(Executive.updated_on <= qParam.updated_on_le)
+        # created_on based
+        if qParam.created_on_ge is not None:
+            query = query.filter(Executive.created_on >= qParam.created_on_ge)
+        if qParam.created_on_le is not None:
+            query = query.filter(Executive.created_on <= qParam.created_on_le)
+
+        # Ordering
+        orderingAttribute = getattr(Executive, OrderBy(qParam.order_by).name)
+        if qParam.order_in == OrderIn.ASC:
+            query = query.order_by(orderingAttribute.asc())
+        else:
+            query = query.order_by(orderingAttribute.desc())
+
+        # Pagination
+        query = query.offset(qParam.offset).limit(qParam.limit)
+        return query.all()
     except Exception as e:
         exceptions.handle(e)
     finally:

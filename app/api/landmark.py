@@ -1,103 +1,141 @@
 from datetime import datetime
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, Form, status, Query
+from enum import IntEnum
+from typing import List, Optional
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    Response,
+    status,
+    Form,
+)
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from shapely import Polygon, Point
+from pydantic import BaseModel, Field
+from shapely.geometry import Polygon, Point
+from shapely import wkt, wkb
 from sqlalchemy import func
-from enum import IntEnum
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src import schemas, exceptions
-from app.src.constants import (
-    EPSG_3857,
-    EPSG_4326,
-    MAX_LANDMARK_AREA,
-    MIN_LANDMARK_AREA,
-)
-from app.src.db import sessionMaker, Landmark, BusStop
-from app.src.enums import LandmarkType, OrderIn
-from app.src.functions import (
-    enumStr,
-    getExecutiveRole,
-    getExecutiveToken,
-    getRequestInfo,
-    isAABB,
-    isSRID4326,
-    logExecutiveEvent,
-    makeExceptionResponses,
-    toWKTgeometry,
-    getOperatorToken,
-    getVendorToken,
-)
+from app.src.constants import MAX_LANDMARK_AREA, MIN_LANDMARK_AREA
+from app.src.db import BusStop, Landmark, ExecutiveRole, Landmark, sessionMaker
+from app.src import exceptions, validators, getters
+from app.src.enums import LandmarkType
+from app.src.loggers import logEvent
+from app.src.functions import enumStr, getArea, makeExceptionResponses
 
-route_operator = APIRouter()
 route_executive = APIRouter()
 route_vendor = APIRouter()
+route_operator = APIRouter()
 
 
-## Schemas
+## Output Schema
+class LandmarkSchema(BaseModel):
+    id: int
+    name: str
+    version: int
+    boundary: str
+    type: int
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+## Input Forms
+class CreateForm(BaseModel):
+    name: str = Field(Form(max_length=32))
+    boundary: str = Field(Form(description="Accepts only SRID 4326 (WGS84)"))
+    type: LandmarkType = Field(
+        Form(description=enumStr(LandmarkType), default=LandmarkType.LOCAL)
+    )
+
+
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form())
+    name: str | None = Field(Form(max_length=32, default=None))
+    boundary: str | None = Field(
+        Form(default=None, description="Accepts only SRID 4326 (WGS84)")
+    )
+    type: LandmarkType | None = Field(
+        Form(description=enumStr(LandmarkType), default=None)
+    )
+
+
+class DeleteForm(BaseModel):
+    id: int = Field(Form())
+
+
+## Query Parameters
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
+
+
 class OrderBy(IntEnum):
     id = 1
-    boundary = 2
-    created_on = 3
-    updated_on = 4
+    location = 2
+    updated_on = 3
+    created_on = 4
 
 
-class LandmarkQueryParams:
-    def __init__(
-        self,
-        id: int | None = Query(default=None),
-        id_ge: int | None = Query(default=None),
-        id_le: int | None = Query(default=None),
-        id_list: List[int | None] = Query(
-            default=None,
-        ),
-        name: str | None = Query(default=None),
-        location: str | None = Query(
-            default=None, description="Accepts only SRID 4326 (WGS84)"
-        ),
-        type: LandmarkType | None = Query(
-            default=None, description=enumStr(LandmarkType)
-        ),
-        type_list: List[LandmarkType | None] = Query(
-            default=None, description=enumStr(LandmarkType)
-        ),
-        created_on: datetime | None = Query(default=None),
-        created_on_ge: datetime | None = Query(default=None),
-        created_on_le: datetime | None = Query(default=None),
-        updated_on: datetime | None = Query(default=None),
-        updated_on_ge: datetime | None = Query(default=None),
-        updated_on_le: datetime | None = Query(default=None),
-        offset: int = Query(default=0, ge=0),
-        limit: int = Query(default=20, gt=0, le=100),
-        order_by: OrderBy = Query(default=OrderBy.id, description=enumStr(OrderBy)),
-        order_in: OrderIn = Query(default=OrderIn.DESC, description=enumStr(OrderIn)),
-    ):
-        self.id = id
-        self.id_ge = id_ge
-        self.id_le = id_le
-        self.id_list = id_list
-        self.name = name
-        self.type = type
-        self.type_list = type_list
-        self.location = location
-        self.created_on = created_on
-        self.created_on_ge = created_on_ge
-        self.created_on_le = created_on_le
-        self.updated_on = updated_on
-        self.updated_on_ge = updated_on_ge
-        self.updated_on_le = updated_on_le
-        self.offset = offset
-        self.limit = limit
-        self.order_by = order_by
-        self.order_in = order_in
+class QueryParams(BaseModel):
+    name: str | None = Field(Query(default=None))
+    location: str | None = Field(
+        Query(default=None, description="Accepts only SRID 4326 (WGS84)")
+    )
+    # id based
+    id: int | None = Field(Query(default=None))
+    id_ge: int | None = Field(Query(default=None))
+    id_le: int | None = Field(Query(default=None))
+    id_list: List[int] | None = Field(Query(default=None))
+    # type based
+    type: LandmarkType | None = Field(
+        Query(default=None, description=enumStr(LandmarkType))
+    )
+    type_list: List[LandmarkType] | None = Field(
+        Query(default=None, description=enumStr(LandmarkType))
+    )
+    # updated_on based
+    updated_on_ge: datetime | None = Field(Query(default=None))
+    updated_on_le: datetime | None = Field(Query(default=None))
+    # created_on based
+    created_on_ge: datetime | None = Field(Query(default=None))
+    created_on_le: datetime | None = Field(Query(default=None))
+    # Ordering
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+    # Pagination
+    offset: int = Field(Query(default=0, ge=0))
+    limit: int = Field(Query(default=20, gt=0, le=100))
 
 
 ## Function
-def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landmark]:
+def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
+    # Validate the WKT polygon input string
+    boundaryGeom = validators.WKTstring(fParam.boundary, Polygon)
+    validators.SRID4326(boundaryGeom)
+    validators.AABB(boundaryGeom)
+
+    # Validate the boundary area
+    areaInSQmeters = getArea(boundaryGeom)
+    if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
+        raise exceptions.InvalidLandmarkBoundaryArea()
+    fParam.boundary = wkt.dumps(boundaryGeom)
+
+
+def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
     query = session.query(Landmark)
+
+    # Pre-processing
+    if qParam.location is not None:
+        geometry = validators.WKTstring(qParam.location, Point)
+        validators.SRID4326(geometry)
+        qParam.location = wkt.dumps(geometry)
+
+    # Filters
+    if qParam.name is not None:
+        query = query.filter(Landmark.name.ilike(f"%{qParam.name}%"))
+    # id based
     if qParam.id is not None:
         query = query.filter(Landmark.id == qParam.id)
     if qParam.id_ge is not None:
@@ -106,44 +144,44 @@ def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landma
         query = query.filter(Landmark.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Landmark.id.in_(qParam.id_list))
-    if qParam.name is not None:
-        query = query.filter(Landmark.name.ilike(f"%{qParam.name}%"))
+    # type based
     if qParam.type is not None:
         query = query.filter(Landmark.type == qParam.type)
     if qParam.type_list is not None:
         query = query.filter(Landmark.type.in_(qParam.type_list))
-    if qParam.created_on is not None:
-        query = query.filter(Landmark.created_on == qParam.created_on)
-    if qParam.created_on_ge is not None:
-        query = query.filter(Landmark.created_on >= qParam.created_on_ge)
-    if qParam.created_on_le is not None:
-        query = query.filter(Landmark.created_on <= qParam.created_on_le)
-    if qParam.updated_on is not None:
-        query = query.filter(Landmark.updated_on == qParam.updated_on)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Landmark.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Landmark.updated_on <= qParam.updated_on_le)
-    if qParam.order_by == OrderBy.boundary and qParam.location:
-        wktLocation = toWKTgeometry(qParam.location, Point)
-        if wktLocation is None:
-            raise exceptions.InvalidWKTStringOrType()
-        if not isSRID4326(wktLocation):
-            raise exceptions.InvalidSRID4326()
-        orderQuery = func.ST_Distance(
-            Landmark.boundary.cast(Geography), func.ST_GeogFromText(qParam.location)
-        )
-    else:
-        orderQuery = getattr(Landmark, OrderBy(qParam.order_by).name)
+    # created_on based
+    if qParam.created_on_ge is not None:
+        query = query.filter(Landmark.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(Landmark.created_on <= qParam.created_on_le)
 
-    if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(orderQuery.asc())
+    # Ordering
+    if qParam.order_by == OrderBy.location:
+        if qParam.location is not None:
+            orderingAttribute = func.ST_Distance(
+                Landmark.boundary.cast(Geography), func.ST_GeogFromText(qParam.location)
+            )
+        else:
+            orderingAttribute = Landmark.boundary
     else:
-        query = query.order_by(orderQuery.desc())
+        orderingAttribute = getattr(Landmark, OrderBy(qParam.order_by).name)
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderingAttribute.asc())
+    else:
+        query = query.order_by(orderingAttribute.desc())
+
+    # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
     landmarks = query.all()
+
+    # Post-processing
     for landmark in landmarks:
-        landmark.boundary = session.scalar(func.ST_AsText(landmark.boundary))
+        landmark.boundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
     return landmarks
 
 
@@ -151,7 +189,7 @@ def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landma
 @route_executive.post(
     "/landmark",
     tags=["Landmark"],
-    response_model=schemas.Landmark,
+    response_model=LandmarkSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -160,66 +198,34 @@ def queryLandmarks(session: Session, qParam: LandmarkQueryParams) -> List[Landma
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.InvalidAABB,
-            exceptions.OverlappingLandmarkBoundary,
-            exceptions.InvalidLandmarkBoundaryArea,
         ]
     ),
     description="""
-    Creates a new landmark for the executive with a valid SRID 4326 boundary.
-
-    - Accepts a WKT polygon representing the landmark boundary. Only **AABB (axis-aligned bounding box)** geometries are allowed.
-    - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
-    - Ensures the boundary does not **overlap with existing landmarks** in the database.
-    - Only executives with the required permission (`create_landmark`) can access this endpoint.
-    - Logs the landmark creation activity with the associated token.
+    Create a new landmark by specifying its name, type, and spatial boundary.  
+    The boundary must be a valid AABB polygon in SRID 4326 (WGS84), and its area must be within an acceptable range.  
+    Only executives with `create_landmark` permission can perform this operation.
     """,
 )
 async def create_landmark(
-    name: Annotated[str, Form(max_length=32)],
-    boundary: Annotated[str, Form(description="Accepts only SRID 4326 (WGS84)")],
-    type: Annotated[
-        LandmarkType, Form(description=enumStr(LandmarkType))
-    ] = LandmarkType.LOCAL,
+    fParam: CreateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        canCreateLandmark = bool(role and role.create_landmark)
-        if not canCreateLandmark:
-            raise exceptions.NoPermission()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.create_landmark)
 
-        wktBoundary = toWKTgeometry(boundary, Polygon)
-        if wktBoundary is None:
-            raise exceptions.InvalidWKTStringOrType()
-        if not isSRID4326(wktBoundary):
-            raise exceptions.InvalidSRID4326()
-        if not isAABB(wktBoundary):
-            raise exceptions.InvalidAABB()
-
-        boundary4326 = func.ST_SetSRID(func.ST_GeomFromText(boundary), EPSG_4326)
-        boundary3857 = func.ST_Transform(boundary4326, EPSG_3857)
-
-        areaInSQmeters = session.scalar(func.ST_Area(boundary3857))
-        landmark3857 = func.ST_Transform(Landmark.boundary, EPSG_3857)
-        overlapping = (
-            session.query(Landmark)
-            .filter(func.ST_Intersects(landmark3857, boundary3857))
-            .first()
+        validateBoundary(fParam)
+        landmark = Landmark(
+            name=fParam.name,
+            boundary=fParam.boundary,
+            type=fParam.type,
         )
-        if overlapping:
-            raise exceptions.OverlappingLandmarkBoundary()
-        if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
-            raise exceptions.InvalidLandmarkBoundaryArea()
-
-        landmark = Landmark(name=name, type=type, boundary=boundary)
         session.add(landmark)
         session.commit()
-        logExecutiveEvent(token, request_info, jsonable_encoder(landmark))
+        logEvent(token, request_info, jsonable_encoder(landmark))
         return landmark
     except Exception as e:
         exceptions.handle(e)
@@ -230,7 +236,7 @@ async def create_landmark(
 @route_executive.patch(
     "/landmark",
     tags=["Landmark"],
-    response_model=schemas.Landmark,
+    response_model=LandmarkSchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -239,95 +245,100 @@ async def create_landmark(
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.InvalidAABB,
-            exceptions.OverlappingLandmarkBoundary,
             exceptions.InvalidLandmarkBoundaryArea,
             exceptions.BusStopOutsideLandmark,
         ]
     ),
     description="""
-    Update an existing landmark by the executive with a valid SRID 4326 boundary.
-
-    - Accepts a WKT polygon representing the landmark boundary. Only **AABB (axis-aligned bounding box)** geometries are allowed.
-    - Validates geometry format, SRID (must be 4326 - WGS 84), and boundary area (must be within acceptable limits).
-    - Ensures the boundary does not **overlap with existing landmarks** in the database.
-    - Only executives with the required permission (`update_landmark`) can access this endpoint.
-    - Logs landmark updates only if any field has changed, along with the associated token.
+    Update the details of an existing landmark including name, type, or boundary.  
+    If the boundary is changed, all associated bus stops must remain within the new boundary.  
+    Only executives with `update_landmark` permission can perform this operation.
     """,
 )
 async def update_landmark(
-    id: Annotated[int, Form()],
-    name: Annotated[str | None, Form(max_length=128)] = None,
-    boundary: Annotated[
-        str | None, Form(description="Accepts only SRID 4326 (WGS84)")
-    ] = None,
-    type: Annotated[
-        LandmarkType | None, Form(description=enumStr(LandmarkType))
-    ] = None,
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        canUpdateLandmark = bool(role and role.update_landmark)
-        if not canUpdateLandmark:
-            raise exceptions.NoPermission()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.update_landmark)
 
-        landmark = session.query(Landmark).filter(Landmark.id == id).first()
+        landmark = session.query(Landmark).filter(Landmark.id == fParam.id).first()
         if landmark is None:
             raise exceptions.InvalidIdentifier()
 
-        if name is not None and landmark.name != name:
-            landmark.name = name
-        if type is not None and landmark.type != type:
-            landmark.type = type
-        if boundary is not None:
-            wktBoundary = toWKTgeometry(boundary, Polygon)
-            if wktBoundary is None:
-                raise exceptions.InvalidWKTStringOrType()
-            if not isSRID4326(wktBoundary):
-                raise exceptions.InvalidSRID4326()
-            if not isAABB(wktBoundary):
-                raise exceptions.InvalidAABB()
-            boundary4326 = func.ST_SetSRID(func.ST_GeomFromText(boundary), EPSG_4326)
-            boundary3857 = func.ST_Transform(boundary4326, EPSG_3857)
-            areaInSQmeters = session.scalar(func.ST_Area(boundary3857))
-            landmark3857 = func.ST_Transform(Landmark.boundary, EPSG_3857)
-            overlapping = (
-                session.query(Landmark)
-                .filter(
-                    Landmark.id != id, func.ST_Intersects(landmark3857, boundary3857)
+        if fParam.name is not None and landmark.name != fParam.name:
+            landmark.name = fParam.name
+        if fParam.boundary is not None:
+            boundaryGeom = validateBoundary(fParam)
+            currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
+            if currentBoundary != fParam.boundary:
+                # Verify that all bus stops are inside the new boundary
+                busStops = (
+                    session.query(BusStop)
+                    .filter(BusStop.landmark_id == fParam.id)
+                    .all()
                 )
-                .first()
-            )
-            if overlapping:
-                raise exceptions.OverlappingLandmarkBoundary()
-            if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
-                raise exceptions.InvalidLandmarkBoundaryArea()
-            busStops = session.query(BusStop).filter(BusStop.landmark_id == id).all()
-            for busStop in busStops:
-                withinBoundary = session.scalar(
-                    func.ST_Within(busStop.location, boundary4326)
-                )
-                if not withinBoundary:
-                    raise exceptions.BusStopOutsideLandmark()
-            landmark.boundary = boundary
+                for busStop in busStops:
+                    busStopGeom = wkb.loads(bytes(busStop.location.data))
+                    if not busStopGeom.within(boundaryGeom):
+                        raise exceptions.BusStopOutsideLandmark()
+                landmark.boundary = fParam.boundary
+        if fParam.type is not None and landmark.type != fParam.type:
+            landmark.type = fParam.type
 
-        isModified = session.is_modified(landmark)
-        if isModified:
+        haveUpdates = session.is_modified(landmark)
+        if haveUpdates:
             landmark.version += 1
             session.commit()
             session.refresh(landmark)
 
         landmarkData = jsonable_encoder(landmark, exclude={"boundary"})
-        landmarkData["boundary"] = session.scalar(func.ST_AsText(landmark.boundary))
-
-        if isModified:
-            logExecutiveEvent(token, request_info, landmarkData)
+        landmarkData["boundary"] = (wkb.loads(bytes(landmark.boundary.data))).wkt
+        if haveUpdates:
+            logEvent(token, request_info, landmarkData)
         return landmarkData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.delete(
+    "/landmark",
+    tags=["Landmark"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Delete an existing landmark by ID.  
+    Only executives with `delete_landmark` permission can perform this action.  
+    If the landmark exists, it will be permanently removed.
+    """,
+)
+async def delete_landmark(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.delete_landmark)
+
+        landmark = session.query(Landmark).filter(Landmark.id == fParam.id).first()
+        if landmark is not None:
+            session.delete(landmark)
+            session.commit()
+            landmarkData = jsonable_encoder(landmark, exclude={"boundary"})
+            landmarkData["boundary"] = (wkb.loads(bytes(landmark.boundary.data))).wkt
+            logEvent(token, request_info, landmarkData)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -337,7 +348,7 @@ async def update_landmark(
 @route_executive.get(
     "/landmark",
     tags=["Landmark"],
-    response_model=List[schemas.Landmark],
+    response_model=List[LandmarkSchema],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -346,68 +357,19 @@ async def update_landmark(
         ]
     ),
     description="""
-    Fetches a list of landmark filtered by optional query parameters.
-    
-    - The authenticated user can access this endpoint.
-    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
-    - Support distance-based filtering when order_by is set to location and the location parameter is provided
-    - Supports pagination with `offset` and `limit`.
-    - Supports sorting using `order_by` and `order_in`.
+    Retrieve a list of landmarks with advanced filtering, sorting, and pagination.  
+    Supports spatial queries using a reference location in SRID 4326, and ordering by proximity or metadata fields.  
+    Only accessible to authenticated executives.
     """,
 )
-async def fetch_landmarks(
-    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_executive)
+async def fetch_landmark(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
+        validators.executiveToken(bearer.credentials, session)
 
-        return queryLandmarks(session, qParam)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-@route_executive.delete("/landmark", tags=["Landmark"])
-async def delete_landmark(bearer=Depends(bearer_executive)):
-    pass
-
-
-## API endpoints [Operator]
-@route_operator.get(
-    "/landmark",
-    tags=["Landmark"],
-    response_model=List[schemas.Landmark],
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-        ]
-    ),
-    description="""
-    Fetches a list of landmark filtered by optional query parameters.
-    
-    - The authenticated user can access this endpoint.
-    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
-    - Support distance-based filtering when order_by is set to location and the location parameter is provided
-    - Supports pagination with `offset` and `limit`.
-    - Supports sorting using `order_by` and `order_in`.
-    """,
-)
-async def fetch_landmarks(
-    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_operator)
-):
-    try:
-        session = sessionMaker()
-        token = getOperatorToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-
-        return queryLandmarks(session, qParam)
+        return searchLandmark(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -418,7 +380,7 @@ async def fetch_landmarks(
 @route_vendor.get(
     "/landmark",
     tags=["Landmark"],
-    response_model=List[schemas.Landmark],
+    response_model=List[LandmarkSchema],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -427,25 +389,49 @@ async def fetch_landmarks(
         ]
     ),
     description="""
-    Fetches a list of landmark filtered by optional query parameters.
-    
-    - The authenticated user can access this endpoint.
-    - Supports filtering by ID range, ID list, location, type_list, name, and creation timestamps.
-    - Support distance-based filtering when order_by is set to location and the location parameter is provided
-    - Supports pagination with `offset` and `limit`.
-    - Supports sorting using `order_by` and `order_in`.
+    Retrieve a list of landmarks with filtering and sorting options available to vendor accounts.  
+    Supports spatial filters like proximity to a point, and constraints on metadata fields such as creation date or type.
     """,
 )
-async def fetch_landmarks(
-    qParam: LandmarkQueryParams = Depends(), bearer=Depends(bearer_vendor)
+async def fetch_landmark(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
-        token = getVendorToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
+        validators.vendorToken(bearer.credentials, session)
 
-        return queryLandmarks(session, qParam)
+        return searchLandmark(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Operator]
+@route_operator.get(
+    "/landmark",
+    tags=["Landmark"],
+    response_model=List[LandmarkSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Retrieve a list of landmarks available to operators.  
+    Supports spatial and metadata-based querying with optional sorting and pagination features.
+    """,
+)
+async def fetch_landmark(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        validators.operatorToken(bearer.credentials, session)
+
+        return searchLandmark(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
