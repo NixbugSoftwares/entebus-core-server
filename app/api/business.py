@@ -111,7 +111,11 @@ class OrderBy(IntEnum):
     created_on = 4
 
 
-class QueryParams(BaseModel):
+class QueryParamsForVE(BaseModel):
+    id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForEX(QueryParamsForVE):
     name: str | None = Field(Query(default=None))
     status: BusinessStatus | None = Field(
         Query(default=None, description=enumStr(BusinessStatus))
@@ -131,7 +135,6 @@ class QueryParams(BaseModel):
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
     )
     # id based
-    id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
@@ -180,7 +183,9 @@ def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateFormForEX
             business.location = fParam.location
 
 
-def searchBusiness(session: Session, qParam: QueryParams) -> List[Business]:
+def searchBusiness(
+    session: Session, qParam: QueryParamsForVE | QueryParamsForEX
+) -> List[Business]:
     query = session.query(Business)
 
     # Pre-processing
@@ -411,7 +416,7 @@ async def delete_business(
     """,
 )
 async def fetch_business(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -496,14 +501,21 @@ async def update_business(
     Requires a valid vendor token.
     """,
 )
-async def fetch_business(bearer=Depends(bearer_vendor)):
+async def fetch_business(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
 
-        business = session.query(Business).filter(Business.id == token.business_id).first()
-        businessData = jsonable_encoder(business, exclude={"location"})
-        businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
+        if qParam.id is None:
+            qParam.id = token.business_id
+        if qParam.id != token.business_id:
+            raise exceptions.InvalidIdentifier()
+        business = session.query(Business).filter(Business.id == qParam.id).first()
+        if business is not None:
+            businessData = jsonable_encoder(business, exclude={"location"})
+            businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
         return [businessData]
     except Exception as e:
         exceptions.handle(e)
