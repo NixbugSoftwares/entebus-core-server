@@ -557,7 +557,8 @@ async def update_company(
     ),
     description="""
     Fetch the company information associated with the current operator.  
-    Returns a list with a single item.  
+    Returns operator's own company if no ID provided.    
+    If ID provided, must match operator's company.     
     Requires a valid operator token.
     """,
 )
