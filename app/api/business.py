@@ -444,8 +444,8 @@ async def fetch_business(
         ]
     ),
     description="""
-    Update the vendors's own business profile.
-    Requires vendor permissions with `update_business` role.
+    Update the vendors's own business profile.  
+    Requires vendor permissions with `update_business` role.    
     Only allows modifying the business associated with the vendor.
     """,
 )
