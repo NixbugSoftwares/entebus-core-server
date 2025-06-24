@@ -53,6 +53,8 @@ app_executive.include_router(route.route_executive)
 app_operator.include_router(route.route_operator)
 app_vendor.include_router(route.route_vendor)
 
+app_executive.include_router(company.route_executive)
+app_vendor.include_router(company.route_vendor)
 app_operator.include_router(company.route_operator)
 
 app_executive.include_router(bus.route_executive)

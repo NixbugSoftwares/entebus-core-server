@@ -425,6 +425,7 @@ class Company(ORMbase):
 
         address (TEXT):
             Physical or mailing address of the company.
+            Must not be null.
             Used for communication or locating the company.
             Maximum 512 characters long.
 
@@ -440,13 +441,15 @@ class Company(ORMbase):
             Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
-            Optional email address for company-related communication.
+            Email address for company-related communication.
+            Must not be null.
             Maximum 256 characters long
             Enforce the format prescribed by RFC 5322
 
         location (Geometry):
             Geographical location of the company represented as a `POINT`
             geometry with SRID 4326. Required for location-based features.
+            Must not be null.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the company record is modified.
@@ -467,7 +470,7 @@ class Company(ORMbase):
     address = Column(TEXT, nullable=False)
     contact_person = Column(TEXT, nullable=False)
     phone_number = Column(TEXT, nullable=False)
-    email_id = Column(TEXT)
+    email_id = Column(TEXT, nullable=False)
     location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
