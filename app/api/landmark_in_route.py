@@ -240,7 +240,8 @@ def searchLandmarkInRoute(
     description="""
     Create a new landmark assignment within a route for a company.  
     Requires `create_route` or `update_route` permission.  
-    Validates route and landmark existence before creation.
+    Validates route and landmark existence before creation.        
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def create_landmark_in_route(
@@ -285,7 +286,8 @@ async def create_landmark_in_route(
     description="""
     Update properties of a landmark within a route.  
     Requires `create_route` or `update_route` permission.  
-    Only updates fields that are explicitly provided.
+    Only updates fields that are explicitly provided.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def update_landmark_in_route(
@@ -434,6 +436,8 @@ async def fetch_landmarks_in_route(
     Create a landmark assignment within a route owned by the operator's company.  
     Requires `create_route` or `update_route` permission.  
     Validates that the route belongs to the operator's company.
+    Validates landmark existence before creation.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def create_landmark_in_route(
@@ -483,7 +487,8 @@ async def create_landmark_in_route(
     description="""
     Update details of a landmark in a route within the operator's company.  
     Requires `create_route` or `update_route` permission.  
-    Fields not provided are ignored.
+    Only updates fields that are explicitly provided.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def update_landmark_in_route(
