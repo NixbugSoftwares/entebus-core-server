@@ -108,8 +108,12 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParams(QueryParamsForOP):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
 
 
 ## Function
@@ -146,7 +150,7 @@ def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
 
 
 def searchLandmarkInRoute(
-    session: Session, qParam: QueryParams | QueryParamsForOP
+    session: Session, qParam: QueryParamsForEX | QueryParamsForVE | QueryParamsForOP
 ) -> List[LandmarkInRoute]:
     query = session.query(LandmarkInRoute)
 
@@ -366,7 +370,7 @@ async def delete_landmark_in_route(
     """,
 )
 async def fetch_landmarks_in_route(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -392,7 +396,7 @@ async def fetch_landmarks_in_route(
     """,
 )
 async def fetch_landmarks_in_route(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
@@ -569,7 +573,7 @@ async def fetch_landmarks_in_route(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchLandmarkInRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)
