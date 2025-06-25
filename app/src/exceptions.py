@@ -78,8 +78,17 @@ class ForeignKeyViolation(APIException):
         super().__init__(detail=detail)
 
 
-class InvalidValue(APIException):
+class UnknownValue(APIException):
     status_code = status.HTTP_404_NOT_FOUND
+    headers = {"X-Error": "UnknownValue"}
+
+    def __init__(self, column_name: str):
+        detail = f"Invalid {column_name.key} is provided"
+        super().__init__(detail=detail)
+
+
+class InvalidValue(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidValue"}
 
     def __init__(self, column_name: str):
