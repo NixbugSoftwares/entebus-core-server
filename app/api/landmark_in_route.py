@@ -77,7 +77,9 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     route_id: int | None = Field(Query(default=None))
+    # landmark_id based
     landmark_id: int | None = Field(Query(default=None))
+    landmark_id_list: List[int] | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -153,8 +155,11 @@ def searchLandmarkInRoute(
         query = query.filter(LandmarkInRoute.company_id == qParam.company_id)
     if qParam.route_id is not None:
         query = query.filter(LandmarkInRoute.route_id == qParam.route_id)
+    # landmark_id based
     if qParam.landmark_id is not None:
         query = query.filter(LandmarkInRoute.landmark_id == qParam.landmark_id)
+    if qParam.landmark_id_list is not None:
+        query = query.filter(LandmarkInRoute.landmark_id.in_(qParam.landmark_id_list))
     # id based
     if qParam.id is not None:
         query = query.filter(LandmarkInRoute.id == qParam.id)
