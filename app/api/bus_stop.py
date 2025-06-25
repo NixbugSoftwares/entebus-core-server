@@ -147,7 +147,7 @@ def queryBusStops(session: Session, qParam: BusStopQueryParams) -> List[BusStop]
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.BusStopOutsideLandmark,
-            exceptions.InvalidValue(BusStop.landmark_id),
+            exceptions.UnknownValue(BusStop.landmark_id),
         ]
     ),
     description="""
@@ -179,7 +179,7 @@ async def create_bus_stop(
 
         landmark = session.query(Landmark).filter(Landmark.id == landmark_id).first()
         if landmark is None:
-            raise exceptions.InvalidValue(BusStop.landmark_id)
+            raise exceptions.UnknownValue(BusStop.landmark_id)
         wktLocation = toWKTgeometry(location, Point)
         if wktLocation is None:
             raise exceptions.InvalidWKTStringOrType()

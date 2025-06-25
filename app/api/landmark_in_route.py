@@ -120,7 +120,7 @@ class QueryParamsForVE(QueryParamsForEX):
 def createLandmarkInRoute(session: Session, route: Route, fParam: CreateForm):
     landmark = session.query(Landmark).filter(Landmark.id == fParam.landmark_id).first()
     if landmark is None:
-        raise exceptions.InvalidValue(LandmarkInRoute.landmark_id)
+        raise exceptions.UnknownValue(LandmarkInRoute.landmark_id)
     if fParam.arrival_delta > fParam.departure_delta:
         raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
     return LandmarkInRoute(
@@ -233,7 +233,8 @@ def searchLandmarkInRoute(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InvalidValue(LandmarkInRoute.route_id),
+            exceptions.UnknownValue(LandmarkInRoute.route_id),
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
@@ -256,7 +257,7 @@ async def create_landmark_in_route(
 
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
-            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+            raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
 
         session.add(landmarkInRoute)
@@ -425,7 +426,8 @@ async def fetch_landmarks_in_route(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InvalidValue(LandmarkInRoute.route_id),
+            exceptions.UnknownValue(LandmarkInRoute.route_id),
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
@@ -453,7 +455,7 @@ async def create_landmark_in_route(
             .first()
         )
         if route is None:
-            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+            raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
 
         session.add(landmarkInRoute)
