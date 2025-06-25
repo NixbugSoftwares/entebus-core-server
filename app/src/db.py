@@ -1,6 +1,7 @@
 from secrets import token_hex
 from geoalchemy2 import Geometry
 from sqlalchemy import (
+    ARRAY,
     TEXT,
     Boolean,
     Column,
@@ -38,6 +39,8 @@ from app.src.enums import (
     CompanyType,
     FareScope,
     BusStatus,
+    TicketingMode,
+    TriggerMode,
 )
 
 
@@ -145,6 +148,15 @@ class ExecutiveRole(ORMbase):
         delete_vendor (Boolean):
             Whether this role permits deletion of a vendor.
 
+        create_schedule (Boolean):
+            Grants permission to create schedules.
+
+        update_schedule (Boolean):
+            Grants permission to modify schedules.
+
+        delete_schedule (Boolean):
+            Grants permission to delete schedules.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -192,6 +204,10 @@ class ExecutiveRole(ORMbase):
     create_vendor = Column(Boolean, nullable=False)
     update_vendor = Column(Boolean, nullable=False)
     delete_vendor = Column(Boolean, nullable=False)
+    # Schedule management permission
+    create_schedule = Column(Boolean, nullable=False)
+    update_schedule = Column(Boolean, nullable=False)
+    delete_schedule = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -709,6 +725,15 @@ class OperatorRole(ORMbase):
         delete_bus (Boolean):
             Whether this role permits deletion of a bus.
 
+        create_schedule (Boolean):
+            Grants permission to create schedules.
+
+        update_schedule (Boolean):
+            Grants permission to modify schedules.
+
+        delete_schedule (Boolean):
+            Grants permission to delete schedules.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -746,6 +771,10 @@ class OperatorRole(ORMbase):
     create_bus = Column(Boolean, nullable=False)
     update_bus = Column(Boolean, nullable=False)
     delete_bus = Column(Boolean, nullable=False)
+    # Schedule management permission
+    create_schedule = Column(Boolean, nullable=False)
+    update_schedule = Column(Boolean, nullable=False)
+    delete_schedule = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1706,6 +1735,99 @@ class LandmarkInRoute(ORMbase):
     distance_from_start = Column(Integer, nullable=False)
     arrival_delta = Column(Integer, nullable=False)
     departure_delta = Column(Integer, nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Schedule(ORMbase):
+    """
+    Represents a scheduled service configuration for a company.
+
+    This table manages the schedule logic including timing, associated route, fare, and bus,
+    as well as automatic or manual triggering of the service. It is crucial for recurring
+    transport operations, allowing operators to define when and how a specific route runs.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the schedule.
+
+        company_id (Integer):
+            Foreign key referencing the company that owns the schedule.
+            Must be non-null. Deletion of the company cascades to its schedules.
+
+        name (String(128)):
+            Human-readable name of the schedule.
+            Must be non-null and unique within a company.
+            Indexed for efficient lookup.
+
+        description (TEXT):
+            Optional textual description of the schedule.
+            Used to provide additional details or annotations.
+
+        route_id (Integer):
+            Foreign key referencing the associated route.
+            If the route is deleted, the field is set to NULL.
+            Determines which route this schedule is linked to.
+
+        fare_id (Integer):
+            Foreign key referencing the fare configuration.
+            Nullable. If deleted, set to NULL.
+            Controls pricing and ticket rules.
+
+        bus_id (Integer):
+            Foreign key referencing the bus to be assigned to this schedule.
+            Nullable. If deleted, set to NULL.
+
+        frequency (ARRAY(Integer)):
+            List of days in which the schedule is to be triggered.
+            Used to define repeated service patterns like hourly or daily intervals.
+
+        ticket_mode (Integer):
+            Ticketing mode of the service created by this schedule.
+            Defaults to `HYBRID`.
+
+        trigger_mode (Integer):
+            Controls how the schedule is activated:
+              - `AUTO` (system triggers automatically),
+              - `MANUAL` (requires operator intervention).
+            Defaults to `AUTO`.
+
+        next_trigger_on (DateTime):
+            Timestamp indicating the next scheduled execution time.
+            Automatically calculated based on `frequency` and `trigger_mode`.
+
+        last_trigger_on (DateTime):
+            Timestamp when the schedule was last triggered.
+            Useful for auditing or retry logic.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the schedule is modified.
+
+        created_on (DateTime):
+            Timestamp when the schedule was created.
+            Must be non-null. Defaults to the current time.
+    """
+
+    __tablename__ = "schedule"
+    __table_args__ = (UniqueConstraint("company_id", "name"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(128), nullable=False, index=True)
+    description = Column(TEXT)
+    # Service related data
+    route_id = Column(Integer, ForeignKey("route.id", ondelete="SET NULL"))
+    fare_id = Column(Integer, ForeignKey("fare.id", ondelete="SET NULL"))
+    bus_id = Column(Integer, ForeignKey("bus.id", ondelete="SET NULL"))
+    frequency = Column(ARRAY(Integer))
+    ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    # Scheduler data
+    trigger_mode = Column(Integer, nullable=False, default=TriggerMode.AUTO)
+    next_trigger_on = Column(DateTime(timezone=True))
+    last_trigger_on = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

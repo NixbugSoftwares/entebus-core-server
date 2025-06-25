@@ -4,6 +4,7 @@ from datetime import time
 from app.src import argon2
 from app.src.enums import (
     CompanyStatus,
+    Day,
     FareScope,
 )
 from app.src.db import (
@@ -18,6 +19,7 @@ from app.src.db import (
     Landmark,
     Fare,
     Business,
+    Schedule,
     Vendor,
     VendorRole,
     VendorRoleMap,
@@ -103,6 +105,9 @@ def initDB():
         create_vendor=True,
         update_vendor=True,
         delete_vendor=True,
+        create_schedule=True,
+        update_schedule=True,
+        delete_schedule=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -133,6 +138,9 @@ def initDB():
         create_vendor=False,
         update_vendor=False,
         delete_vendor=False,
+        create_schedule=False,
+        update_schedule=False,
+        delete_schedule=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -188,6 +196,9 @@ def testDB():
         create_bus=True,
         update_bus=True,
         delete_bus=True,
+        create_schedule=True,
+        update_schedule=True,
+        delete_schedule=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -203,6 +214,9 @@ def testDB():
         create_bus=False,
         update_bus=False,
         delete_bus=False,
+        create_schedule=False,
+        update_schedule=False,
+        delete_schedule=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -356,6 +370,25 @@ def testDB():
         road_tax_upto="2026-03-25T11:24:33.649Z",
     )
     session.add_all([bus1, bus2])
+    session.flush()
+
+    schedule = Schedule(
+        company_id=company.id,
+        name="Test Schedule",
+        route_id=route.id,
+        bus_id=bus1.id,
+        fare_id=fare.id,
+        frequency=[
+            Day.MONDAY,
+            Day.TUESDAY,
+            Day.WEDNESDAY,
+            Day.THURSDAY,
+            Day.FRIDAY,
+            Day.SATURDAY,
+            Day.SUNDAY,
+        ],
+    )
+    session.add(schedule)
     session.flush()
 
     business = Business(
