@@ -136,6 +136,15 @@ class ExecutiveRole(ORMbase):
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
+        create_bus (Boolean):
+            Whether this role permits the creation of a new bus.
+
+        update_bus (Boolean):
+            Whether this role permits editing the existing bus.
+
+        delete_bus (Boolean):
+            Whether this role permits deletion of a bus.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -179,7 +188,10 @@ class ExecutiveRole(ORMbase):
     create_route = Column(Boolean, nullable=False)
     update_route = Column(Boolean, nullable=False)
     delete_route = Column(Boolean, nullable=False)
-
+    # Bus management permission
+    create_bus = Column(Boolean, nullable=False)
+    update_bus = Column(Boolean, nullable=False)
+    delete_bus = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -413,6 +425,7 @@ class Company(ORMbase):
 
         address (TEXT):
             Physical or mailing address of the company.
+            Must not be null.
             Used for communication or locating the company.
             Maximum 512 characters long.
 
@@ -428,13 +441,15 @@ class Company(ORMbase):
             Phone number start with a plus sign followed by country code and local number.
 
         email_id (TEXT):
-            Optional email address for company-related communication.
+            Email address for company-related communication.
+            Must not be null.
             Maximum 256 characters long
             Enforce the format prescribed by RFC 5322
 
         location (Geometry):
             Geographical location of the company represented as a `POINT`
             geometry with SRID 4326. Required for location-based features.
+            Must not be null.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the company record is modified.
@@ -455,7 +470,7 @@ class Company(ORMbase):
     address = Column(TEXT, nullable=False)
     contact_person = Column(TEXT, nullable=False)
     phone_number = Column(TEXT, nullable=False)
-    email_id = Column(TEXT)
+    email_id = Column(TEXT, nullable=False)
     location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
@@ -682,6 +697,24 @@ class OperatorRole(ORMbase):
         delete_route (Boolean):
             Whether this role permits deletion of a route.
 
+        create_company (Boolean):
+            Whether this role permits the creation of a new company.
+
+        update_company (Boolean):
+            Whether this role permits editing the existing company.
+
+        delete_company (Boolean):
+            Whether this role permits deletion of a company.
+
+        create_bus (Boolean):
+            Whether this role permits the creation of a new bus.
+
+        update_bus (Boolean):
+            Whether this role permits editing the existing bus.
+
+        delete_bus (Boolean):
+            Whether this role permits deletion of a bus.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -712,7 +745,14 @@ class OperatorRole(ORMbase):
     create_route = Column(Boolean, nullable=False)
     update_route = Column(Boolean, nullable=False)
     delete_route = Column(Boolean, nullable=False)
-
+    # Bus management permission
+    create_bus = Column(Boolean, nullable=False)
+    update_bus = Column(Boolean, nullable=False)
+    delete_bus = Column(Boolean, nullable=False)
+    # Company management permission
+    create_company = Column(Boolean, nullable=False)
+    update_company = Column(Boolean, nullable=False)
+    delete_company = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

@@ -1,6 +1,12 @@
-from datetime import datetime, time
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
+
+
+class RequestInfo(BaseModel):
+    method: str
+    path: str
+    app_id: int
 
 
 class HealthStatus(BaseModel):
@@ -91,20 +97,6 @@ class VendorToken(MaskedVendorToken):
     token_type: Optional[str] = "bearer"
 
 
-class Company(BaseModel):
-    id: int
-    name: str
-    address: str
-    location: str
-    contact_person: str
-    phone_number: str
-    email_id: Optional[str]
-    status: int
-    type: int
-    created_on: datetime
-    updated_on: Optional[datetime]
-
-
 class Operator(BaseModel):
     id: int
     company_id: int
@@ -133,15 +125,6 @@ class Business(BaseModel):
     updated_on: Optional[datetime]
 
 
-class Route(BaseModel):
-    id: int
-    company_id: int
-    name: str
-    start_time: time
-    updated_on: Optional[datetime]
-    created_on: datetime
-
-
 class LandmarkInRoute(BaseModel):
     id: int
     company_id: int
@@ -154,23 +137,17 @@ class LandmarkInRoute(BaseModel):
     created_on: datetime
 
 
-class BusinessWallet(BaseModel):
-    id: int
-    business_id: int
-    account_number: str
-    account_name: str
-    ifsc_code: str
-    balance: int
-    bank_name: Optional[str]
-    created_on: datetime
-
-
-class CompanyWallet(BaseModel):
+class Bus(BaseModel):
     id: int
     company_id: int
-    account_number: str
-    account_name: str
-    ifsc_code: str
-    balance: int
-    bank_name: Optional[str]
+    registration_number: str
+    name: str
+    capacity: int
+    manufactured_on: datetime
+    insurance_upto: Optional[datetime]
+    pollution_upto: Optional[datetime]
+    fitness_upto: Optional[datetime]
+    road_tax_upto: Optional[datetime]
+    status: int
+    updated_on: Optional[datetime]
     created_on: datetime

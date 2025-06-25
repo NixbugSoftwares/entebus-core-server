@@ -10,12 +10,20 @@ from app.api import (
     executive_account,
     operator_account,
     business,
+    route,
+    bus,
 )
+from app.src.enums import AppID
 
 
 app_executive = FastAPI()
 app_vendor = FastAPI()
 app_operator = FastAPI()
+
+app_executive.state.id = AppID.EXECUTIVE
+app_vendor.state.id = AppID.VENDOR
+app_operator.state.id = AppID.OPERATOR
+
 
 app_executive.include_router(executive_token.route_executive)
 app_operator.include_router(operator_token.route_operator)
@@ -34,8 +42,20 @@ app_vendor.include_router(bus_stop.route_vendor)
 app_executive.include_router(executive_account.route_executive)
 
 app_executive.include_router(company.route_executive)
+app_operator.include_router(company.route_operator)
 
 app_operator.include_router(operator_account.route_operator)
 app_executive.include_router(operator_account.route_executive)
 
 app_executive.include_router(business.route_executive)
+
+app_executive.include_router(route.route_executive)
+app_operator.include_router(route.route_operator)
+app_vendor.include_router(route.route_vendor)
+
+app_executive.include_router(company.route_executive)
+app_vendor.include_router(company.route_vendor)
+app_operator.include_router(company.route_operator)
+
+app_executive.include_router(bus.route_executive)
+app_operator.include_router(bus.route_operator)

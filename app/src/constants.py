@@ -19,7 +19,7 @@ OPENOBSERVE_PORT = environ.get("OPENOBSERVE_PORT", "5080")
 OPENOBSERVE_USERNAME = environ.get("OPENOBSERVE_USERNAME", "admin@entebus.com")
 OPENOBSERVE_PASSWORD = environ.get("OPENOBSERVE_PASSWORD", "password")
 OPENOBSERVE_ORG = environ.get("OPENOBSERVE_ORG", "nixbug")
-OPENOBSERVE_STREAM = environ.get("OPENOBSERVE_STREAM", "entebus-api-server")
+OPENOBSERVE_STREAM = environ.get("OPENOBSERVE_STREAM", "entebus-core-server")
 
 # MinIO configuration
 MINIO_HOST = environ.get("MINIO_HOST", "localhost")
@@ -41,6 +41,7 @@ MAX_VENDOR_TOKENS = 1  # Maximum tokens per vendor
 # Regex constants
 REGEX_USERNAME = "^[a-zA-Z][a-zA-Z0-9-.@_]*$"
 REGEX_PASSWORD = "^[a-zA-Z0-9-+,.@_$%&*#!^=/?]*$"
+REGEX_REGISTRATION_NUMBER = "^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$"
 
 # Geometry type constants
 MAX_LANDMARK_AREA = 5 * 1000 * 1000  # 5 Square Kilometer in Square Meter

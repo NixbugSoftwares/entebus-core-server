@@ -56,10 +56,13 @@ def initDB():
         status=CompanyStatus.VERIFIED,
         contact_person="Managing director",
         phone_number="+919496801157",
-        address="Edava, Thiruvananthapuram, Kerala",
+        address="Edava, Thiruvananthapuram, Kerala 695311",
+        email_id="contact@nixbug.com",
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
     password = argon2.makePassword("password")
     admin = Executive(
         username="admin",
@@ -99,6 +102,9 @@ def initDB():
         create_route=True,
         update_route=True,
         delete_route=True,
+        create_bus=True,
+        update_bus=True,
+        delete_bus=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -126,12 +132,18 @@ def initDB():
         create_route=False,
         update_route=False,
         delete_route=False,
+        create_bus=False,
+        update_bus=False,
+        delete_bus=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
+
     adminToRoleMapping = ExecutiveRoleMap(executive_id=admin.id, role_id=adminRole.id)
     guestToRoleMapping = ExecutiveRoleMap(executive_id=guest.id, role_id=guestRole.id)
     session.add_all([adminToRoleMapping, guestToRoleMapping])
+    session.flush()
+
     session.commit()
     print("* Initialization completed")
     session.close()
@@ -144,7 +156,8 @@ def testDB():
         status=CompanyStatus.VERIFIED,
         contact_person="Bismilla Motors(Edava)",
         phone_number="+911212121212",
-        address="Edava, TVM",
+        address="Test, Test, Test 695311",
+        email_id="example@test.com",
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
@@ -173,6 +186,12 @@ def testDB():
         create_route=True,
         update_route=True,
         delete_route=True,
+        create_company=True,
+        update_company=True,
+        delete_company=True,
+        create_bus=True,
+        update_bus=True,
+        delete_bus=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -184,6 +203,12 @@ def testDB():
         create_route=False,
         update_route=False,
         delete_route=False,
+        create_company=False,
+        update_company=False,
+        delete_company=False,
+        create_bus=False,
+        update_bus=False,
+        delete_bus=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
