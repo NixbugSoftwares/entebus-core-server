@@ -121,6 +121,8 @@ def createLandmarkInRoute(session: Session, route: Route, fParam: CreateForm):
     landmark = session.query(Landmark).filter(Landmark.id == fParam.landmark_id).first()
     if landmark is None:
         raise exceptions.InvalidValue(LandmarkInRoute.landmark_id)
+    if fParam.arrival_delta > fParam.departure_delta:
+        raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
     return LandmarkInRoute(
         company_id=route.company_id,
         route_id=fParam.route_id,
@@ -147,6 +149,8 @@ def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
         and landmarkInRoute.departure_delta != fParam.departure_delta
     ):
         landmarkInRoute.departure_delta = fParam.departure_delta
+    if landmarkInRoute.arrival_delta > landmarkInRoute.departure_delta:
+        raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
 
 
 def searchLandmarkInRoute(
@@ -274,6 +278,7 @@ async def create_landmark_in_route(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
@@ -470,6 +475,7 @@ async def create_landmark_in_route(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
