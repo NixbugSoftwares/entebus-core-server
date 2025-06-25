@@ -91,15 +91,6 @@ class ExecutiveRole(ORMbase):
         delete_landmark (Boolean):
             Whether this role permits deletion of a landmark.
 
-        create_bus_stop (Boolean):
-            Whether this role permits the creation of a new bus stop.
-
-        update_bus_stop (Boolean):
-            Whether this role permits editing existing the bus stop.
-
-        delete_bus_stop (Boolean):
-            Whether this role permits deletion of a bus stop.
-
         create_company (Boolean):
             Whether this role permits the creation of a new company.
 
@@ -168,10 +159,6 @@ class ExecutiveRole(ORMbase):
     create_landmark = Column(Boolean, nullable=False)
     update_landmark = Column(Boolean, nullable=False)
     delete_landmark = Column(Boolean, nullable=False)
-    # Bus Stop management permission
-    create_bus_stop = Column(Boolean, nullable=False)
-    update_bus_stop = Column(Boolean, nullable=False)
-    delete_bus_stop = Column(Boolean, nullable=False)
     # Company management permission
     create_company = Column(Boolean, nullable=False)
     update_company = Column(Boolean, nullable=False)
