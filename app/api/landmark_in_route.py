@@ -70,7 +70,7 @@ class OrderIn(IntEnum):
 
 class OrderBy(IntEnum):
     id = 1
-    distance_from_start: 2
+    distance_from_start = 2
     updated_on = 3
     created_on = 4
 
@@ -229,6 +229,7 @@ def searchLandmarkInRoute(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.InvalidValue(LandmarkInRoute.route_id),
         ]
     ),
     description="""
@@ -419,6 +420,7 @@ async def fetch_landmarks_in_route(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.InvalidValue(LandmarkInRoute.route_id),
         ]
     ),
     description="""
