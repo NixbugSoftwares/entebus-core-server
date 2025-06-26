@@ -1,86 +1,139 @@
-from typing import Annotated, List
+from datetime import datetime, timedelta, timezone
+from enum import IntEnum
+from secrets import token_hex
+from typing import List, Optional
 from fastapi import (
     APIRouter,
     Depends,
-    Form,
+    Query,
     Response,
     status,
-    Query,
+    Form,
 )
 from fastapi.encoders import jsonable_encoder
-from datetime import datetime, timedelta, timezone
-from secrets import token_hex
-from enum import IntEnum
+from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive
-from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.enums import (
-    AccountStatus,
-    PlatformType,
-    OrderIn,
+from app.src.constants import (
+    MAX_EXECUTIVE_TOKENS,
+    MAX_TOKEN_VALIDITY,
 )
-from app.src import schemas
 from app.src.db import (
-    sessionMaker,
     Executive,
     ExecutiveToken,
+    sessionMaker,
 )
-from app.src import argon2, exceptions
-from app.src.functions import (
-    enumStr,
-    getExecutiveRole,
-    getExecutiveToken,
-    getRequestInfo,
-    logExecutiveEvent,
-    makeExceptionResponses,
-)
+from app.src import argon2, exceptions, validators, getters
+from app.src.enums import AccountStatus, PlatformType
+from app.src.loggers import logEvent
+from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 
 
-## Schemas
+## Output Schema
+class MaskedExecutiveTokenSchema(BaseModel):
+    id: int
+    executive_id: int
+    expires_in: int
+    platform_type: int
+    client_details: Optional[str]
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+class ExecutiveTokenSchema(MaskedExecutiveTokenSchema):
+    access_token: str
+    token_type: Optional[str] = "bearer"
+
+
+## Input Forms
+class CreateForm(BaseModel):
+    username: str = Field(Form(max_length=32))
+    password: str = Field(Form(max_length=32))
+    platform_type: PlatformType = Field(
+        Form(description=enumStr(PlatformType), default=PlatformType.OTHER)
+    )
+    client_details: str | None = Field(Form(max_length=1024, default=None))
+
+
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+
+
+class DeleteForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+
+
+## Query Parameters
+class OrderIn(IntEnum):
+    ASC = 1
+    DESC = 2
+
+
 class OrderBy(IntEnum):
     id = 1
-    created_on = 2
+    updated_on = 2
+    created_on = 3
+
+
+class QueryParams(BaseModel):
+    executive_id: int | None = Field(Query(default=None))
+    platform_type: PlatformType | None = Field(
+        Query(default=None, description=enumStr(PlatformType))
+    )
+    client_details: str | None = Field(Query(default=None))
+    # id based
+    id: int | None = Field(Query(default=None))
+    id_ge: int | None = Field(Query(default=None))
+    id_le: int | None = Field(Query(default=None))
+    id_list: List[int] | None = Field(Query(default=None))
+    # updated_on based
+    updated_on_ge: datetime | None = Field(Query(default=None))
+    updated_on_le: datetime | None = Field(Query(default=None))
+    # created_on based
+    created_on_ge: datetime | None = Field(Query(default=None))
+    created_on_le: datetime | None = Field(Query(default=None))
+    # Ordering
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+    # Pagination
+    offset: int = Field(Query(default=0, ge=0))
+    limit: int = Field(Query(default=20, gt=0, le=100))
 
 
 ## API endpoints [Executive]
 @route_executive.post(
     "/entebus/account/token",
     tags=["Token"],
-    response_model=schemas.ExecutiveToken,
+    response_model=ExecutiveTokenSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for an executive after validating credentials.
-
-    - This endpoint performs authentication using username and password submitted as form data. 
-    - If the credentials are valid and the executive account is active, a new token is generated and returned.
-    - Limits active tokens using MAX_EXECUTIVE_TOKENS (token rotation).
-    - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
-    - Logs the authentication event for audit tracking.
+    Issues a new access token for an executive after validating credentials.    
+    If the credentials are valid and the executive account is active, a new token is generated and returned.    
+    Limits active tokens using MAX_EXECUTIVE_TOKENS (token rotation).   
+    Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).    
+    Logs the authentication event for audit tracking.
     """,
 )
 async def create_token(
-    username: Annotated[str, Form(max_length=32)],
-    password: Annotated[str, Form(max_length=32)],
-    platform_type: Annotated[
-        PlatformType, Form(description=enumStr(PlatformType))
-    ] = PlatformType.OTHER,
-    client_details: Annotated[str | None, Form(max_length=1024)] = None,
-    request_info=Depends(getRequestInfo),
+    fParam: CreateForm = Depends(),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
         executive = (
-            session.query(Executive).filter(Executive.username == username).first()
+            session.query(Executive)
+            .filter(Executive.username == fParam.username)
+            .first()
         )
         if executive is None:
             raise exceptions.InvalidCredentials()
 
-        if not argon2.checkPassword(password, executive.password):
+        if not argon2.checkPassword(fParam.password, executive.password):
             raise exceptions.InvalidCredentials()
         if executive.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveAccount()
@@ -103,14 +156,12 @@ async def create_token(
             executive_id=executive.id,
             expires_in=MAX_TOKEN_VALIDITY,
             expires_at=expires_at,
-            platform_type=platform_type,
-            client_details=client_details,
+            platform_type=fParam.platform_type,
+            client_details=fParam.client_details,
         )
         session.add(token)
         session.commit()
-        logExecutiveEvent(
-            token, request_info, jsonable_encoder(token, exclude={"access_token"})
-        )
+        logEvent(token, request_info, jsonable_encoder(token, exclude={"access_token"}))
         return token
     except Exception as e:
         exceptions.handle(e)
@@ -121,39 +172,36 @@ async def create_token(
 @route_executive.patch(
     "/entebus/account/token",
     tags=["Token"],
-    response_model=schemas.ExecutiveToken,
-    status_code=status.HTTP_200_OK,
+    response_model=ExecutiveTokenSchema,
     responses=makeExceptionResponses(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Refreshes an existing executive access token.
-
-    - If no `id` is provided, refreshes only the current token (used in this request).
-    - If an `id` is provided: Must match the current token's `access_token` (prevents
-      unauthorized refreshes, even by the same executive).
-    - Raises `InvalidIdentifier` if the token does not exist (avoids ID probing).
-    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
-    - Rotates the `access_token` value (invalidates the old token immediately).
-    - Logs the refresh event for auditability.
+    If no id is provided, refreshes only the current token (used in this request).  
+    If an id is provided: Must match the current token's access_token (prevents unauthorized refreshes, even by the same executive).    
+    Raises InvalidIdentifier if the token does not exist (avoids ID probing).   
+    Extends expires_at by MAX_TOKEN_VALIDITY seconds.   
+    Rotates the access_token value (invalidates the old token immediately). 
+    Logs the refresh event for auditability.
     """,
 )
 async def refresh_token(
-    id: Annotated[int, Form()] = None,
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
+        token = validators.executiveToken(bearer.credentials, session)
 
-        if id is None:
+        if fParam.id is None:
             tokenToUpdate = token
         else:
             tokenToUpdate = (
-                session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
+                session.query(ExecutiveToken)
+                .filter(ExecutiveToken.id == fParam.id)
+                .first()
             )
             if tokenToUpdate is None:
                 raise exceptions.InvalidIdentifier()
@@ -165,95 +213,12 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
-        logExecutiveEvent(
+        logEvent(
             token,
             request_info,
-            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
+            jsonable_encoder(token, exclude={"access_token"}),
         )
-        session.expunge(tokenToUpdate)
-        return tokenToUpdate
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-@route_executive.get(
-    "/entebus/account/token",
-    tags=["Token"],
-    response_model=List[schemas.MaskedExecutiveToken],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description="""  
-    Retrieves access tokens associated with executive accounts.
-
-    - This endpoint allows filtering tokens using below mentioned parameters.
-    - If the authenticated user has the manage_ex_token permission, all masked tokens from the ExecutiveToken table are returned.
-    - If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.
-    - Supports pagination with `offset` and `limit` query parameters.
-    - Supports ordering by `id` or `created_on`, in ascending or descending order.
-    - Returns a list of masked token data, excluding access token content.
-    - Useful for reviewing active or historical token usage management.
-    """,
-)
-async def fetch_tokens(
-    id: Annotated[int, Query()] = None,
-    id_ge: Annotated[int, Query()] = None,
-    id_le: Annotated[int, Query()] = None,
-    executive_id: Annotated[int, Query()] = None,
-    platform_type: Annotated[
-        PlatformType, Query(description=enumStr(PlatformType))
-    ] = None,
-    client_details: Annotated[str, Query()] = None,
-    created_on: Annotated[datetime, Query()] = None,
-    created_on_ge: Annotated[datetime, Query()] = None,
-    created_on_le: Annotated[datetime, Query()] = None,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(gt=0, le=100)] = 20,
-    order_by: Annotated[OrderBy, Query(description=enumStr(OrderBy))] = OrderBy.id,
-    order_in: Annotated[OrderIn, Query(description=enumStr(OrderIn))] = OrderIn.DESC,
-    bearer=Depends(bearer_executive),
-):
-    try:
-        session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
-        canManageToken = bool(role and role.manage_ex_token)
-
-        query = session.query(ExecutiveToken)
-        if executive_id is not None:
-            query = query.filter(ExecutiveToken.executive_id == executive_id)
-        if canManageToken is False:
-            query = query.filter(ExecutiveToken.executive_id == token.executive_id)
-        if id is not None:
-            query = query.filter(ExecutiveToken.id == id)
-        if id_ge is not None:
-            query = query.filter(ExecutiveToken.id >= id_ge)
-        if id_le is not None:
-            query = query.filter(ExecutiveToken.id <= id_le)
-        if platform_type is not None:
-            query = query.filter(ExecutiveToken.platform_type == platform_type)
-        if client_details is not None:
-            query = query.filter(
-                ExecutiveToken.client_details.ilike(f"%{client_details}%")
-            )
-        if created_on is not None:
-            query = query.filter(ExecutiveToken.created_on == created_on)
-        if created_on_ge is not None:
-            query = query.filter(ExecutiveToken.created_on >= created_on_ge)
-        if created_on_le is not None:
-            query = query.filter(ExecutiveToken.created_on <= created_on_le)
-
-        # Apply ordering
-        orderQuery = getattr(ExecutiveToken, OrderBy(order_by).name)
-        if order_in == OrderIn.ASC:
-            query = query.order_by(orderQuery.asc())
-        else:
-            query = query.order_by(orderQuery.desc())
-
-        tokens = query.limit(limit).offset(offset).all()
-        return tokens
+        return token
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -268,51 +233,119 @@ async def fetch_tokens(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an active access token associated with an executive account.
-
-    - This endpoint deletes an access token based on the token ID (optional).
-    - If no ID is provided, it deletes the token used in the request (self-revocation).
-    - If an ID is provided, the caller must either: 
-        Own the token being deleted, or have a role with `manage_ex_token` permission.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking.
+    Revokes an active access token associated with an executive account.    
+    This endpoint deletes an access token based on the token ID (optional). 
+    If no ID is provided, it deletes the token used in the request (self-revocation).   
+    If an ID is provided, the caller must either, own the token being deleted, or have a role with `manage_ex_token` permission. 
+    If the token ID is invalid or already deleted, the operation is silently ignored.   
+    Logs the token revocation event for audit tracking.
     """,
 )
 async def delete_token(
-    id: Annotated[int, Form()] = None,
+    fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_executive),
-    request_info=Depends(getRequestInfo),
+    request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = getExecutiveToken(bearer.credentials, session)
-        if token is None:
-            raise exceptions.InvalidToken()
-        role = getExecutiveRole(token, session)
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
 
-        if id is None:
+        if fParam.id is None:
             tokenToDelete = token
         else:
             tokenToDelete = (
-                session.query(ExecutiveToken).filter(ExecutiveToken.id == id).first()
+                session.query(ExecutiveToken)
+                .filter(ExecutiveToken.id == fParam.id)
+                .first()
             )
             if tokenToDelete is not None:
-                forSelf = token.executive_id == tokenToDelete.executive_id
-                canManageToken = bool(role and role.manage_ex_token)
-                if not forSelf and not canManageToken:
+                isSelfDelete = token.executive_id == tokenToDelete.executive_id
+                hasDeletePermission = bool(role and role.manage_ex_token)
+                if not isSelfDelete and not hasDeletePermission:
                     raise exceptions.NoPermission()
             else:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
 
         session.delete(tokenToDelete)
         session.commit()
-        logExecutiveEvent(
+        logEvent(
             token,
             request_info,
             jsonable_encoder(tokenToDelete, exclude={"access_token"}),
         )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.get(
+    "/entebus/account/token",
+    tags=["Token"],
+    response_model=List[MaskedExecutiveTokenSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Retrieves access tokens associated with executive accounts.     
+    If the authenticated user has the `manage_ex_token` permission, all masked tokens from the ExecutiveToken table are returned.     
+    If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.     
+    Returns a list of masked token data, excluding access_token content.    
+    Useful for reviewing active or historical token usage management.
+    """,
+)
+async def fetch_tokens(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        canManageToken = bool(role and role.manage_ex_token)
+
+        query = session.query(ExecutiveToken)
+
+        # Filters
+        if qParam.executive_id is not None:
+            query = query.filter(ExecutiveToken.executive_id == qParam.executive_id)
+        if canManageToken is False:
+            query = query.filter(ExecutiveToken.executive_id == token.executive_id)
+        if qParam.platform_type is not None:
+            query = query.filter(ExecutiveToken.platform_type == qParam.platform_type)
+        if qParam.client_details is not None:
+            query = query.filter(
+                ExecutiveToken.client_details.ilike(f"%{qParam.client_details}%")
+            )
+        # id based
+        if qParam.id is not None:
+            query = query.filter(ExecutiveToken.id == qParam.id)
+        if qParam.id_ge is not None:
+            query = query.filter(ExecutiveToken.id >= qParam.id_ge)
+        if qParam.id_le is not None:
+            query = query.filter(ExecutiveToken.id <= qParam.id_le)
+        if qParam.id_list is not None:
+            query = query.filter(ExecutiveToken.id.in_(qParam.id_list))
+        # updated_on based
+        if qParam.updated_on_ge is not None:
+            query = query.filter(ExecutiveToken.updated_on >= qParam.updated_on_ge)
+        if qParam.updated_on_le is not None:
+            query = query.filter(ExecutiveToken.updated_on <= qParam.updated_on_le)
+        # created_on based
+        if qParam.created_on_ge is not None:
+            query = query.filter(ExecutiveToken.created_on >= qParam.created_on_ge)
+        if qParam.created_on_le is not None:
+            query = query.filter(ExecutiveToken.created_on <= qParam.created_on_le)
+
+        # Ordering
+        orderingAttribute = getattr(ExecutiveToken, OrderBy(qParam.order_by).name)
+        if qParam.order_in == OrderIn.ASC:
+            query = query.order_by(orderingAttribute.asc())
+        else:
+            query = query.order_by(orderingAttribute.desc())
+
+        # Pagination
+        query = query.offset(qParam.offset).limit(qParam.limit)
+        return query.all()
     except Exception as e:
         exceptions.handle(e)
     finally:
