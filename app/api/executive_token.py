@@ -236,8 +236,7 @@ async def refresh_token(
     Revokes an active access token associated with an executive account.    
     This endpoint deletes an access token based on the token ID (optional). 
     If no ID is provided, it deletes the token used in the request (self-revocation).   
-    If an ID is provided, the caller must either:   
-       - Own the token being deleted, or have a role with `manage_ex_token` permission. 
+    If an ID is provided, the caller must either, own the token being deleted, or have a role with `manage_ex_token` permission. 
     If the token ID is invalid or already deleted, the operation is silently ignored.   
     Logs the token revocation event for audit tracking.
     """,
@@ -289,7 +288,7 @@ async def delete_token(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Retrieves access tokens associated with executive accounts.     
-    If the authenticated user has the manage_ex_token permission, all masked tokens from the ExecutiveToken table are returned.     
+    If the authenticated user has the `manage_ex_token` permission, all masked tokens from the ExecutiveToken table are returned.     
     If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.     
     Returns a list of masked token data, excluding access_token content.    
     Useful for reviewing active or historical token usage management.
