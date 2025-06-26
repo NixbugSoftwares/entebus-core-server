@@ -720,7 +720,6 @@ class OperatorRole(ORMbase):
     manage_token = Column(Boolean, nullable=False)
     # Company management permission
     update_company = Column(Boolean, nullable=False)
-
     # Operator management permission
     create_operator = Column(Boolean, nullable=False)
     update_operator = Column(Boolean, nullable=False)
@@ -1310,7 +1309,6 @@ class VendorRole(ORMbase):
     manage_token = Column(Boolean, nullable=False)
     # Business management permission
     update_business = Column(Boolean, nullable=False)
-
     # Vendor management permission
     create_vendor = Column(Boolean, nullable=False)
     update_vendor = Column(Boolean, nullable=False)
