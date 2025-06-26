@@ -58,6 +58,10 @@ class CreateForm(BaseModel):
     client_details: str | None = Field(Form(max_length=1024, default=None))
 
 
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+
+
 class DeleteForm(BaseModel):
     id: int | None = Field(Form(default=None))
 
@@ -172,7 +176,6 @@ async def create_token(
     "/entebus/account/token",
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
-    status_code=status.HTTP_200_OK,
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Refreshes an existing executive access token.
@@ -183,6 +186,7 @@ async def create_token(
     """,
 )
 async def refresh_token(
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -190,11 +194,22 @@ async def refresh_token(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
 
-        token.expires_in += MAX_TOKEN_VALIDITY
-        token.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
-        token.access_token = token_hex(32)
+        if fParam.id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(ExecutiveToken).filter(ExecutiveToken.id == fParam.id).first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
+            
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
+        tokenToUpdate.access_token = token_hex(32)
         session.commit()
-        session.refresh(token)
+        session.refresh(tokenToUpdate)
         logEvent(
             token,
             request_info,
