@@ -33,16 +33,6 @@ class ExecutiveToken(MaskedExecutiveToken):
     token_type: Optional[str] = "bearer"
 
 
-class Landmark(BaseModel):
-    id: int
-    name: str
-    version: int
-    boundary: str
-    type: int
-    updated_on: Optional[datetime]
-    created_on: datetime
-
-
 class MaskedOperatorToken(BaseModel):
     id: int
     operator_id: int
