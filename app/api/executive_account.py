@@ -214,6 +214,8 @@ async def update_executive(
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
+        if fParam.id is None:
+            fParam.id = token.executive_id
         isSelfUpdate = fParam.id == token.executive_id
         hasUpdatePermission = bool(role and role.update_executive)
         if not isSelfUpdate and not hasUpdatePermission:
@@ -305,7 +307,9 @@ async def delete_executive(
         if executive is not None:
             session.delete(executive)
             session.commit()
-            logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
+            logEvent(
+                token, request_info, jsonable_encoder(executive, exclude={"password"})
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
