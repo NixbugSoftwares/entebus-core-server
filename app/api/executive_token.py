@@ -20,7 +20,6 @@ from app.src.constants import (
 )
 from app.src.db import (
     Executive,
-    ExecutiveRole,
     ExecutiveToken,
     sessionMaker,
 )
@@ -176,7 +175,9 @@ async def create_token(
     "/entebus/account/token",
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
     description="""
     Refreshes an existing executive access token.
 
@@ -198,13 +199,15 @@ async def refresh_token(
             tokenToUpdate = token
         else:
             tokenToUpdate = (
-                session.query(ExecutiveToken).filter(ExecutiveToken.id == fParam.id).first()
+                session.query(ExecutiveToken)
+                .filter(ExecutiveToken.id == fParam.id)
+                .first()
             )
             if tokenToUpdate is None:
                 raise exceptions.InvalidIdentifier()
             if tokenToUpdate.access_token != token.access_token:
                 raise exceptions.NoPermission()
-            
+
         tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
         tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
         tokenToUpdate.access_token = token_hex(32)
