@@ -141,10 +141,10 @@ class OverlappingLandmarkBoundary(APIException):
     headers = {"X-Error": "OverlappingLandmarkBoundary"}
 
 
-class InvalidBoundaryArea(APIException):
+class InvalidLandmarkBoundaryArea(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Boundary area not within the prescribed limits"
-    headers = {"X-Error": "InvalidBoundaryArea"}
+    headers = {"X-Error": "InvalidLandmarkBoundaryArea"}
 
 
 class BusStopOutsideLandmark(APIException):
