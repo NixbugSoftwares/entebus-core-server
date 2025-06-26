@@ -67,7 +67,11 @@ class DeleteFormForEX(BaseModel):
 
 
 class DeleteForm(BaseModel):
-    id: int | None = Field(Form())
+    id: int | None = Field(Form(default=None))
+
+
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
 
 
 ## Query Parameters
@@ -82,7 +86,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamsForOP(BaseModel):
     operator_id: int | None = Field(Query(default=None))
     platform_type: PlatformType | None = Field(
         Query(default=None, description=enumStr(PlatformType))
@@ -107,13 +111,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def searchOperatorToken(
-    session: Session, qParam: QueryParamsForEX | QueryParams
+    session: Session, qParam: QueryParamsForEX | QueryParamsForOP
 ) -> List[OperatorToken]:
     query = session.query(OperatorToken)
 
@@ -427,7 +431,7 @@ async def delete_token(
     """,
 )
 async def fetch_tokens(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
