@@ -48,6 +48,10 @@ app_executive.include_router(executive_account.route_executive)
 app_operator.include_router(operator_account.route_operator)
 app_executive.include_router(operator_account.route_executive)
 
+app_executive.include_router(company.route_executive)
+app_vendor.include_router(company.route_vendor)
+app_operator.include_router(company.route_operator)
+
 app_vendor.include_router(vendor_account.route_vendor)
 app_executive.include_router(vendor_account.route_executive)
 
