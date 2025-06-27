@@ -82,7 +82,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamsForVE(BaseModel):
     vendor_id: int | None = Field(Query(default=None))
     platform_type: PlatformType | None = Field(
         Query(default=None, description=enumStr(PlatformType))
@@ -107,13 +107,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamsForVE):
     business_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def searchVendorToken(
-    session: Session, qParam: QueryParamsForEX | QueryParams
+    session: Session, qParam: QueryParamsForEX | QueryParamsForVE
 ) -> List[VendorToken]:
     query = session.query(VendorToken)
 
@@ -225,16 +225,14 @@ async def delete_token(
         tokenToDelete = (
             session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
         )
-        if tokenToDelete is None:
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        session.delete(tokenToDelete)
-        session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(tokenToDelete, exclude={"access_token"}),
-        )
+        if tokenToDelete is not None:
+            session.delete(tokenToDelete)
+            session.commit()
+            logEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
@@ -386,9 +384,7 @@ async def delete_token(
             tokenToDelete = token
         else:
             tokenToDelete = (
-                session.query(VendorToken)
-                .filter(VendorToken.id == fParam.id)
-                .first()
+                session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
             )
             if tokenToDelete is not None:
                 isSelfDelete = token.vendor_id == tokenToDelete.vendor_id
@@ -427,7 +423,7 @@ async def delete_token(
     """,
 )
 async def fetch_tokens(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
