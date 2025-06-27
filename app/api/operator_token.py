@@ -173,12 +173,11 @@ def searchOperatorToken(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.
-
-    - Only executives with `manage_op_token` permission can access this endpoint.
-    - Supports filtering by token ID, operator ID, platform type, client details, and creation timestamps.
-    - Enables pagination using `offset` and `limit`.
-    - Allows sorting using `order_by` and `order_in`.
+    Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.    
+    Only executives with `manage_op_token` permission can access this endpoint.     
+    Supports filtering by token ID, operator ID, platform type, client details, and creation timestamps.    
+    Enables pagination using offset and limit.   
+    Allows sorting using order_by and order_i`.
     """,
 )
 async def fetch_tokens(
@@ -205,14 +204,11 @@ async def fetch_tokens(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an access token associated with an operator account.
-
-    - This endpoint deletes an access token based on the operator token ID.
-    - The executive with `manage_op_token` permission can delete any operator's token.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking if the id is valid.
-    - Requires the operator token ID as an input parameter.
+    Revokes an access token associated with an operator account.       
+    This endpoint deletes an access token based on the operator token ID.    
+    The executive with `manage_op_token` permission can delete any operator's token.    
+    If the token ID is invalid or already deleted, the operation is silently ignored.   
+    Logs the token revocation event for audit tracking if the id is valid.      
     """,
 )
 async def delete_token(
@@ -256,14 +252,13 @@ async def delete_token(
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for an operator after validating credentials.
-
-    - This endpoint performs authentication using company_id, username and password submitted as form data.
-    - If the credentials are valid and the operator account is active, a new token is generated and returned.
-    - Limits active tokens using MAX_OPERATOR_TOKENS (token rotation).
-    - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
-    - Token will be generated for ACTIVE operators only.
-    - Logs the authentication event for audit tracking.
+    Issues a new access token for an operator after validating credentials.     
+    This endpoint performs authentication using company_id, username and password submitted as form data.   
+    If the credentials are valid and the operator account is active, a new token is generated and returned.     
+    Limits active tokens using MAX_OPERATOR_TOKENS (token rotation).    
+    Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).    
+    Token will be generated for ACTIVE operators only.      
+    Logs the authentication event for audit tracking.
     """,
 )
 async def create_token(
@@ -326,11 +321,12 @@ async def create_token(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
-    Refreshes an existing operator access token.
-
-    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
-    - Rotates the `access_token` value (invalidates the old token immediately).
-    - Logs the refresh event for auditability.
+    Refreshes an existing operator access token.    
+    If no id is provided, refreshes only the current token (used in this request).      
+    If an id is provided: Must match the current token's access_token (prevents unauthorized refreshes, even by the same operator).     
+    Extends expires_at by MAX_TOKEN_VALIDITY seconds.   
+    Rotates the access_token value (invalidates the old token immediately).   
+    Logs the refresh event for auditability.
     """,
 )
 async def refresh_token(
@@ -364,7 +360,7 @@ async def refresh_token(
             request_info,
             jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
         )
-        return token
+        return tokenToUpdate
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -379,15 +375,12 @@ async def refresh_token(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an active access token associated with an operator account.
-
-    - This endpoint deletes an access token based on the token ID (optional).
-    - If no ID is provided, it deletes the token used in the request (self-revocation).
-    - If an ID is provided, the caller must either:
-        Own the token being deleted, or have a role with `manage_op_token` permission.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking.
+    Revokes an active access token associated with an operator account.     
+    This endpoint deletes an access token based on the token ID (optional).     
+    If no ID is provided, it deletes the token used in the request (self-revocation).       
+    If an ID is provided, the caller must either, own the token being deleted, or have a role with `manage_token` permission.   
+    If the token ID is invalid or already deleted, the operation is silently ignored.   
+    Logs the token revocation event for audit tracking.
     """,
 )
 async def delete_token(
@@ -436,12 +429,11 @@ async def delete_token(
     response_model=List[MaskedOperatorTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of operator tokens filtered by optional query parameters.
-
-    - Operators without `manage_op_token` permission can only retrieve their own tokens.
-    - Supports filtering by ID range, platform type, client details, and creation timestamps.
-    - Supports pagination with `offset` and `limit`.
-    - Supports sorting using `order_by` and `order_in`.
+    Fetches a list of operator tokens filtered by optional query parameters.    
+    Operators without `manage_token` permission can only retrieve their own tokens.  
+    Supports filtering by ID range, platform type, client details, and creation timestamps.     
+    Supports pagination with offset and limit.      
+    Supports sorting using order_by and order_in.
     """,
 )
 async def fetch_tokens(
