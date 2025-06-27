@@ -172,7 +172,7 @@ def searchOperator(
     if qParam.username is not None:
         query = query.filter(Operator.username.ilike(f"%{qParam.username}%"))
     if qParam.company_id is not None:
-        query = query.filter(Operator.company_id == Operator.company_id)
+        query = query.filter(Operator.company_id == qParam.company_id)
     if qParam.gender is not None:
         query = query.filter(Operator.gender == qParam.gender)
     if qParam.full_name is not None:
@@ -485,7 +485,12 @@ async def update_operator(
         if fParam.status == AccountStatus.SUSPENDED and isSelfUpdate:
             raise exceptions.NoPermission()
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == fParam.id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
+        )
         if operator is None:
             raise exceptions.InvalidIdentifier()
 
@@ -530,10 +535,15 @@ async def delete_operator(
         validators.operatorPermission(role, OperatorRole.delete_operator)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.operator_id:
             raise exceptions.NoPermission()
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == fParam.id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
+        )
         if operator is not None:
             session.delete(operator)
             session.commit()
