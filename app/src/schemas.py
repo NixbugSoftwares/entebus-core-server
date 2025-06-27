@@ -18,22 +18,6 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
-class MaskedVendorToken(BaseModel):
-    id: int
-    business_id: int
-    vendor_id: int
-    expires_in: int
-    platform_type: int
-    client_details: Optional[str]
-    created_on: datetime
-    updated_on: Optional[datetime]
-
-
-class VendorToken(MaskedVendorToken):
-    access_token: str
-    token_type: Optional[str] = "bearer"
-
-
 class Operator(BaseModel):
     id: int
     company_id: int
