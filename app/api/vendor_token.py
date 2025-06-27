@@ -70,6 +70,10 @@ class DeleteForm(BaseModel):
     id: int | None = Field(Form(default=None))
 
 
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+
+
 ## Query Parameters
 class OrderIn(IntEnum):
     ASC = 1
@@ -316,8 +320,9 @@ async def create_token(
     "/business/account/token",
     tags=["Token"],
     response_model=VendorTokenSchema,
-    status_code=status.HTTP_200_OK,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
     description="""
     Refreshes an existing vendor access token.
 
@@ -327,24 +332,35 @@ async def create_token(
     """,
 )
 async def refresh_token(
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
+        if fParam.id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
 
-        token.expires_in += MAX_TOKEN_VALIDITY
-        token.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
-        token.access_token = token_hex(32)
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
+        tokenToUpdate.access_token = token_hex(32)
         session.commit()
-        session.refresh(token)
+        session.refresh(tokenToUpdate)
         logEvent(
             token,
             request_info,
-            jsonable_encoder(token, exclude={"access_token"}),
+            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
         )
-        return token
+        return tokenToUpdate
     except Exception as e:
         exceptions.handle(e)
     finally:
