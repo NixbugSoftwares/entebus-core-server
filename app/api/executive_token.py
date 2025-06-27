@@ -57,6 +57,10 @@ class CreateForm(BaseModel):
     client_details: str | None = Field(Form(max_length=1024, default=None))
 
 
+class UpdateForm(BaseModel):
+    id: int | None = Field(Form(default=None))
+
+
 class DeleteForm(BaseModel):
     id: int | None = Field(Form(default=None))
 
@@ -108,13 +112,11 @@ class QueryParams(BaseModel):
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for an executive after validating credentials.
-
-    - This endpoint performs authentication using username and password submitted as form data. 
-    - If the credentials are valid and the executive account is active, a new token is generated and returned.
-    - Limits active tokens using MAX_EXECUTIVE_TOKENS (token rotation).
-    - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
-    - Logs the authentication event for audit tracking.
+    Issues a new access token for an executive after validating credentials.    
+    If the credentials are valid and the executive account is active, a new token is generated and returned.    
+    Limits active tokens using MAX_EXECUTIVE_TOKENS (token rotation).   
+    Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).    
+    Logs the authentication event for audit tracking.
     """,
 )
 async def create_token(
@@ -171,17 +173,21 @@ async def create_token(
     "/entebus/account/token",
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
-    status_code=status.HTTP_200_OK,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
     description="""
     Refreshes an existing executive access token.
-
-    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
-    - Rotates the `access_token` value (invalidates the old token immediately).
-    - Logs the refresh event for auditability.
+    If no id is provided, refreshes only the current token (used in this request).  
+    If an id is provided: Must match the current token's access_token (prevents unauthorized refreshes, even by the same executive).    
+    Raises InvalidIdentifier if the token does not exist (avoids ID probing).   
+    Extends expires_at by MAX_TOKEN_VALIDITY seconds.   
+    Rotates the access_token value (invalidates the old token immediately). 
+    Logs the refresh event for auditability.
     """,
 )
 async def refresh_token(
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -189,17 +195,30 @@ async def refresh_token(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
 
-        token.expires_in += MAX_TOKEN_VALIDITY
-        token.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
-        token.access_token = token_hex(32)
+        if fParam.id is None:
+            tokenToUpdate = token
+        else:
+            tokenToUpdate = (
+                session.query(ExecutiveToken)
+                .filter(ExecutiveToken.id == fParam.id)
+                .first()
+            )
+            if tokenToUpdate is None:
+                raise exceptions.InvalidIdentifier()
+            if tokenToUpdate.access_token != token.access_token:
+                raise exceptions.NoPermission()
+
+        tokenToUpdate.expires_in += MAX_TOKEN_VALIDITY
+        tokenToUpdate.expires_at += timedelta(seconds=MAX_TOKEN_VALIDITY)
+        tokenToUpdate.access_token = token_hex(32)
         session.commit()
-        session.refresh(token)
+        session.refresh(tokenToUpdate)
         logEvent(
             token,
             request_info,
-            jsonable_encoder(token, exclude={"access_token"}),
+            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
         )
-        return token
+        return tokenToUpdate
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -214,14 +233,12 @@ async def refresh_token(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an active access token associated with an executive account.
-
-    - This endpoint deletes an access token based on the token ID (optional).
-    - If no ID is provided, it deletes the token used in the request (self-revocation).
-    - If an ID is provided, the caller must either:
-        Own the token being deleted, or have a role with `manage_ex_token` permission.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Logs the token revocation event for audit tracking.
+    Revokes an active access token associated with an executive account.    
+    This endpoint deletes an access token based on the token ID (optional). 
+    If no ID is provided, it deletes the token used in the request (self-revocation).   
+    If an ID is provided, the caller must either, own the token being deleted, or have a role with `manage_ex_token` permission. 
+    If the token ID is invalid or already deleted, the operation is silently ignored.   
+    Logs the token revocation event for audit tracking.
     """,
 )
 async def delete_token(
@@ -270,12 +287,11 @@ async def delete_token(
     response_model=List[MaskedExecutiveTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Retrieves access tokens associated with executive accounts.
-
-    - If the authenticated user has the manage_ex_token permission, all masked tokens from the ExecutiveToken table are returned.
-    - If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.
-    - Returns a list of masked token data, excluding access_token content.
-    - Useful for reviewing active or historical token usage management.
+    Retrieves access tokens associated with executive accounts.     
+    If the authenticated user has the `manage_ex_token` permission, all masked tokens from the ExecutiveToken table are returned.     
+    If the authenticated user don't have manage_ex_token permission, only their own masked tokens are returned.     
+    Returns a list of masked token data, excluding access_token content.    
+    Useful for reviewing active or historical token usage management.
     """,
 )
 async def fetch_tokens(
