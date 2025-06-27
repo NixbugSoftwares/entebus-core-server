@@ -97,7 +97,8 @@ class Day(IntEnum):
     SUNDAY = 7
 
 
-class TriggerMode(IntEnum):
+class TriggeringMode(IntEnum):
     DISABLED = 1
     AUTO = 2
     MANUAL = 3
+    IMMEDIATE = 4

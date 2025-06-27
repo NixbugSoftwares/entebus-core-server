@@ -40,7 +40,7 @@ from app.src.enums import (
     FareScope,
     BusStatus,
     TicketingMode,
-    TriggerMode,
+    TriggeringMode,
 )
 
 
@@ -919,6 +919,7 @@ class Fare(ORMbase):
             References the `company.id` column.
             Indicates which company owns the fare configuration.
             Uses cascading delete — fares are deleted if the associated company is removed.
+            Global fare have None as company_id.
 
         version (Integer):
             Numerical version of the fare.
@@ -1764,6 +1765,7 @@ class Schedule(ORMbase):
         description (TEXT):
             Optional textual description of the schedule.
             Used to provide additional details or annotations.
+            Maximum 2048 characters long.
 
         route_id (Integer):
             Foreign key referencing the associated route.
@@ -1823,9 +1825,9 @@ class Schedule(ORMbase):
     fare_id = Column(Integer, ForeignKey("fare.id", ondelete="SET NULL"))
     bus_id = Column(Integer, ForeignKey("bus.id", ondelete="SET NULL"))
     frequency = Column(ARRAY(Integer))
-    ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    ticketing_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     # Scheduler data
-    trigger_mode = Column(Integer, nullable=False, default=TriggerMode.AUTO)
+    triggering_mode = Column(Integer, nullable=False, default=TriggeringMode.AUTO)
     next_trigger_on = Column(DateTime(timezone=True))
     last_trigger_on = Column(DateTime(timezone=True))
     # Metadata
