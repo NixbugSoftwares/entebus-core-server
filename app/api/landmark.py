@@ -119,7 +119,7 @@ def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
     # Validate the boundary area
     areaInSQmeters = getArea(boundaryGeom)
     if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
-        raise exceptions.InvalidLandmarkBoundaryArea()
+        raise exceptions.InvalidBoundaryArea()
     fParam.boundary = wkt.dumps(boundaryGeom)
 
 
@@ -198,6 +198,7 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.InvalidAABB,
+            exceptions.InvalidBoundaryArea,
         ]
     ),
     description="""
@@ -245,7 +246,7 @@ async def create_landmark(
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.InvalidAABB,
-            exceptions.InvalidLandmarkBoundaryArea,
+            exceptions.InvalidBoundaryArea,
             exceptions.BusStopOutsideLandmark,
         ]
     ),
