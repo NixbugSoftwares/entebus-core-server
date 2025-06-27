@@ -444,8 +444,12 @@ async def fetch_tokens(
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
+        role = getters.vendorRole(token, session)
+        canManageToken = bool(role and role.manage_token)
 
         qParam = QueryParamsForEX(**qParam.model_dump(), business_id=token.business_id)
+        if not canManageToken:
+            qParam.vendor_id = token.vendor_id
         return searchVendorToken(session, qParam)
     except Exception as e:
         exceptions.handle(e)
