@@ -357,7 +357,7 @@ async def refresh_token(
         logEvent(
             token,
             request_info,
-            jsonable_encoder(tokenToUpdate, exclude={"access_token"}),
+            jsonable_encoder(token, exclude={"access_token"}),
         )
         return tokenToUpdate
     except Exception as e:

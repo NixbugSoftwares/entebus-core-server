@@ -291,7 +291,7 @@ async def delete_executive(
         validators.executivePermission(role, ExecutiveRole.delete_executive)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.executive_id:
             raise exceptions.NoPermission()
 
         executive = session.query(Executive).filter(Executive.id == fParam.id).first()
