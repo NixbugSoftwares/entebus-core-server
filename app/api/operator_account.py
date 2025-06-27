@@ -48,7 +48,7 @@ class OperatorSchema(BaseModel):
 
 
 ## Input Forms
-class CreateForm(BaseModel):
+class CreateFormForOP(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
     gender: GenderType = Field(
@@ -63,11 +63,11 @@ class CreateForm(BaseModel):
     )
 
 
-class CreateFormForEX(CreateForm):
+class CreateFormForEX(CreateFormForOP):
     company_id: int = Field(Form())
 
 
-class UpdateForm(BaseModel):
+class UpdateFormForOP(BaseModel):
     id: int | None = Field(Form(default=None))
     password: str | None = Field(
         Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
@@ -87,7 +87,7 @@ class UpdateForm(BaseModel):
     )
 
 
-class UpdateFormForEX(UpdateForm):
+class UpdateFormForEX(UpdateFormForOP):
     id: int = Field(Form())
 
 
@@ -107,7 +107,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamsForOP(BaseModel):
     username: str | None = Field(Query(default=None))
     gender: GenderType | None = Field(
         Query(default=None, description=enumStr(GenderType))
@@ -137,13 +137,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def updateOperator(
-    session: Session, operator: Operator, fParam: UpdateForm | UpdateFormForEX
+    session: Session, operator: Operator, fParam: UpdateFormForOP | UpdateFormForEX
 ):
     if fParam.password is not None:
         operator.password = argon2.makePassword(fParam.password)
@@ -164,7 +164,7 @@ def updateOperator(
 
 
 def searchOperator(
-    session: Session, qParam: QueryParams | QueryParamsForEX
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
 ) -> List[Operator]:
     query = session.query(Operator)
 
@@ -413,7 +413,7 @@ async def fetch_operator(
     """,
 )
 async def create_operator(
-    fParam: CreateForm = Depends(),
+    fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
@@ -469,7 +469,7 @@ async def create_operator(
     """,
 )
 async def update_operator(
-    fParam: UpdateForm = Depends(),
+    fParam: UpdateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
@@ -580,7 +580,7 @@ async def delete_operator(
     """,
 )
 async def fetch_operator(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
