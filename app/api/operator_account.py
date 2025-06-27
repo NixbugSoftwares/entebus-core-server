@@ -228,13 +228,11 @@ def searchOperator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status.
-
-    - Only executive with `create_operator` permission can create operator.
-    - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new operator account with an active status.       
+    Only executive with `create_operator` permission can create operator.       
+    Logs the executive account creation activity with the associated token.     
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.
     """,
 )
 async def create_operator(
@@ -284,14 +282,12 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account.
-
-    - Executive with `update_operator` permission can update other operators.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the executive account update activity with the associated token.
+    Updates an existing operator account.       
+    Executive with `update_operator` permission can update other operators.     
+    Follow patterns for smooth creation of password.        
+    The password is hashed using Argon2 before storing.         
+    If the status is set to`SUSPENDED, all tokens associated with that operator are revoked.      
+    Logs the executive account update activity with the associated token.
     """,
 )
 async def update_operator(
@@ -336,6 +332,9 @@ async def update_operator(
         ]
     ),
     description="""
+    Delete an existing operator by ID.  
+    Requires executive permissions with `delete_operator` role.  
+    Deletes the operator and logs the deletion event.
     """,
 )
 async def delete_operator(
@@ -369,6 +368,13 @@ async def delete_operator(
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch operator accounts with filtering, sorting, and pagination.    
+    Filter by company_id, username, gender, designation, contact details, status, and creation/update timestamps.   
+    Filter by ID ranges or lists.    
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.    
+    Returns a list of operator accounts matching the criteria.      
+    Requires a valid executive token.
     """,
 )
 async def fetch_operator(
@@ -398,13 +404,12 @@ async def fetch_operator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status.
-
-    - Only operator with `create_operator` permission can create operator.
-    - Logs the operator account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new operator account with an active status, associated with the current operator company.     
+    Only operator with `create_operator` permission can create operator.        
+    Logs the operator account creation activity with the associated token.      
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.         
+    Duplicate usernames are not allowed.
     """,
 )
 async def create_operator(
@@ -454,16 +459,13 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account.
-
-    - Operator can update their own account details.
-    - Operator with `update_operator` permission can update other operators.
-    - An operator cannot update their own status.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the operator account update activity with the associated token.
+    Updates an existing operator account associated with the current operator company.      
+    Operator can update their own account but cannot update their own status.       
+    Operator with `update_operator` permission can update other operators.      
+    Follow patterns for smooth creation of username and password.       
+    Password changes are securely hashed.       
+    If the status is set to SUSPENDED, all tokens associated with that operator are revoked.      
+    Logs the operator account update activity with the associated token.
     """,
 )
 async def update_operator(
@@ -521,6 +523,11 @@ async def update_operator(
         ]
     ),
     description="""
+    Delete an operator account associated with the current operator company.        
+    Only users with the `delete_operator` permission can delete operator accounts.        
+    Self-deletion is not allowed for safety reasons.    
+    If the specified operator exists, it will be deleted permanently.    
+    The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_operator(
@@ -563,6 +570,13 @@ async def delete_operator(
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch the operator information associated with the current operator company.     
+    Filter by username, gender, designation, contact details, status, and creation/update timestamps.      
+    Filter by ID ranges or lists.       
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.        
+    Returns a list of operator accounts matching the criteria.      
+    Requires a valid operator token.
     """,
 )
 async def fetch_operator(
