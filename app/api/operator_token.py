@@ -341,6 +341,7 @@ async def refresh_token(
             tokenToUpdate = (
                 session.query(OperatorToken)
                 .filter(OperatorToken.id == fParam.id)
+                .filter(OperatorToken.company_id == token.company_id)
                 .first()
             )
             if tokenToUpdate is None:
@@ -397,6 +398,7 @@ async def delete_token(
             tokenToDelete = (
                 session.query(OperatorToken)
                 .filter(OperatorToken.id == fParam.id)
+                .filter(OperatorToken.company_id == token.company_id)
                 .first()
             )
             if tokenToDelete is not None:
