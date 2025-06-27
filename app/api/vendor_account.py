@@ -48,7 +48,7 @@ class VendorSchema(BaseModel):
 
 
 ## Input Forms
-class CreateForm(BaseModel):
+class CreateFormForVE(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
     gender: GenderType = Field(
@@ -63,11 +63,11 @@ class CreateForm(BaseModel):
     )
 
 
-class CreateFormForEX(CreateForm):
+class CreateFormForEX(CreateFormForVE):
     business_id: int = Field(Form())
 
 
-class UpdateForm(BaseModel):
+class UpdateFormForVE(BaseModel):
     id: int | None = Field(Form(default=None))
     password: str | None = Field(
         Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
@@ -87,7 +87,7 @@ class UpdateForm(BaseModel):
     )
 
 
-class UpdateFormForEX(UpdateForm):
+class UpdateFormForEX(UpdateFormForVE):
     id: int = Field(Form())
 
 
@@ -107,7 +107,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamForVE(BaseModel):
     username: str | None = Field(Query(default=None))
     gender: GenderType | None = Field(
         Query(default=None, description=enumStr(GenderType))
@@ -137,13 +137,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamForVE):
     business_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def updateVendor(
-    session: Session, vendor: Vendor, fParam: UpdateForm | UpdateFormForEX
+    session: Session, vendor: Vendor, fParam: UpdateFormForVE | UpdateFormForEX
 ):
     if fParam.password is not None:
         vendor.password = argon2.makePassword(fParam.password)
@@ -164,7 +164,7 @@ def updateVendor(
 
 
 def searchVendor(
-    session: Session, qParam: QueryParams | QueryParamsForEX
+    session: Session, qParam: QueryParamForVE | QueryParamsForEX
 ) -> List[Vendor]:
     query = session.query(Vendor)
 
@@ -413,7 +413,7 @@ async def fetch_vendor(
     """,
 )
 async def create_vendor(
-    fParam: CreateForm = Depends(),
+    fParam: CreateFormForVE = Depends(),
     bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
@@ -469,7 +469,7 @@ async def create_vendor(
     """,
 )
 async def update_vendor(
-    fParam: UpdateForm = Depends(),
+    fParam: UpdateFormForVE = Depends(),
     bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
@@ -579,7 +579,7 @@ async def delete_vendor(
     Requires a valid vendor token.
     """,
 )
-async def fetch_vendor(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
+async def fetch_vendor(qParam: QueryParamForVE = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
