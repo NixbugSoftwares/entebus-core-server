@@ -228,13 +228,11 @@ def searchVendor(
         ]
     ),
     description="""
-    Creates a new vendor account with an active status.
-
-    - Only executive with `create_vendor` permission can create vendor.
-    - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new vendor account with an active status.       
+    Only executive with `create_vendor` permission can create vendor.       
+    Logs the vendor account creation activity with the associated token.     
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.
     """,
 )
 async def create_vendor(
@@ -284,12 +282,12 @@ async def create_vendor(
         ]
     ),
     description="""
-    Updates an existing vendor account.
-
-    - Executive with `update_vendor` permission can update other vendors.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that vendor are revoked.
-    - Logs the executive account update activity with the associated token.
+    Updates an existing vendor account.       
+    Executive with `update_vendor` permission can update vendors account.     
+    Follow patterns for smooth creation of password.        
+    The password is hashed using Argon2 before storing.         
+    If the status is set to`SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
 async def update_vendor(
@@ -334,6 +332,9 @@ async def update_vendor(
         ]
     ),
     description="""
+    Delete an existing vendor by ID.  
+    Requires executive permissions with `delete_vendor` role.  
+    Deletes the vendor and logs the deletion event.
     """,
 )
 async def delete_vendor(
@@ -367,6 +368,13 @@ async def delete_vendor(
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch vendor accounts with filtering, sorting, and pagination.    
+    Filter by business_id, username, gender, designation, contact details, status, and creation/update timestamps.   
+    Filter by ID ranges or lists.    
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.    
+    Returns a list of vendor accounts matching the criteria.      
+    Requires a valid executive token.
     """,
 )
 async def fetch_vendor(
@@ -396,13 +404,12 @@ async def fetch_vendor(
         ]
     ),
     description="""
-    Creates a new vendor account with an active status.
-
-    - Only vendor with `create_vendor` permission can create vendor.
-    - Logs the vendor account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new vendor account with an active status, associated with the current vendor business.     
+    Only vendor with `create_vendor` permission can create vendor.        
+    Logs the vendor account creation activity with the associated token.      
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.         
+    Duplicate usernames are not allowed.
     """,
 )
 async def create_vendor(
@@ -452,16 +459,13 @@ async def create_vendor(
         ]
     ),
     description="""
-    Updates an existing vendor account.
-
-    - Vendor can update their own account details.
-    - Vendor with `update_vendor` permission can update other vendors.
-    - An vendor cannot update their own status.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that vendor are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the vendor account update activity with the associated token.
+    Updates an existing vendor account associated with the current vendor business.      
+    Vendor can update their own account but cannot update their own status.       
+    Vendor with `update_vendor` permission can update other vendors.      
+    Follow patterns for smooth creation of username and password.       
+    Password changes are securely hashed.       
+    If the status is set to SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
 async def update_vendor(
@@ -519,6 +523,11 @@ async def update_vendor(
         ]
     ),
     description="""
+    Delete an vendor account associated with the current vendor business.        
+    Only users with the `delete_vendor` permission can delete vendor accounts.        
+    Self-deletion is not allowed for safety reasons.    
+    If the specified vendor exists, it will be deleted permanently.    
+    The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_vendor(
@@ -561,6 +570,13 @@ async def delete_vendor(
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch the vendor information associated with the current vendor business.     
+    Filter by username, gender, designation, contact details, status, and creation/update timestamps.      
+    Filter by ID ranges or lists.       
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.        
+    Returns a list of vendor accounts matching the criteria.      
+    Requires a valid vendor token.
     """,
 )
 async def fetch_vendor(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
