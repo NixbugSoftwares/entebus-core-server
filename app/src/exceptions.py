@@ -160,3 +160,11 @@ class InvalidStateTransition(APIException):
     def __init__(self, state_name: str):
         detail = f"The {state_name} cannot be set to the provided value"
         super().__init__(detail=detail)
+
+
+class InvalidAssociation(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidAssociation"}
+
+    def __init__(self, column_name_1: str, column_name_2: str):
+        detail = f"The {column_name_1.key} is not associated with {column_name_2.key}"
