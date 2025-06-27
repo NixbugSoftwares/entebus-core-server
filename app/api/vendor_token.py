@@ -343,7 +343,10 @@ async def refresh_token(
             tokenToUpdate = token
         else:
             tokenToUpdate = (
-                session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
+                session.query(VendorToken)
+                .filter(VendorToken.id == fParam.id)
+                .filter(VendorToken.business_id == token.business_id)
+                .first()
             )
             if tokenToUpdate is None:
                 raise exceptions.InvalidIdentifier()
@@ -400,7 +403,10 @@ async def delete_token(
             tokenToDelete = token
         else:
             tokenToDelete = (
-                session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
+                session.query(VendorToken)
+                .filter(VendorToken.id == fParam.id)
+                .filter(VendorToken.business_id == token.business_id)
+                .first()
             )
             if tokenToDelete is not None:
                 isSelfDelete = token.vendor_id == tokenToDelete.vendor_id
