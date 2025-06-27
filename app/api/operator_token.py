@@ -225,16 +225,14 @@ async def delete_token(
         tokenToDelete = (
             session.query(OperatorToken).filter(OperatorToken.id == fParam.id).first()
         )
-        if tokenToDelete is None:
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        session.delete(tokenToDelete)
-        session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(tokenToDelete, exclude={"access_token"}),
-        )
+        if tokenToDelete is not None:
+            session.delete(tokenToDelete)
+            session.commit()
+            logEvent(
+                token,
+                request_info,
+                jsonable_encoder(tokenToDelete, exclude={"access_token"}),
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
