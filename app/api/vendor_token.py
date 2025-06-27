@@ -173,12 +173,11 @@ def searchVendorToken(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Fetches a list of vendor tokens belonging to a business, filtered by optional query parameters.
-
-    - Only executives with `manage_ve_token` permission can access this endpoint.
-    - Supports filtering by token ID, vendor ID, platform type, client details, and creation timestamps.
-    - Enables pagination using `offset` and `limit`.
-    - Allows sorting using `order_by` and `order_in`.
+    Fetches a list of vendor tokens belonging to a business, filtered by optional query parameters.     
+    Only executives with `manage_ve_token` permission can access this endpoint.     
+    Supports filtering by token ID, vendor ID, platform type, client details, and creation timestamps.      
+    Enables pagination using offset and limit.      
+    Allows sorting using order_by and order_in.
     """,
 )
 async def fetch_tokens(
@@ -205,14 +204,11 @@ async def fetch_tokens(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an access token associated with an vendor account.
-
-    - This endpoint deletes an access token based on the vendor token ID.
-    - The executive with `manage_ve_token` permission can delete any vendor's token.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking if the id is valid.
-    - Requires the vendor token ID as an input parameter.
+    Revokes an access token associated with an vendor account.      
+    This endpoint deletes an access token based on the vendor token ID.     
+    The executive with `manage_ve_token` permission can delete any vendor's token.      
+    If the token ID is invalid or already deleted, the operation is silently ignored.       
+    Logs the token revocation event for audit tracking if the id is valid.      
     """,
 )
 async def delete_token(
@@ -254,14 +250,13 @@ async def delete_token(
         [exceptions.InactiveAccount, exceptions.InvalidCredentials]
     ),
     description="""
-    Issues a new access token for an vendor after validating credentials.
-
-    - This endpoint performs authentication using business_id, username and password submitted as form data.
-    - If the credentials are valid and the vendor account is active, a new token is generated and returned.
-    - Limits active tokens using MAX_VENDOR_TOKENS (token rotation).
-    - Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).
-    - Token will be generated for ACTIVE vendors only.
-    - Logs the authentication event for audit tracking.
+    Issues a new access token for an vendor after validating credentials.       
+    This endpoint performs authentication using business_id, username and password submitted as form data.      
+    If the credentials are valid and the vendor account is active, a new token is generated and returned.       
+    Limits active tokens using MAX_VENDOR_TOKENS (token rotation).      
+    Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).        
+    Token will be generated for ACTIVE vendors only.    
+    Logs the authentication event for audit tracking.
     """,
 )
 async def create_token(
@@ -324,11 +319,12 @@ async def create_token(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
-    Refreshes an existing vendor access token.
-
-    - Extends `expires_at` by `MAX_TOKEN_VALIDITY` seconds.
-    - Rotates the `access_token` value (invalidates the old token immediately).
-    - Logs the refresh event for auditability.
+    Refreshes an existing vendor access token.      
+    If no id is provided, refreshes only the current token (used in this request).          
+    If an id is provided: Must match the current token's access_token (prevents unauthorized refreshes, even by the same vendor).     
+    Extends expires_at by MAX_TOKEN_VALIDITY seconds.       
+    Rotates the access_token value (invalidates the old token immediately).       
+    Logs the refresh event for auditability.
     """,
 )
 async def refresh_token(
@@ -378,15 +374,13 @@ async def refresh_token(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Revokes an active access token associated with an vendor account.
-
-    - This endpoint deletes an access token based on the token ID (optional).
-    - If no ID is provided, it deletes the token used in the request (self-revocation).
-    - If an ID is provided, the caller must either:
-        Own the token being deleted, or have a role with `manage_ve_token` permission.
-    - If the token ID is invalid or already deleted, the operation is silently ignored.
-    - Returns 204 No Content upon success.
-    - Logs the token revocation event for audit tracking.
+    Revokes an active access token associated with an vendor account.   
+    This endpoint deletes an access token based on the token ID (optional).     
+    If no ID is provided, it deletes the token used in the request (self-revocation).   
+    If an ID is provided, the caller must either, own the token being deleted, or have a role with `manage_token` permission.   
+    If the token ID is invalid or already deleted, the operation is silently ignored.   
+    Returns 204 No Content upon success.    
+    Logs the token revocation event for audit tracking.
     """,
 )
 async def delete_token(
@@ -436,12 +430,11 @@ async def delete_token(
     response_model=List[MaskedVendorTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of vendor tokens filtered by optional query parameters.
-
-    - Vendors without `manage_ve_token` permission can only retrieve their own tokens.
-    - Supports filtering by ID range, platform type, client details, and creation timestamps.
-    - Supports pagination with `offset` and `limit`.
-    - Supports sorting using `order_by` and `order_in`.
+    Fetches a list of vendor tokens filtered by optional query parameters.      
+    Vendors without `manage_token` permission can only retrieve their own tokens.       
+    Supports filtering by ID range, platform type, client details, and creation timestamps.     
+    Supports pagination with offset and limit.      
+    Supports sorting using order_by and order_in.
     """,
 )
 async def fetch_tokens(
