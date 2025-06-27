@@ -172,7 +172,7 @@ def searchVendor(
     if qParam.username is not None:
         query = query.filter(Vendor.username.ilike(f"%{qParam.username}%"))
     if qParam.business_id is not None:
-        query = query.filter(Vendor.business_id == Vendor.business_id)
+        query = query.filter(Vendor.business_id == qParam.business_id)
     if qParam.gender is not None:
         query = query.filter(Vendor.gender == qParam.gender)
     if qParam.full_name is not None:
@@ -483,7 +483,12 @@ async def update_vendor(
         if fParam.status == AccountStatus.SUSPENDED and isSelfUpdate:
             raise exceptions.NoPermission()
 
-        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
+            .first()
+        )
         if vendor is None:
             raise exceptions.InvalidIdentifier()
 
@@ -528,10 +533,15 @@ async def delete_vendor(
         validators.vendorPermission(role, VendorRole.delete_vendor)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.business_id:
             raise exceptions.NoPermission()
 
-        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
+            .first()
+        )
         if vendor is not None:
             session.delete(vendor)
             session.commit()
