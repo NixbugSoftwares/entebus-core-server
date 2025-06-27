@@ -70,14 +70,16 @@ class OrderIn(IntEnum):
 
 class OrderBy(IntEnum):
     id = 1
-    distance_from_start: 2
+    distance_from_start = 2
     updated_on = 3
     created_on = 4
 
 
 class QueryParamsForOP(BaseModel):
     route_id: int | None = Field(Query(default=None))
+    # landmark_id based
     landmark_id: int | None = Field(Query(default=None))
+    landmark_id_list: List[int] | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -106,15 +108,21 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParams(QueryParamsForOP):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
 
 
 ## Function
 def createLandmarkInRoute(session: Session, route: Route, fParam: CreateForm):
     landmark = session.query(Landmark).filter(Landmark.id == fParam.landmark_id).first()
     if landmark is None:
-        raise exceptions.InvalidValue(LandmarkInRoute.landmark_id)
+        raise exceptions.UnknownValue(LandmarkInRoute.landmark_id)
+    if fParam.arrival_delta > fParam.departure_delta:
+        raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
     return LandmarkInRoute(
         company_id=route.company_id,
         route_id=fParam.route_id,
@@ -141,10 +149,12 @@ def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
         and landmarkInRoute.departure_delta != fParam.departure_delta
     ):
         landmarkInRoute.departure_delta = fParam.departure_delta
+    if landmarkInRoute.arrival_delta > landmarkInRoute.departure_delta:
+        raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
 
 
 def searchLandmarkInRoute(
-    session: Session, qParam: QueryParams | QueryParamsForOP
+    session: Session, qParam: QueryParamsForEX | QueryParamsForVE | QueryParamsForOP
 ) -> List[LandmarkInRoute]:
     query = session.query(LandmarkInRoute)
 
@@ -153,8 +163,11 @@ def searchLandmarkInRoute(
         query = query.filter(LandmarkInRoute.company_id == qParam.company_id)
     if qParam.route_id is not None:
         query = query.filter(LandmarkInRoute.route_id == qParam.route_id)
+    # landmark_id based
     if qParam.landmark_id is not None:
         query = query.filter(LandmarkInRoute.landmark_id == qParam.landmark_id)
+    if qParam.landmark_id_list is not None:
+        query = query.filter(LandmarkInRoute.landmark_id.in_(qParam.landmark_id_list))
     # id based
     if qParam.id is not None:
         query = query.filter(LandmarkInRoute.id == qParam.id)
@@ -220,12 +233,15 @@ def searchLandmarkInRoute(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.UnknownValue(LandmarkInRoute.route_id),
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
     Create a new landmark assignment within a route for a company.  
     Requires `create_route` or `update_route` permission.  
-    Validates route and landmark existence before creation.
+    Validates route and landmark existence before creation.        
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def create_landmark_in_route(
@@ -242,7 +258,7 @@ async def create_landmark_in_route(
 
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
-            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+            raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
 
         session.add(landmarkInRoute)
@@ -264,12 +280,14 @@ async def create_landmark_in_route(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
     Update properties of a landmark within a route.  
     Requires `create_route` or `update_route` permission.  
-    Only updates fields that are explicitly provided.
+    Only updates fields that are explicitly provided.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def update_landmark_in_route(
@@ -360,8 +378,8 @@ async def delete_landmark_in_route(
     Requires a valid executive token.
     """,
 )
-async def fetch_landmark_in_route(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
+async def fetch_landmarks_in_route(
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -386,8 +404,8 @@ async def fetch_landmark_in_route(
     Requires a valid vendor token.
     """,
 )
-async def fetch_landmark_in_route(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)
+async def fetch_landmarks_in_route(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
 ):
     try:
         session = sessionMaker()
@@ -410,12 +428,16 @@ async def fetch_landmark_in_route(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.UnknownValue(LandmarkInRoute.route_id),
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
     Create a landmark assignment within a route owned by the operator's company.  
     Requires `create_route` or `update_route` permission.  
     Validates that the route belongs to the operator's company.
+    Validates landmark existence before creation.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def create_landmark_in_route(
@@ -437,7 +459,7 @@ async def create_landmark_in_route(
             .first()
         )
         if route is None:
-            raise exceptions.InvalidValue(LandmarkInRoute.route_id)
+            raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
 
         session.add(landmarkInRoute)
@@ -459,12 +481,14 @@ async def create_landmark_in_route(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
         ]
     ),
     description="""
     Update details of a landmark in a route within the operator's company.  
     Requires `create_route` or `update_route` permission.  
-    Fields not provided are ignored.
+    Only updates fields that are explicitly provided.   
+    Validates departure_delta is greater than arrival_delta.
     """,
 )
 async def update_landmark_in_route(
@@ -557,14 +581,14 @@ async def delete_landmark_in_route(
     Requires a valid operator token.
     """,
 )
-async def fetch_landmark_in_route(
+async def fetch_landmarks_in_route(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchLandmarkInRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)
