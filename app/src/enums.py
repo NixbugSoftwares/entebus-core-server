@@ -79,3 +79,26 @@ class BusStatus(IntEnum):
     ACTIVE = 1
     MAINTENANCE = 2
     SUSPENDED = 3
+
+
+class TicketingMode(IntEnum):
+    HYBRID = 1
+    DIGITAL = 2
+    CONVENTIONAL = 3
+
+
+class Day(IntEnum):
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+
+class TriggeringMode(IntEnum):
+    DISABLED = 1
+    AUTO = 2
+    MANUAL = 3
+    IMMEDIATE = 4
