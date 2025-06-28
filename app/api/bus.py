@@ -259,10 +259,9 @@ def searchBus(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Creates a new bus for a company.
-
-    - Only executive with `create_bus` permission can create bus.
-    - Logs the bus account creation activity with the associated token.
+    Creates a new bus for a specified  company.     
+    Only executive with `create_bus` permission can create bus.     
+    Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
@@ -309,13 +308,11 @@ async def create_bus(
         ]
     ),
     description="""
-    Updates an existing bus belonging to any company.
-
-    - Only executives with `update_bus` permission can perform this operation.
-    - Validates the bus ID before applying updates.
-    - Supports partial updates such as modifying the bus name or capacity.
-    - Changes are saved only if the bus data has been modified.
-    - Logs the bus updating activity with the associated token.
+    Updates an existing bus belonging to any company.       
+    Only executives with `update_bus` permission can perform this operation.        
+    Supports partial updates such as modifying the bus name or capacity.        
+    Changes are saved only if the bus data has been modified.       
+    Logs the bus updating activity with the associated token.
     """,
 )
 async def update_bus(
@@ -357,12 +354,11 @@ async def update_bus(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing bus belonging to any company.
-
-    - Only executives with `delete_bus` permission can perform this operation.
-    - Validates the bus ID before deletion.
-    - If the bus exists, it is permanently removed from the system.
-    - Logs the deletion activity using the executive's token and request metadata.
+    Deletes an existing bus belonging to any company.       
+    Only executives with `delete_bus` permission can perform this operation.    
+    Validates the bus ID before deletion.       
+    If the bus exists, it is permanently removed from the system.       
+    Logs the deletion activity using the executive's token and request metadata.
     """,
 )
 async def delete_bus(
@@ -394,10 +390,9 @@ async def delete_bus(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     response_model=List[BusSchema],
     description="""
-    Fetches a list of all buses for a company.
-
-    - Only executives with `fetch_bus` permission can perform this operation.
-    - Logs the bus fetching activity using the executive's token and request metadata.
+    Fetches a list of all buses across companies.       
+    Supports filtering by company ID, name, registration number and metadata.   
+    Requires a valid executive token.
     """,
 )
 async def fetch_buses(
@@ -422,12 +417,9 @@ async def fetch_buses(
     response_model=List[BusSchemaForVE],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of buses across companies based on provided query parameters.
-
-    - Requires a valid vendor token for authentication.
-    - Supports flexible filtering using query parameters such as bus ID, name, or company ID.
-    - Returns all matching buses without restricting to a specific company.
-    - Enables vendors to access bus data for authorized purposes.
+    Fetches a list of buses across companies based on provided query parameters.        
+    Requires a valid vendor token for authentication.       
+    Supports flexible filtering using query parameters such as bus ID, name, or company ID.
     """,
 )
 async def fetch_tokens(
@@ -454,10 +446,10 @@ async def fetch_tokens(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Creates a new bus for a company.
-
-    - Only operator with `create_bus` permission can create bus.
-    - Logs the bus account creation activity with the associated token.
+    Creates a new bus for for the operator's own company.       
+    Only operator with `create_bus` permission can create bus.      
+    The company ID is derived from the token, not user input.       
+    Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
@@ -505,13 +497,12 @@ async def create_bus(
         ]
     ),
     description="""
-    Updates an existing bus belonging to the operator's associated company.
-
-    - Only operators with `update_bus` permission can perform this operation.
-    - Validates the bus ID and ensures it belongs to the operator's company.
-    - Supports partial updates such as modifying the bus name or capacity.
-    - Changes are saved only if the bus data has been modified.
-    - Logs the bus updating activity using the operator's token and request metadata.
+    Updates an existing bus belonging to the operator's associated company.     
+    Only operators with `update_bus` permission can perform this operation.     
+    Validates the bus ID and ensures it belongs to the operator's company.      
+    Supports partial updates such as modifying the bus name or capacity.        
+    Changes are saved only if the bus data has been modified.       
+    Logs the bus updating activity using the operator's token and request metadata.
     """,
 )
 async def update_bus(
@@ -558,12 +549,10 @@ async def update_bus(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing bus belonging to the operator's associated company.
-
-    - Only operators with `delete_bus` permission can perform this operation.
-    - Validates the bus ID and ensures it belongs to the operator's company.
-    - If the bus exists, it is permanently removed from the system.
-    - Logs the deletion activity using the operator's token and request metadata.
+    Deletes an existing bus belonging to the operator's associated company.     
+    Only operators with `delete_bus` permission can perform this operation.     
+    Only bus owned by the operator's company can be deleted.        
+    Logs the deletion activity using the operator's token and request metadata.
     """,
 )
 async def delete_bus(
@@ -601,10 +590,9 @@ async def delete_bus(
     response_model=List[BusSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of buses associated with the operator's company.
-
-    - Any operators w can perform this operation.
-    - Returns an empty list if the requested company ID does not match the operator's company.
+    Fetches a list of buses associated with the operator's company.     
+    Requires a valid operator token.        
+    Supports filters like ID, registration number, name and creation timestamps.  
     """,
 )
 async def fetch_buses(
