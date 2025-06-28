@@ -1783,14 +1783,16 @@ class Schedule(ORMbase):
 
         frequency (ARRAY(Integer)):
             List of days in which the schedule is to be triggered.
-            Used to define repeated service patterns like hourly or daily intervals.
+            Used to define repeated service patterns on daily intervals.
 
-        ticket_mode (Integer):
+        ticketing_mode (Integer):
             Ticketing mode of the service created by this schedule.
+            Mapped from the `TicketingMode`.
             Defaults to `HYBRID`.
 
-        trigger_mode (Integer):
+        triggering_mode (Integer):
             Controls how the schedule is activated:
+            Mapped from the `TriggeringMode`.
               - `AUTO` (system triggers automatically),
               - `MANUAL` (requires operator intervention).
             Defaults to `AUTO`.
