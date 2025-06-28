@@ -27,14 +27,15 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class MaskedBusSchema(BaseModel):
+class BusSchemaForVE(BaseModel):
     id: int
     company_id: int
     registration_number: str
     name: str
     capacity: int
 
-class BusSchema(MaskedBusSchema):
+
+class BusSchema(BusSchemaForVE):
     manufactured_on: datetime
     insurance_upto: Optional[datetime]
     pollution_upto: Optional[datetime]
@@ -94,8 +95,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
-    company_id: int | None = Field(Query(default=None))
+class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
@@ -114,6 +114,14 @@ class QueryParams(BaseModel):
     # Pagination
     offset: int = Field(Query(default=0, ge=0))
     limit: int = Field(Query(default=20, gt=0, le=100))
+
+
+class QueryParamsForEX(QueryParamsForOP):
+    company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
 
 
 ## Function
@@ -143,10 +151,11 @@ def updateBus(bus: Bus, fParam: UpdateForm):
         bus.road_tax_upto = fParam.road_tax_upto
     if fParam.status is not None and bus.status != fParam.status:
         bus.status = fParam.status
-    return bus
 
 
-def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
+def searchBus(
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
+) -> List[Bus]:
     query = session.query(Bus)
 
     # Filters
@@ -172,11 +181,11 @@ def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
         query = query.filter(Bus.created_on <= qParam.created_on_le)
 
     # Ordering
-    order_attr = getattr(Bus, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Bus, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(order_attr.asc())
+        query = query.order_by(orderingAttribute.asc())
     else:
-        query = query.order_by(order_attr.desc())
+        query = query.order_by(orderingAttribute.desc())
 
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
@@ -190,10 +199,7 @@ def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new bus for a company.
@@ -270,7 +276,7 @@ async def update_bus(
         if bus is None:
             raise exceptions.InvalidIdentifier
 
-        bus = updateBus(bus, fParam)
+        updateBus(bus, fParam)
         haveUpdates = session.is_modified(bus)
         if haveUpdates:
             session.commit()
@@ -289,12 +295,9 @@ async def update_bus(
 @route_executive.delete(
     "/company/bus",
     tags=["Bus"],
-    response_model=BusSchema,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Deletes an existing bus belonging to any company.
@@ -320,7 +323,6 @@ async def delete_bus(
         if bus is not None:
             session.delete(bus)
             session.commit()
-            busData = jsonable_encoder(bus)
             logEvent(token, request_info, jsonable_encoder(bus))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
@@ -342,7 +344,7 @@ async def delete_bus(
     """,
 )
 async def fetch_buses(
-    qParam: QueryParams = Depends(),
+    qParam: QueryParamsForEX = Depends(),
     bearer=Depends(bearer_executive),
 ):
     try:
@@ -363,10 +365,7 @@ async def fetch_buses(
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new bus for a company.
@@ -468,12 +467,9 @@ async def update_bus(
 @route_operator.delete(
     "/company/bus",
     tags=["Bus"],
-    response_model=BusSchema,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Deletes an existing bus belonging to the operator's associated company.
@@ -517,6 +513,7 @@ async def delete_bus(
     "/company/bus",
     tags=["Bus"],
     response_model=List[BusSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of buses associated with the operator's company.
 
@@ -525,8 +522,7 @@ async def delete_bus(
     """,
 )
 async def fetch_buses(
-    qParam: QueryParams = Depends(),
-    bearer=Depends(bearer_operator),
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
