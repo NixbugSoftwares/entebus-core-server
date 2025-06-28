@@ -27,22 +27,23 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class MaskedBusSchema(BaseModel):
+class BusSchemaForVE(BaseModel):
     id: int
     company_id: int
     registration_number: str
     name: str
     capacity: int
+    updated_on: Optional[datetime]
+    created_on: datetime
 
-class BusSchema(MaskedBusSchema):
+
+class BusSchema(BusSchemaForVE):
     manufactured_on: datetime
     insurance_upto: Optional[datetime]
     pollution_upto: Optional[datetime]
     fitness_upto: Optional[datetime]
     road_tax_upto: Optional[datetime]
     status: int
-    updated_on: Optional[datetime]
-    created_on: datetime
 
 
 ## Input Forms
@@ -95,13 +96,17 @@ class OrderBy(IntEnum):
 
 
 class QueryParams(BaseModel):
-    company_id: int | None = Field(Query(default=None))
+    # filters
     name: str | None = Field(Query(default=None))
+    registration_number: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # capacity based
+    capacity_ge: int | None = Field(Query(default=None))
+    capacity_le: int | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -114,6 +119,36 @@ class QueryParams(BaseModel):
     # Pagination
     offset: int = Field(Query(default=0, ge=0))
     limit: int = Field(Query(default=20, gt=0, le=100))
+
+
+class QueryParamsForVE(QueryParams):
+    company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForOP(QueryParams):
+    # filters
+    status: BusStatus | None = Field(
+        Query(default=None, description=enumStr(BusStatus))
+    )
+    # manufactured_on based
+    manufactured_on_ge: datetime | None = Field(Query(default=None))
+    manufactured_on_le: datetime | None = Field(Query(default=None))
+    # insurance_upto based
+    insurance_upto_ge: datetime | None = Field(Query(default=None))
+    insurance_upto_le: datetime | None = Field(Query(default=None))
+    # pollution_upto based
+    pollution_upto_ge: datetime | None = Field(Query(default=None))
+    pollution_upto_le: datetime | None = Field(Query(default=None))
+    # fitness_upto based
+    fitness_upto_ge: datetime | None = Field(Query(default=None))
+    fitness_upto_le: datetime | None = Field(Query(default=None))
+    # road_tax_upto based
+    road_tax_upto_ge: datetime | None = Field(Query(default=None))
+    road_tax_upto_le: datetime | None = Field(Query(default=None))
+
+
+class QueryParamsForEX(QueryParamsForOP):
+    company_id: int | None = Field(Query(default=None))
 
 
 ## Function
@@ -143,13 +178,21 @@ def updateBus(bus: Bus, fParam: UpdateForm):
         bus.road_tax_upto = fParam.road_tax_upto
     if fParam.status is not None and bus.status != fParam.status:
         bus.status = fParam.status
-    return bus
 
 
-def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
+def searchBus(
+    session: Session, qParam: QueryParamsForVE | QueryParamsForEX | QueryParamsForOP
+) -> List[Bus]:
     query = session.query(Bus)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(Bus.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
+    if qParam.status is not None:
+        query = query.filter(Bus.status == qParam.status)
+    # id based
     if qParam.id is not None:
         query = query.filter(Bus.id == qParam.id)
     if qParam.id_ge is not None:
@@ -158,25 +201,53 @@ def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
         query = query.filter(Bus.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Bus.id.in_(qParam.id_list))
-    if qParam.company_id is not None:
-        query = query.filter(Bus.company_id == qParam.company_id)
-    if qParam.name is not None:
-        query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
+    # capacity based
+    if qParam.capacity_ge is not None:
+        query = query.filter(Bus.capacity >= qParam.capacity_ge)
+    if qParam.capacity_le is not None:
+        query = query.filter(Bus.capacity <= qParam.capacity_le)
+    # manufactured_on based
+    if qParam.manufactured_on_ge is not None:
+        query = query.filter(Bus.manufactured_on >= qParam.manufactured_on_ge)
+    if qParam.manufactured_on_le is not None:
+        query = query.filter(Bus.manufactured_on <= qParam.manufactured_on_le)
+    # insurance_upto based
+    if qParam.insurance_upto_ge is not None:
+        query = query.filter(Bus.insurance_upto >= qParam.insurance_upto_ge)
+    if qParam.insurance_upto_le is not None:
+        query = query.filter(Bus.insurance_upto <= qParam.insurance_upto_le)
+    # pollution_upto based
+    if qParam.pollution_upto_ge is not None:
+        query = query.filter(Bus.pollution_upto >= qParam.pollution_upto_ge)
+    if qParam.pollution_upto_le is not None:
+        query = query.filter(Bus.pollution_upto <= qParam.pollution_upto_le)
+    # fitness_upto based
+    if qParam.fitness_upto_ge is not None:
+        query = query.filter(Bus.fitness_upto >= qParam.fitness_upto_ge)
+    if qParam.fitness_upto_le is not None:
+        query = query.filter(Bus.fitness_upto <= qParam.fitness_upto_le)
+    # road_tax_upto based
+    if qParam.road_tax_upto_ge is not None:
+        query = query.filter(Bus.road_tax_upto >= qParam.road_tax_upto_ge)
+    if qParam.road_tax_upto_le is not None:
+        query = query.filter(Bus.road_tax_upto <= qParam.road_tax_upto_le)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Bus.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Bus.updated_on <= qParam.updated_on_le)
+    # created_on based
     if qParam.created_on_ge is not None:
         query = query.filter(Bus.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
         query = query.filter(Bus.created_on <= qParam.created_on_le)
 
     # Ordering
-    order_attr = getattr(Bus, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Bus, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
-        query = query.order_by(order_attr.asc())
+        query = query.order_by(orderingAttribute.asc())
     else:
-        query = query.order_by(order_attr.desc())
+        query = query.order_by(orderingAttribute.desc())
 
     # Pagination
     query = query.offset(qParam.offset).limit(qParam.limit)
@@ -190,16 +261,12 @@ def searchBus(session: Session, qParam: QueryParams) -> List[Bus]:
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Creates a new bus for a company.
-
-    - Only executive with `create_bus` permission can create bus.
-    - Logs the bus account creation activity with the associated token.
+    Creates a new bus for a specified  company.     
+    Only executive with `create_bus` permission can create bus.     
+    Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
@@ -246,13 +313,11 @@ async def create_bus(
         ]
     ),
     description="""
-    Updates an existing bus belonging to any company.
-
-    - Only executives with `update_bus` permission can perform this operation.
-    - Validates the bus ID before applying updates.
-    - Supports partial updates such as modifying the bus name or capacity.
-    - Changes are saved only if the bus data has been modified.
-    - Logs the bus updating activity with the associated token.
+    Updates an existing bus belonging to any company.       
+    Only executives with `update_bus` permission can perform this operation.        
+    Supports partial updates such as modifying the bus name or capacity.        
+    Changes are saved only if the bus data has been modified.       
+    Logs the bus updating activity with the associated token.
     """,
 )
 async def update_bus(
@@ -270,7 +335,7 @@ async def update_bus(
         if bus is None:
             raise exceptions.InvalidIdentifier
 
-        bus = updateBus(bus, fParam)
+        updateBus(bus, fParam)
         haveUpdates = session.is_modified(bus)
         if haveUpdates:
             session.commit()
@@ -289,20 +354,16 @@ async def update_bus(
 @route_executive.delete(
     "/company/bus",
     tags=["Bus"],
-    response_model=BusSchema,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing bus belonging to any company.
-
-    - Only executives with `delete_bus` permission can perform this operation.
-    - Validates the bus ID before deletion.
-    - If the bus exists, it is permanently removed from the system.
-    - Logs the deletion activity using the executive's token and request metadata.
+    Deletes an existing bus belonging to any company.       
+    Only executives with `delete_bus` permission can perform this operation.    
+    Validates the bus ID before deletion.       
+    If the bus exists, it is permanently removed from the system.       
+    Logs the deletion activity using the executive's token and request metadata.
     """,
 )
 async def delete_bus(
@@ -320,7 +381,6 @@ async def delete_bus(
         if bus is not None:
             session.delete(bus)
             session.commit()
-            busData = jsonable_encoder(bus)
             logEvent(token, request_info, jsonable_encoder(bus))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
@@ -335,20 +395,59 @@ async def delete_bus(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     response_model=List[BusSchema],
     description="""
-    Fetches a list of all buses for a company.
-
-    - Only executives with `fetch_bus` permission can perform this operation.
-    - Logs the bus fetching activity using the executive's token and request metadata.
+    Fetches a list of all buses across companies.       
+    Supports filtering by company ID, name, registration number and metadata.   
+    Requires a valid executive token.
     """,
 )
 async def fetch_buses(
-    qParam: QueryParams = Depends(),
+    qParam: QueryParamsForEX = Depends(),
     bearer=Depends(bearer_executive),
 ):
     try:
         session = sessionMaker()
         validators.executiveToken(bearer.credentials, session)
 
+        return searchBus(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company/bus",
+    tags=["Bus"],
+    response_model=List[BusSchemaForVE],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of buses across companies based on provided query parameters.        
+    Requires a valid vendor token for authentication.       
+    Supports flexible filtering using query parameters such as bus ID, name, or company ID.
+    """,
+)
+async def fetch_tokens(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            status=BusStatus.ACTIVE,
+            manufactured_on_ge=None,
+            manufactured_on_le=None,
+            insurance_upto_ge=None,
+            insurance_upto_le=None,
+            pollution_upto_ge=None,
+            pollution_upto_le=None,
+            fitness_upto_ge=None,
+            fitness_upto_le=None,
+            road_tax_upto_ge=None,
+            road_tax_upto_le=None,
+        )
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)
@@ -363,16 +462,13 @@ async def fetch_buses(
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Creates a new bus for a company.
-
-    - Only operator with `create_bus` permission can create bus.
-    - Logs the bus account creation activity with the associated token.
+    Creates a new bus for for the operator's own company.       
+    Only operator with `create_bus` permission can create bus.      
+    The company ID is derived from the token, not user input.       
+    Logs the bus account creation activity with the associated token.
     """,
 )
 async def create_bus(
@@ -420,13 +516,12 @@ async def create_bus(
         ]
     ),
     description="""
-    Updates an existing bus belonging to the operator's associated company.
-
-    - Only operators with `update_bus` permission can perform this operation.
-    - Validates the bus ID and ensures it belongs to the operator's company.
-    - Supports partial updates such as modifying the bus name or capacity.
-    - Changes are saved only if the bus data has been modified.
-    - Logs the bus updating activity using the operator's token and request metadata.
+    Updates an existing bus belonging to the operator's associated company.     
+    Only operators with `update_bus` permission can perform this operation.     
+    Validates the bus ID and ensures it belongs to the operator's company.      
+    Supports partial updates such as modifying the bus name or capacity.        
+    Changes are saved only if the bus data has been modified.       
+    Logs the bus updating activity using the operator's token and request metadata.
     """,
 )
 async def update_bus(
@@ -468,20 +563,15 @@ async def update_bus(
 @route_operator.delete(
     "/company/bus",
     tags=["Bus"],
-    response_model=BusSchema,
+    status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing bus belonging to the operator's associated company.
-
-    - Only operators with `delete_bus` permission can perform this operation.
-    - Validates the bus ID and ensures it belongs to the operator's company.
-    - If the bus exists, it is permanently removed from the system.
-    - Logs the deletion activity using the operator's token and request metadata.
+    Deletes an existing bus belonging to the operator's associated company.     
+    Only operators with `delete_bus` permission can perform this operation.     
+    Only bus owned by the operator's company can be deleted.        
+    Logs the deletion activity using the operator's token and request metadata.
     """,
 )
 async def delete_bus(
@@ -517,52 +607,21 @@ async def delete_bus(
     "/company/bus",
     tags=["Bus"],
     response_model=List[BusSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of buses associated with the operator's company.
-
-    - Any operators w can perform this operation.
-    - Returns an empty list if the requested company ID does not match the operator's company.
+    Fetches a list of buses associated with the operator's company.     
+    Requires a valid operator token.        
+    Supports filters like ID, registration number, name and creation timestamps.  
     """,
 )
 async def fetch_buses(
-    qParam: QueryParams = Depends(),
-    bearer=Depends(bearer_operator),
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id is None:
-            qParam.company_id = token.company_id
-        elif qParam.company_id != token.company_id:
-            return []
-        return searchBus(session, qParam)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-## API endpoints [Vendor]
-@route_vendor.get(
-    "/company/bus",
-    tags=["Bus"],
-    response_model=List[MaskedBusSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description="""
-    Fetches a list of buses across companies based on provided query parameters.
-
-    - Requires a valid vendor token for authentication.
-    - Supports flexible filtering using query parameters such as bus ID, name, or company ID.
-    - Returns all matching buses without restricting to a specific company.
-    - Enables vendors to access bus data for authorized purposes.
-    """,
-)
-async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
-    try:
-        session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
-
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)

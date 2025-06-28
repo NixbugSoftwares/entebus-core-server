@@ -393,7 +393,6 @@ def testDB():
 
     business = Business(
         name="Test business",
-        status=CompanyStatus.VERIFIED,
         contact_person="RedBus Pvt Ltd",
         phone_number="+911212121212",
         address="Test, Test, Test 695311",

@@ -78,8 +78,17 @@ class ForeignKeyViolation(APIException):
         super().__init__(detail=detail)
 
 
-class InvalidValue(APIException):
+class UnknownValue(APIException):
     status_code = status.HTTP_404_NOT_FOUND
+    headers = {"X-Error": "UnknownValue"}
+
+    def __init__(self, column_name: str):
+        detail = f"Invalid {column_name.key} is provided"
+        super().__init__(detail=detail)
+
+
+class InvalidValue(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidValue"}
 
     def __init__(self, column_name: str):
@@ -141,10 +150,10 @@ class OverlappingLandmarkBoundary(APIException):
     headers = {"X-Error": "OverlappingLandmarkBoundary"}
 
 
-class InvalidLandmarkBoundaryArea(APIException):
+class InvalidBoundaryArea(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Boundary area not within the prescribed limits"
-    headers = {"X-Error": "InvalidLandmarkBoundaryArea"}
+    headers = {"X-Error": "InvalidBoundaryArea"}
 
 
 class BusStopOutsideLandmark(APIException):
