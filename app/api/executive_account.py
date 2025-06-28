@@ -44,7 +44,6 @@ class ExecutiveSchema(BaseModel):
     created_on: datetime
 
 
-## Input Forms
 class CreateForm(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
@@ -142,6 +141,10 @@ class QueryParams(BaseModel):
         ]
     ),
     description="""
+    Create a new executive account.     
+    Only authorized users with `create_executive` permission can create a new executive.    
+    The password is hashed using Argon2 before storing.     
+    Duplicate usernames are not allowed.
     """,
 )
 async def create_executive(
@@ -187,6 +190,11 @@ async def create_executive(
         ]
     ),
     description="""
+    Update an existing executive account.   
+    Executives can update their own account but cannot update their own status.     
+    Authorized users with `update_executive` permission can update any executive.   
+    Password changes are securely hashed.   
+    Modifications are only saved if changes are detected.
     """,
 )
 async def update_executive(
@@ -199,6 +207,8 @@ async def update_executive(
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
+        if fParam.id is None:
+            fParam.id = token.executive_id
         isSelfUpdate = fParam.id == token.executive_id
         hasUpdatePermission = bool(role and role.update_executive)
         if not isSelfUpdate and not hasUpdatePermission:
@@ -262,6 +272,11 @@ async def update_executive(
         ]
     ),
     description="""
+    Delete an executive account.    
+    Only users with the `delete_executive` permission can delete executive accounts.    
+    Self-deletion is not allowed for safety reasons.    
+    If the specified executive exists, it will be deleted permanently.  
+    The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_executive(
@@ -276,14 +291,16 @@ async def delete_executive(
         validators.executivePermission(role, ExecutiveRole.delete_executive)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.executive_id:
             raise exceptions.NoPermission()
 
         executive = session.query(Executive).filter(Executive.id == fParam.id).first()
         if executive is not None:
             session.delete(executive)
             session.commit()
-            logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
+            logEvent(
+                token, request_info, jsonable_encoder(executive, exclude={"password"})
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
@@ -297,6 +314,12 @@ async def delete_executive(
     response_model=List[ExecutiveSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch executive accounts with filtering, sorting, and pagination.   
+    Filter by username, gender, designation, contact details, status, and creation/update timestamps.   
+    Filter by ID ranges or lists.   
+    Sort by ID, creation date, or update date in ascending or descending order. 
+    Paginate using offset and limit.    
+    Returns a list of executive accounts matching the criteria.
     """,
 )
 async def fetch_executive(
