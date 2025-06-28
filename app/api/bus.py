@@ -358,6 +358,35 @@ async def fetch_buses(
         session.close()
 
 
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company/bus",
+    tags=["Bus"],
+    response_model=List[BusSchemaForVE],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of buses across companies based on provided query parameters.
+
+    - Requires a valid vendor token for authentication.
+    - Supports flexible filtering using query parameters such as bus ID, name, or company ID.
+    - Returns all matching buses without restricting to a specific company.
+    - Enables vendors to access bus data for authorized purposes.
+    """,
+)
+async def fetch_tokens(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
+
+        return searchBus(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 ## API endpoints [Operator]
 @route_operator.post(
     "/company/bus",
@@ -528,37 +557,7 @@ async def fetch_buses(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        if qParam.company_id is None:
-            qParam.company_id = token.company_id
-        elif qParam.company_id != token.company_id:
-            return []
-        return searchBus(session, qParam)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-## API endpoints [Vendor]
-@route_vendor.get(
-    "/company/bus",
-    tags=["Bus"],
-    response_model=List[MaskedBusSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description="""
-    Fetches a list of buses across companies based on provided query parameters.
-
-    - Requires a valid vendor token for authentication.
-    - Supports flexible filtering using query parameters such as bus ID, name, or company ID.
-    - Returns all matching buses without restricting to a specific company.
-    - Enables vendors to access bus data for authorized purposes.
-    """,
-)
-async def fetch_tokens(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
-    try:
-        session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
-
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)
