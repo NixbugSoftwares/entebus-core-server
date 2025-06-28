@@ -95,8 +95,10 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParamsForOP(BaseModel):
+class QueryParams(BaseModel):
+    # filters
     name: str | None = Field(Query(default=None))
+    registration_number: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -105,6 +107,29 @@ class QueryParamsForOP(BaseModel):
     # capacity based
     capacity_ge: int | None = Field(Query(default=None))
     capacity_le: int | None = Field(Query(default=None))
+    # updated_on based
+    updated_on_ge: datetime | None = Field(Query(default=None))
+    updated_on_le: datetime | None = Field(Query(default=None))
+    # created_on based
+    created_on_ge: datetime | None = Field(Query(default=None))
+    created_on_le: datetime | None = Field(Query(default=None))
+    # Ordering
+    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
+    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
+    # Pagination
+    offset: int = Field(Query(default=0, ge=0))
+    limit: int = Field(Query(default=20, gt=0, le=100))
+
+
+class QueryParamsForVE(QueryParams):
+    company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForOP(QueryParams):
+    # filters
+    status: BusStatus | None = Field(
+        Query(default=None, description=enumStr(BusStatus))
+    )
     # manufactured_on based
     manufactured_on_ge: datetime | None = Field(Query(default=None))
     manufactured_on_le: datetime | None = Field(Query(default=None))
@@ -120,30 +145,10 @@ class QueryParamsForOP(BaseModel):
     # road_tax_upto based
     road_tax_upto_ge: datetime | None = Field(Query(default=None))
     road_tax_upto_le: datetime | None = Field(Query(default=None))
-    # status based
-    status: BusStatus | None = Field(
-        Query(default=None, description=enumStr(BusStatus))
-    )
-    # updated_on based
-    updated_on_ge: datetime | None = Field(Query(default=None))
-    updated_on_le: datetime | None = Field(Query(default=None))
-    # created_on based
-    created_on_ge: datetime | None = Field(Query(default=None))
-    created_on_le: datetime | None = Field(Query(default=None))
-    # Ordering
-    order_by: OrderBy = Field(Query(default=OrderBy.id, description=enumStr(OrderBy)))
-    order_in: OrderIn = Field(Query(default=OrderIn.DESC, description=enumStr(OrderIn)))
-    # Pagination
-    offset: int = Field(Query(default=0, ge=0))
-    limit: int = Field(Query(default=20, gt=0, le=100))
 
 
 class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
-
-
-class QueryParamsForVE(QueryParamsForEX):
-    pass
 
 
 ## Function
@@ -176,7 +181,7 @@ def updateBus(bus: Bus, fParam: UpdateForm):
 
 
 def searchBus(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
+    session: Session, qParam: QueryParamsForVE | QueryParamsForEX | QueryParamsForOP
 ) -> List[Bus]:
     query = session.query(Bus)
 
@@ -429,6 +434,20 @@ async def fetch_tokens(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            status=BusStatus.ACTIVE,
+            manufactured_on_ge=None,
+            manufactured_on_le=None,
+            insurance_upto_ge=None,
+            insurance_upto_le=None,
+            pollution_upto_ge=None,
+            pollution_upto_le=None,
+            fitness_upto_ge=None,
+            fitness_upto_le=None,
+            road_tax_upto_ge=None,
+            road_tax_upto_le=None,
+        )
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)
