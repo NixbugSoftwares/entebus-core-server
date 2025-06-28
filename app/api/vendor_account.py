@@ -15,13 +15,13 @@ from pydantic import BaseModel, Field
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import EmailStr
 
-from app.api.bearer import bearer_executive, bearer_operator
+from app.api.bearer import bearer_executive, bearer_vendor
 from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
 from app.src.db import (
     ExecutiveRole,
-    Operator,
-    OperatorRole,
-    OperatorToken,
+    Vendor,
+    VendorRole,
+    VendorToken,
     sessionMaker,
 )
 from app.src import argon2, exceptions, validators, getters
@@ -29,14 +29,14 @@ from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
 
-route_operator = APIRouter()
+route_vendor = APIRouter()
 route_executive = APIRouter()
 
 
 ## Output Schema
-class OperatorSchema(BaseModel):
+class VendorSchema(BaseModel):
     id: int
-    company_id: int
+    business_id: int
     username: str
     gender: int
     full_name: Optional[str]
@@ -48,7 +48,7 @@ class OperatorSchema(BaseModel):
 
 
 ## Input Forms
-class CreateFormForOP(BaseModel):
+class CreateFormForVE(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
     gender: GenderType = Field(
@@ -63,11 +63,11 @@ class CreateFormForOP(BaseModel):
     )
 
 
-class CreateFormForEX(CreateFormForOP):
-    company_id: int = Field(Form())
+class CreateFormForEX(CreateFormForVE):
+    business_id: int = Field(Form())
 
 
-class UpdateFormForOP(BaseModel):
+class UpdateFormForVE(BaseModel):
     id: int | None = Field(Form(default=None))
     password: str | None = Field(
         Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
@@ -87,7 +87,7 @@ class UpdateFormForOP(BaseModel):
     )
 
 
-class UpdateFormForEX(UpdateFormForOP):
+class UpdateFormForEX(UpdateFormForVE):
     id: int = Field(Form())
 
 
@@ -107,7 +107,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParamsForOP(BaseModel):
+class QueryParamForVE(BaseModel):
     username: str | None = Field(Query(default=None))
     gender: GenderType | None = Field(
         Query(default=None, description=enumStr(GenderType))
@@ -137,74 +137,74 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParamsForOP):
-    company_id: int | None = Field(Query(default=None))
+class QueryParamsForEX(QueryParamForVE):
+    business_id: int | None = Field(Query(default=None))
 
 
 ## Function
-def updateOperator(
-    session: Session, operator: Operator, fParam: UpdateFormForOP | UpdateFormForEX
+def updateVendor(
+    session: Session, vendor: Vendor, fParam: UpdateFormForVE | UpdateFormForEX
 ):
     if fParam.password is not None:
-        operator.password = argon2.makePassword(fParam.password)
-    if fParam.gender is not None and operator.gender != fParam.gender:
-        operator.gender = fParam.gender
-    if fParam.full_name is not None and operator.full_name != fParam.full_name:
-        operator.full_name = fParam.full_name
-    if fParam.phone_number is not None and operator.phone_number != fParam.phone_number:
-        operator.phone_number = fParam.phone_number
-    if fParam.email_id is not None and operator.email_id != fParam.email_id:
-        operator.email_id = fParam.email_id
-    if fParam.status is not None and operator.status != fParam.status:
+        vendor.password = argon2.makePassword(fParam.password)
+    if fParam.gender is not None and vendor.gender != fParam.gender:
+        vendor.gender = fParam.gender
+    if fParam.full_name is not None and vendor.full_name != fParam.full_name:
+        vendor.full_name = fParam.full_name
+    if fParam.phone_number is not None and vendor.phone_number != fParam.phone_number:
+        vendor.phone_number = fParam.phone_number
+    if fParam.email_id is not None and vendor.email_id != fParam.email_id:
+        vendor.email_id = fParam.email_id
+    if fParam.status is not None and vendor.status != fParam.status:
         if fParam.status == AccountStatus.SUSPENDED:
-            session.query(OperatorToken).filter(
-                OperatorToken.operator_id == fParam.id
+            session.query(VendorToken).filter(
+                VendorToken.vendor_id == fParam.id
             ).delete()
-        operator.status = fParam.status
+        vendor.status = fParam.status
 
 
-def searchOperator(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
-) -> List[Operator]:
-    query = session.query(Operator)
+def searchVendor(
+    session: Session, qParam: QueryParamForVE | QueryParamsForEX
+) -> List[Vendor]:
+    query = session.query(Vendor)
 
     # Filters
     if qParam.username is not None:
-        query = query.filter(Operator.username.ilike(f"%{qParam.username}%"))
-    if qParam.company_id is not None:
-        query = query.filter(Operator.company_id == qParam.company_id)
+        query = query.filter(Vendor.username.ilike(f"%{qParam.username}%"))
+    if qParam.business_id is not None:
+        query = query.filter(Vendor.business_id == qParam.business_id)
     if qParam.gender is not None:
-        query = query.filter(Operator.gender == qParam.gender)
+        query = query.filter(Vendor.gender == qParam.gender)
     if qParam.full_name is not None:
-        query = query.filter(Operator.full_name.ilike(f"%{qParam.full_name}%"))
+        query = query.filter(Vendor.full_name.ilike(f"%{qParam.full_name}%"))
     if qParam.phone_number is not None:
-        query = query.filter(Operator.phone_number.ilike(f"%{qParam.phone_number}%"))
+        query = query.filter(Vendor.phone_number.ilike(f"%{qParam.phone_number}%"))
     if qParam.email_id is not None:
-        query = query.filter(Operator.email_id.ilike(f"%{qParam.email_id}%"))
+        query = query.filter(Vendor.email_id.ilike(f"%{qParam.email_id}%"))
     if qParam.status is not None:
-        query = query.filter(Operator.status == qParam.status)
+        query = query.filter(Vendor.status == qParam.status)
     # id based
     if qParam.id is not None:
-        query = query.filter(Operator.id == qParam.id)
+        query = query.filter(Vendor.id == qParam.id)
     if qParam.id_ge is not None:
-        query = query.filter(Operator.id >= qParam.id_ge)
+        query = query.filter(Vendor.id >= qParam.id_ge)
     if qParam.id_le is not None:
-        query = query.filter(Operator.id <= qParam.id_le)
+        query = query.filter(Vendor.id <= qParam.id_le)
     if qParam.id_list is not None:
-        query = query.filter(Operator.id.in_(qParam.id_list))
+        query = query.filter(Vendor.id.in_(qParam.id_list))
     # updated_on based
     if qParam.updated_on_ge is not None:
-        query = query.filter(Operator.updated_on >= qParam.updated_on_ge)
+        query = query.filter(Vendor.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
-        query = query.filter(Operator.updated_on <= qParam.updated_on_le)
+        query = query.filter(Vendor.updated_on <= qParam.updated_on_le)
     # created_on based
     if qParam.created_on_ge is not None:
-        query = query.filter(Operator.created_on >= qParam.created_on_ge)
+        query = query.filter(Vendor.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
-        query = query.filter(Operator.created_on <= qParam.created_on_le)
+        query = query.filter(Vendor.created_on <= qParam.created_on_le)
 
     # Ordering
-    orderingAttribute = getattr(Operator, OrderBy(qParam.order_by).name)
+    orderingAttribute = getattr(Vendor, OrderBy(qParam.order_by).name)
     if qParam.order_in == OrderIn.ASC:
         query = query.order_by(orderingAttribute.asc())
     else:
@@ -217,9 +217,9 @@ def searchOperator(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/account",
-    tags=["Operator Account"],
-    response_model=OperatorSchema,
+    "/business/account",
+    tags=["Vendor Account"],
+    response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -228,14 +228,14 @@ def searchOperator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status.       
-    Only executive with `create_operator` permission can create operator.       
-    Logs the operator account creation activity with the associated token.     
+    Creates a new vendor account with an active status.       
+    Only executive with `create_vendor` permission can create vendor.       
+    Logs the vendor account creation activity with the associated token.     
     Follow patterns for smooth creation of username and password.       
     The password is hashed using Argon2 before storing.
     """,
 )
-async def create_operator(
+async def create_vendor(
     fParam: CreateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
@@ -244,11 +244,11 @@ async def create_operator(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_operator)
+        validators.executivePermission(role, ExecutiveRole.create_vendor)
 
         fParam.password = argon2.makePassword(fParam.password)
-        operator = Operator(
-            company_id=fParam.company_id,
+        vendor = Vendor(
+            business_id=fParam.business_id,
             username=fParam.username,
             password=fParam.password,
             gender=fParam.gender,
@@ -256,14 +256,14 @@ async def create_operator(
             phone_number=fParam.phone_number,
             email_id=fParam.email_id,
         )
-        session.add(operator)
+        session.add(vendor)
         session.commit()
         logEvent(
             token,
             request_info,
-            jsonable_encoder(operator, exclude={"password"}),
+            jsonable_encoder(vendor, exclude={"password"}),
         )
-        return operator
+        return vendor
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -271,9 +271,9 @@ async def create_operator(
 
 
 @route_executive.patch(
-    "/company/account",
-    tags=["Operator Account"],
-    response_model=OperatorSchema,
+    "/business/account",
+    tags=["Vendor Account"],
+    response_model=VendorSchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -282,15 +282,15 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account.       
-    Executive with `update_operator` permission can update operators.     
+    Updates an existing vendor account.       
+    Executive with `update_vendor` permission can update vendors account.     
     Follow patterns for smooth creation of password.        
     The password is hashed using Argon2 before storing.         
-    If the status is set to`SUSPENDED, all tokens associated with that operator are revoked.      
-    Logs the operator account update activity with the associated token.
+    If the status is set to`SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
-async def update_operator(
+async def update_vendor(
     fParam: UpdateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
@@ -299,22 +299,22 @@ async def update_operator(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_operator)
+        validators.executivePermission(role, ExecutiveRole.update_vendor)
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
-        if operator is None:
+        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        if vendor is None:
             raise exceptions.InvalidIdentifier()
 
-        updateOperator(session, operator, fParam)
-        haveUpdates = session.is_modified(operator)
+        updateVendor(session, vendor, fParam)
+        haveUpdates = session.is_modified(vendor)
         if haveUpdates:
             session.commit()
-            session.refresh(operator)
+            session.refresh(vendor)
 
-        operatorData = jsonable_encoder(operator, exclude={"password"})
+        vendorData = jsonable_encoder(vendor, exclude={"password"})
         if haveUpdates:
-            logEvent(token, request_info, operatorData)
-        return operatorData
+            logEvent(token, request_info, vendorData)
+        return vendorData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -322,8 +322,8 @@ async def update_operator(
 
 
 @route_executive.delete(
-    "/company/account",
-    tags=["Operator Account"],
+    "/business/account",
+    tags=["Vendor Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
         [
@@ -332,12 +332,12 @@ async def update_operator(
         ]
     ),
     description="""
-    Delete an existing operator by ID.  
-    Requires executive permissions with `delete_operator` role.  
-    Deletes the operator and logs the deletion event.
+    Delete an existing vendor by ID.  
+    Requires executive permissions with `delete_vendor` role.  
+    Deletes the vendor and logs the deletion event.
     """,
 )
-async def delete_operator(
+async def delete_vendor(
     fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
@@ -346,14 +346,14 @@ async def delete_operator(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, OperatorRole.delete_operator)
+        validators.executivePermission(role, VendorRole.delete_vendor)
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
-        if operator is not None:
-            session.delete(operator)
+        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        if vendor is not None:
+            session.delete(vendor)
             session.commit()
             logEvent(
-                token, request_info, jsonable_encoder(operator, exclude={"password"})
+                token, request_info, jsonable_encoder(vendor, exclude={"password"})
             )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
@@ -363,39 +363,39 @@ async def delete_operator(
 
 
 @route_executive.get(
-    "/company/account",
-    tags=["Operator Account"],
-    response_model=List[OperatorSchema],
+    "/business/account",
+    tags=["Vendor Account"],
+    response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch operator accounts with filtering, sorting, and pagination.    
-    Filter by company_id, username, gender, designation, contact details, status, and creation/update timestamps.   
+    Fetch vendor accounts with filtering, sorting, and pagination.    
+    Filter by business_id, username, gender, designation, contact details, status, and creation/update timestamps.   
     Filter by ID ranges or lists.    
     Sort by ID, creation date, or update date in ascending or descending order.     
     Paginate using offset and limit.    
-    Returns a list of operator accounts matching the criteria.      
+    Returns a list of vendor accounts matching the criteria.      
     Requires a valid executive token.
     """,
 )
-async def fetch_operator(
+async def fetch_vendor(
     qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
         validators.executiveToken(bearer.credentials, session)
 
-        return searchOperator(session, qParam)
+        return searchVendor(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
         session.close()
 
 
-## API endpoints [Operator]
-@route_operator.post(
-    "/company/account",
+## API endpoints [Vendor]
+@route_vendor.post(
+    "/business/account",
     tags=["Account"],
-    response_model=OperatorSchema,
+    response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
         [
@@ -404,28 +404,28 @@ async def fetch_operator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status, associated with the current operator company.     
-    Only operator with `create_operator` permission can create operator.        
-    Logs the operator account creation activity with the associated token.      
+    Creates a new vendor account with an active status, associated with the current vendor business.     
+    Only vendor with `create_vendor` permission can create vendor.        
+    Logs the vendor account creation activity with the associated token.      
     Follow patterns for smooth creation of username and password.       
     The password is hashed using Argon2 before storing.         
     Duplicate usernames are not allowed.
     """,
 )
-async def create_operator(
-    fParam: CreateFormForOP = Depends(),
-    bearer=Depends(bearer_operator),
+async def create_vendor(
+    fParam: CreateFormForVE = Depends(),
+    bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
-        role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_operator)
+        token = validators.vendorToken(bearer.credentials, session)
+        role = getters.vendorRole(token, session)
+        validators.vendorPermission(role, VendorRole.create_vendor)
 
         fParam.password = argon2.makePassword(fParam.password)
-        operator = Operator(
-            company_id=token.company_id,
+        vendor = Vendor(
+            business_id=token.business_id,
             username=fParam.username,
             password=fParam.password,
             gender=fParam.gender,
@@ -433,24 +433,24 @@ async def create_operator(
             phone_number=fParam.phone_number,
             email_id=fParam.email_id,
         )
-        session.add(operator)
+        session.add(vendor)
         session.commit()
         logEvent(
             token,
             request_info,
-            jsonable_encoder(operator, exclude={"password"}),
+            jsonable_encoder(vendor, exclude={"password"}),
         )
-        return operator
+        return vendor
     except Exception as e:
         exceptions.handle(e)
     finally:
         session.close()
 
 
-@route_operator.patch(
-    "/company/account",
+@route_vendor.patch(
+    "/business/account",
     tags=["Account"],
-    response_model=OperatorSchema,
+    response_model=VendorSchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -459,61 +459,61 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account associated with the current operator company.      
-    Operator can update their own account but cannot update their own status.       
-    Operator with `update_operator` permission can update other operators.      
+    Updates an existing vendor account associated with the current vendor business.      
+    Vendor can update their own account but cannot update their own status.       
+    Vendor with `update_vendor` permission can update other vendors.      
     Follow patterns for smooth creation of username and password.       
     Password changes are securely hashed.       
-    If the status is set to SUSPENDED, all tokens associated with that operator are revoked.      
-    Logs the operator account update activity with the associated token.
+    If the status is set to SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
-async def update_operator(
-    fParam: UpdateFormForOP = Depends(),
-    bearer=Depends(bearer_operator),
+async def update_vendor(
+    fParam: UpdateFormForVE = Depends(),
+    bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
-        role = getters.operatorRole(token, session)
+        token = validators.vendorToken(bearer.credentials, session)
+        role = getters.vendorRole(token, session)
 
         if fParam.id is None:
-            fParam.id = token.operator_id
-        isSelfUpdate = fParam.id == token.operator_id
-        hasUpdatePermission = bool(role and role.update_operator)
+            fParam.id = token.vendor_id
+        isSelfUpdate = fParam.id == token.vendor_id
+        hasUpdatePermission = bool(role and role.update_vendor)
         if not isSelfUpdate and not hasUpdatePermission:
             raise exceptions.NoPermission()
         if fParam.status == AccountStatus.SUSPENDED and isSelfUpdate:
             raise exceptions.NoPermission()
 
-        operator = (
-            session.query(Operator)
-            .filter(Operator.id == fParam.id)
-            .filter(Operator.company_id == token.company_id)
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
             .first()
         )
-        if operator is None:
+        if vendor is None:
             raise exceptions.InvalidIdentifier()
 
-        updateOperator(session, operator, fParam)
-        haveUpdates = session.is_modified(operator)
+        updateVendor(session, vendor, fParam)
+        haveUpdates = session.is_modified(vendor)
         if haveUpdates:
             session.commit()
-            session.refresh(operator)
+            session.refresh(vendor)
 
-        operatorData = jsonable_encoder(operator, exclude={"password"})
+        vendorData = jsonable_encoder(vendor, exclude={"password"})
         if haveUpdates:
-            logEvent(token, request_info, operatorData)
-        return operatorData
+            logEvent(token, request_info, vendorData)
+        return vendorData
     except Exception as e:
         exceptions.handle(e)
     finally:
         session.close()
 
 
-@route_operator.delete(
-    "/company/account",
+@route_vendor.delete(
+    "/business/account",
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -523,39 +523,39 @@ async def update_operator(
         ]
     ),
     description="""
-    Delete an operator account associated with the current operator company.        
-    Only users with the `delete_operator` permission can delete operator accounts.        
+    Delete an vendor account associated with the current vendor business.        
+    Only users with the `delete_vendor` permission can delete vendor accounts.        
     Self-deletion is not allowed for safety reasons.    
-    If the specified operator exists, it will be deleted permanently.    
+    If the specified vendor exists, it will be deleted permanently.    
     The deleted account details are logged for audit purposes.
     """,
 )
-async def delete_operator(
+async def delete_vendor(
     fParam: DeleteForm = Depends(),
-    bearer=Depends(bearer_operator),
+    bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
-        role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_operator)
+        token = validators.vendorToken(bearer.credentials, session)
+        role = getters.vendorRole(token, session)
+        validators.vendorPermission(role, VendorRole.delete_vendor)
 
         # Prevent self deletion
-        if fParam.id == token.operator_id:
+        if fParam.id == token.business_id:
             raise exceptions.NoPermission()
 
-        operator = (
-            session.query(Operator)
-            .filter(Operator.id == fParam.id)
-            .filter(Operator.company_id == token.company_id)
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
             .first()
         )
-        if operator is not None:
-            session.delete(operator)
+        if vendor is not None:
+            session.delete(vendor)
             session.commit()
             logEvent(
-                token, request_info, jsonable_encoder(operator, exclude={"password"})
+                token, request_info, jsonable_encoder(vendor, exclude={"password"})
             )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
@@ -564,30 +564,28 @@ async def delete_operator(
         session.close()
 
 
-@route_operator.get(
-    "/company/account",
+@route_vendor.get(
+    "/business/account",
     tags=["Account"],
-    response_model=List[OperatorSchema],
+    response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch the operator information associated with the current operator company.     
+    Fetch the vendor information associated with the current vendor business.     
     Filter by username, gender, designation, contact details, status, and creation/update timestamps.      
     Filter by ID ranges or lists.       
     Sort by ID, creation date, or update date in ascending or descending order.     
     Paginate using offset and limit.        
-    Returns a list of operator accounts matching the criteria.      
-    Requires a valid operator token.
+    Returns a list of vendor accounts matching the criteria.      
+    Requires a valid vendor token.
     """,
 )
-async def fetch_operator(
-    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
-):
+async def fetch_vendor(qParam: QueryParamForVE = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
-        return searchOperator(session, qParam)
+        qParam = QueryParamsForEX(**qParam.model_dump(), business_id=token.business_id)
+        return searchVendor(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
