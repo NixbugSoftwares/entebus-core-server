@@ -102,6 +102,28 @@ class QueryParamsForOP(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # capacity based
+    capacity_ge: int | None = Field(Query(default=None))
+    capacity_le: int | None = Field(Query(default=None))
+    # manufactured_on based
+    manufactured_on_ge: datetime | None = Field(Query(default=None))
+    manufactured_on_le: datetime | None = Field(Query(default=None))
+    # insurance_upto based
+    insurance_upto_ge: datetime | None = Field(Query(default=None))
+    insurance_upto_le: datetime | None = Field(Query(default=None))
+    # pollution_upto based
+    pollution_upto_ge: datetime | None = Field(Query(default=None))
+    pollution_upto_le: datetime | None = Field(Query(default=None))
+    # fitness_upto based
+    fitness_upto_ge: datetime | None = Field(Query(default=None))
+    fitness_upto_le: datetime | None = Field(Query(default=None))
+    # road_tax_upto based
+    road_tax_upto_ge: datetime | None = Field(Query(default=None))
+    road_tax_upto_le: datetime | None = Field(Query(default=None))
+    # status based
+    status: BusStatus | None = Field(
+        Query(default=None, description=enumStr(BusStatus))
+    )
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -159,6 +181,13 @@ def searchBus(
     query = session.query(Bus)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(Bus.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
+    if qParam.status is not None:
+        query = query.filter(Bus.status == qParam.status)
+    # id based
     if qParam.id is not None:
         query = query.filter(Bus.id == qParam.id)
     if qParam.id_ge is not None:
@@ -167,14 +196,42 @@ def searchBus(
         query = query.filter(Bus.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Bus.id.in_(qParam.id_list))
-    if qParam.company_id is not None:
-        query = query.filter(Bus.company_id == qParam.company_id)
-    if qParam.name is not None:
-        query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
+    # capacity based
+    if qParam.capacity_ge is not None:
+        query = query.filter(Bus.capacity >= qParam.capacity_ge)
+    if qParam.capacity_le is not None:
+        query = query.filter(Bus.capacity <= qParam.capacity_le)
+    # manufactured_on based
+    if qParam.manufactured_on_ge is not None:
+        query = query.filter(Bus.manufactured_on >= qParam.manufactured_on_ge)
+    if qParam.manufactured_on_le is not None:
+        query = query.filter(Bus.manufactured_on <= qParam.manufactured_on_le)
+    # insurance_upto based
+    if qParam.insurance_upto_ge is not None:
+        query = query.filter(Bus.insurance_upto >= qParam.insurance_upto_ge)
+    if qParam.insurance_upto_le is not None:
+        query = query.filter(Bus.insurance_upto <= qParam.insurance_upto_le)
+    # pollution_upto based
+    if qParam.pollution_upto_ge is not None:
+        query = query.filter(Bus.pollution_upto >= qParam.pollution_upto_ge)
+    if qParam.pollution_upto_le is not None:
+        query = query.filter(Bus.pollution_upto <= qParam.pollution_upto_le)
+    # fitness_upto based
+    if qParam.fitness_upto_ge is not None:
+        query = query.filter(Bus.fitness_upto >= qParam.fitness_upto_ge)
+    if qParam.fitness_upto_le is not None:
+        query = query.filter(Bus.fitness_upto <= qParam.fitness_upto_le)
+    # road_tax_upto based
+    if qParam.road_tax_upto_ge is not None:
+        query = query.filter(Bus.road_tax_upto >= qParam.road_tax_upto_ge)
+    if qParam.road_tax_upto_le is not None:
+        query = query.filter(Bus.road_tax_upto <= qParam.road_tax_upto_le)
+    # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Bus.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Bus.updated_on <= qParam.updated_on_le)
+    # created_on based
     if qParam.created_on_ge is not None:
         query = query.filter(Bus.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
