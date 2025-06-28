@@ -7,7 +7,7 @@ from fastapi import (
     Query,
     Response,
     status,
-    Form,
+    Body,
 )
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
@@ -53,42 +53,42 @@ class ScheduleSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(Form(max_length=128))
-    description: Optional[str] = Field(Form(max_length=2048, default=None))
-    route_id: Optional[int] = Field(Form(default=None))
-    fare_id: Optional[int] = Field(Form(default=None))
-    bus_id: Optional[int] = Field(Form(default=None))
-    frequency: Optional[List[Day]] = Field(Form(description=enumStr(Day), default=None))
+    name: str = Field(Body(max_length=128))
+    description: Optional[str] = Field(Body(max_length=2048, default=None))
+    route_id: Optional[int] = Field(Body(default=None))
+    fare_id: Optional[int] = Field(Body(default=None))
+    bus_id: Optional[int] = Field(Body(default=None))
+    frequency: Optional[List[Day]] = Field(Body(description=enumStr(Day), default=None))
     ticketing_mode: TicketingMode = Field(
-        Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
+        Body(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
     triggering_mode: TriggeringMode = Field(
-        Form(description=enumStr(TriggeringMode), default=TriggeringMode.AUTO)
+        Body(description=enumStr(TriggeringMode), default=TriggeringMode.AUTO)
     )
 
 
 class CreateFormForEX(CreateFormForOP):
-    company_id: int = Field(Form())
+    company_id: int = Field(Body())
 
 
 class UpdateForm(BaseModel):
-    id: int = Field(Form())
-    name: str | None = Field(Form(default=None, max_length=128))
-    description: str | None = Field(Form(default=None, max_length=2048))
-    route_id: int | None = Field(Form(default=None))
-    fare_id: int | None = Field(Form(default=None))
-    bus_id: int | None = Field(Form(default=None))
-    frequency: List[Day] | None = Field(Form(default=None, description=enumStr(Day)))
+    id: int = Field(Body())
+    name: str | None = Field(Body(default=None, max_length=128))
+    description: str | None = Field(Body(default=None, max_length=2048))
+    route_id: int | None = Field(Body(default=None))
+    fare_id: int | None = Field(Body(default=None))
+    bus_id: int | None = Field(Body(default=None))
+    frequency: List[Day] | None = Field(Body(default=None, description=enumStr(Day)))
     ticketing_mode: TicketingMode | None = Field(
-        Form(default=None, description=enumStr(TicketingMode))
+        Body(default=None, description=enumStr(TicketingMode))
     )
     triggering_mode: TriggeringMode | None = Field(
-        Form(default=None, description=enumStr(TriggeringMode))
+        Body(default=None, description=enumStr(TriggeringMode))
     )
 
 
 class DeleteForm(BaseModel):
-    id: int = Field(Form())
+    id: int = Field(Body())
 
 
 ## Query Parameters
@@ -108,7 +108,7 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
-    description: str | None = Field(Form(default=None))
+    description: str | None = Field(Query(default=None))
     route_id: int | None = Field(Query(default=None))
     fare_id: int | None = Field(Query(default=None))
     bus_id: int | None = Field(Query(default=None))
@@ -250,6 +250,8 @@ def searchSchedule(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.InvalidValue(Schedule.bus_id),
+            exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
     ),
     description="""
@@ -420,6 +422,7 @@ async def fetch_schedule(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.InvalidValue(Schedule.bus_id),
         ]
     ),
     description="""
@@ -436,11 +439,10 @@ async def create_schedule(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_schedule)
 
-        company = session.query(Company).filter(Company.id == token.company_id).first()
         bus = (
             session.query(Bus)
             .filter(Bus.id == fParam.bus_id)
-            .filter(Bus.company_id == company.id)
+            .filter(Bus.company_id == token.company_id)
             .first()
         )
         if bus is None:
@@ -448,7 +450,7 @@ async def create_schedule(
         route = (
             session.query(Route)
             .filter(Route.id == fParam.route_id)
-            .filter(Route.company_id == company.id)
+            .filter(Route.company_id == token.company_id)
             .first()
         )
         if route is None:
@@ -456,7 +458,7 @@ async def create_schedule(
         fare = (
             session.query(Fare)
             .filter(Fare.id == fParam.fare_id)
-            .filter(Fare.company_id == company.id)
+            .filter(Fare.company_id == token.company_id)
             .first()
         )
         if fare is None:
@@ -483,7 +485,7 @@ async def create_schedule(
         session.close()
 
 
-@route_executive.patch(
+@route_operator.patch(
     "/company/schedule",
     tags=["Schedule"],
     response_model=ScheduleSchema,
@@ -499,16 +501,21 @@ async def create_schedule(
 )
 async def update_schedule(
     fParam: UpdateForm = Depends(),
-    bearer=Depends(bearer_executive),
+    bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
-        role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_schedule)
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, ExecutiveRole.update_schedule)
 
-        schedule = session.query(Schedule).filter(Schedule.id == fParam.id).first()
+        schedule = (
+            session.query(Schedule)
+            .filter(Schedule.id == fParam.id)
+            .filter(Schedule.company_id == token.company_id)
+            .first()
+        )
         if schedule is None:
             raise exceptions.InvalidIdentifier()
 
