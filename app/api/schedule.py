@@ -156,19 +156,25 @@ def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
         schedule.description = fParam.description
     if fParam.route_id is not None and schedule.route_id != fParam.route_id:
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
+        if route is None:
+            raise exceptions.UnknownValue(Schedule.route_id)
         if route.company_id != schedule.company_id:
-            raise exceptions.InvalidValue(Schedule.route_id)
+            raise exceptions.InvalidAssociation(Schedule.route_id, Schedule.company_id)
         schedule.route_id = fParam.route_id
     if fParam.fare_id is not None and schedule.fare_id != fParam.fare_id:
         fare = session.query(Fare).filter(Fare.id == fParam.fare_id).first()
+        if fare is None:
+            raise exceptions.UnknownValue(Schedule.fare_id)
         if fare.scope != FareScope.GLOBAL:
             if fare.company_id != schedule.company_id:
-                raise exceptions.InvalidValue(Schedule.fare_id)
+                raise exceptions.InvalidAssociation(Schedule.fare_id, Schedule.company_id)
         schedule.fare_id = fParam.fare_id
     if fParam.bus_id is not None and schedule.bus_id != fParam.bus_id:
         bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
+        if bus is None:
+            raise exceptions.UnknownValue(Schedule.bus_id)
         if bus.company_id != schedule.company_id:
-            raise exceptions.InvalidValue(Schedule.bus_id)
+            raise exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id)
         schedule.bus_id = fParam.bus_id
     if fParam.frequency is not None and schedule.frequency != fParam.frequency:
         schedule.frequency = fParam.frequency
@@ -260,7 +266,7 @@ def searchSchedule(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InvalidValue(Schedule.bus_id),
+            exceptions.UnknownValue(Schedule.bus_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
     ),
@@ -285,16 +291,16 @@ async def create_schedule(
 
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
-            raise exceptions.InvalidValue(Schedule.company_id)
+            raise exceptions.UnknownValue(Schedule.company_id)
         bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
         if bus is None:
-            raise exceptions.InvalidValue(Schedule.bus_id)
+            raise exceptions.UnknownValue(Schedule.bus_id)
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
-            raise exceptions.InvalidValue(Schedule.route_id)
+            raise exceptions.UnknownValue(Schedule.route_id)
         fare = session.query(Fare).filter(Fare.id == fParam.fare_id).first()
         if fare is None:
-            raise exceptions.InvalidValue(Schedule.fare_id)
+            raise exceptions.UnknownValue(Schedule.fare_id)
 
         if bus.company_id != company.id:
             raise exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id)
@@ -336,7 +342,8 @@ async def create_schedule(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
-            exceptions.InvalidValue(Schedule.route_id)
+            exceptions.UnknownValue(Schedule.route_id),
+            exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
     ),
     description="""
@@ -449,7 +456,7 @@ async def fetch_schedule(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InvalidValue(Schedule.bus_id),
+            exceptions.UnknownValue(Schedule.bus_id),
         ]
     ),
     description="""
@@ -479,7 +486,7 @@ async def create_schedule(
             .first()
         )
         if bus is None:
-            raise exceptions.InvalidValue(Schedule.bus_id)
+            raise exceptions.UnknownValue(Schedule.bus_id)
         route = (
             session.query(Route)
             .filter(Route.id == fParam.route_id)
@@ -487,7 +494,7 @@ async def create_schedule(
             .first()
         )
         if route is None:
-            raise exceptions.InvalidValue(Schedule.route_id)
+            raise exceptions.UnknownValue(Schedule.route_id)
         fare = (
             session.query(Fare)
             .filter(Fare.id == fParam.fare_id)
@@ -495,7 +502,7 @@ async def create_schedule(
             .first()
         )
         if fare is None:
-            raise exceptions.InvalidValue(Schedule.fare_id)
+            raise exceptions.UnknownValue(Schedule.fare_id)
 
         schedule = Schedule(
             company_id=token.company_id,
@@ -527,7 +534,8 @@ async def create_schedule(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
-            exceptions.InvalidValue(Schedule.route_id)
+            exceptions.UnknownValue(Schedule.route_id),
+            exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
     ),
     description="""
