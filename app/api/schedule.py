@@ -149,16 +149,26 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
-def updateSchedule(schedule: Schedule, fParam: UpdateForm):
+def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
     if fParam.name is not None and schedule.name != fParam.name:
         schedule.name = fParam.name
     if fParam.description is not None and schedule.description != fParam.description:
         schedule.description = fParam.description
     if fParam.route_id is not None and schedule.route_id != fParam.route_id:
+        route = session.query(Route).filter(Route.id == fParam.route_id).first()
+        if route.company_id != schedule.company_id:
+            raise exceptions.InvalidValue(Schedule.route_id)
         schedule.route_id = fParam.route_id
     if fParam.fare_id is not None and schedule.fare_id != fParam.fare_id:
+        fare = session.query(Fare).filter(Fare.id == fParam.fare_id).first()
+        if fare.scope != FareScope.GLOBAL:
+            if fare.company_id != schedule.company_id:
+                raise exceptions.InvalidValue(Schedule.fare_id)
         schedule.fare_id = fParam.fare_id
     if fParam.bus_id is not None and schedule.bus_id != fParam.bus_id:
+        bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
+        if bus.company_id != schedule.company_id:
+            raise exceptions.InvalidValue(Schedule.bus_id)
         schedule.bus_id = fParam.bus_id
     if fParam.frequency is not None and schedule.frequency != fParam.frequency:
         schedule.frequency = fParam.frequency
@@ -326,6 +336,7 @@ async def create_schedule(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(Schedule.route_id)
         ]
     ),
     description="""
@@ -351,7 +362,7 @@ async def update_schedule(
         if schedule is None:
             raise exceptions.InvalidIdentifier()
 
-        updateSchedule(schedule, fParam)
+        updateSchedule(session, schedule, fParam)
         haveUpdates = session.is_modified(schedule)
         if haveUpdates:
             session.commit()
@@ -516,6 +527,7 @@ async def create_schedule(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidValue(Schedule.route_id)
         ]
     ),
     description="""
@@ -545,7 +557,7 @@ async def update_schedule(
         if schedule is None:
             raise exceptions.InvalidIdentifier()
 
-        updateSchedule(schedule, fParam)
+        updateSchedule(session, schedule, fParam)
         haveUpdates = session.is_modified(schedule)
         if haveUpdates:
             session.commit()
