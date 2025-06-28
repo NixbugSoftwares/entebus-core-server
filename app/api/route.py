@@ -91,12 +91,8 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParamsForOP):
+class QueryParams(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
-
-
-class QueryParamsForVE(QueryParamsForEX):
-    pass
 
 
 ## Function
@@ -108,7 +104,7 @@ def updateRoute(route: Route, fParam: UpdateForm):
 
 
 def searchRoute(
-    session: Session, qParam: QueryParamsForVE | QueryParamsForOP | QueryParamsForEX
+    session: Session, qParam: QueryParams | QueryParamsForOP
 ) -> List[Route]:
     query = session.query(Route)
 
@@ -169,6 +165,7 @@ def searchRoute(
     description="""
     Create a new route for a specified company.  
     Requires executive role with `create_route` permission.  
+    Accepts route name and start time.
     """,
 )
 async def create_route(
@@ -290,8 +287,8 @@ async def delete_route(
     Requires a valid executive token.
     """,
 )
-async def fetch_routes(
-    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
+async def fetch_route(
+    qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -316,9 +313,7 @@ async def fetch_routes(
     Supports filtering, sorting, and pagination.
     """,
 )
-async def fetch_tokens(
-    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
-):
+async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
@@ -478,14 +473,14 @@ async def delete_route(
     Requires a valid operator token.
     """,
 )
-async def fetch_routes(
+async def fetch_route(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = QueryParams(**qParam.model_dump(), company_id=token.company_id)
         return searchRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)

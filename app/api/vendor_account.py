@@ -579,7 +579,9 @@ async def delete_vendor(
     Requires a valid vendor token.
     """,
 )
-async def fetch_vendor(qParam: QueryParamForVE = Depends(), bearer=Depends(bearer_vendor)):
+async def fetch_vendor(
+    qParam: QueryParamForVE = Depends(), bearer=Depends(bearer_vendor)
+):
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
