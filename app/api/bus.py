@@ -33,6 +33,8 @@ class BusSchemaForVE(BaseModel):
     registration_number: str
     name: str
     capacity: int
+    updated_on: Optional[datetime]
+    created_on: datetime
 
 
 class BusSchema(BusSchemaForVE):
@@ -42,8 +44,6 @@ class BusSchema(BusSchemaForVE):
     fitness_upto: Optional[datetime]
     road_tax_upto: Optional[datetime]
     status: int
-    updated_on: Optional[datetime]
-    created_on: datetime
 
 
 ## Input Forms
