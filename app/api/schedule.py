@@ -255,6 +255,11 @@ def searchSchedule(
         ]
     ),
     description="""
+    Create a new schedule for a specified company.           
+    Requires executive role with `create_schedule` permission.      
+    In this bus_id, route_id must be associated with the company.       
+    If fare_id is in Local scope, it must be associated with the company.   
+    Log the schedule creation activity with the associated token.
     """,
 )
 async def create_schedule(
@@ -324,6 +329,11 @@ async def create_schedule(
         ]
     ),
     description="""
+    Update an existing schedule by ID.      
+    Requires executive role with `update_schedule` permission.   
+    In this bus_id, route_id must be associated with the company.       
+    If fare_id is in Local scope, it must be associated with the company.    
+    Log the schedule update activity with the associated token.
     """,
 )
 async def update_schedule(
@@ -365,6 +375,9 @@ async def update_schedule(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete an existing schedule by ID.      
+    Requires executive role with `delete_schedule` permission.      
+    Deletes the schedule if it exists and logs the action.
     """,
 )
 async def delete_schedule(
@@ -396,6 +409,9 @@ async def delete_schedule(
     response_model=List[ScheduleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch a list of all schedules across companies.     
+    Only available to users with a valid executive token.       
+    Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_schedule(
@@ -426,6 +442,12 @@ async def fetch_schedule(
         ]
     ),
     description="""
+    Create a new schedule for the operator's own company.       
+    Requires operator role with `create_schedule` permission.       
+    The company ID is derived from the token, not user input.       
+    In this bus_id, route_id must be associated with the company.           
+    If fare_id is in Local scope, it must be associated with the company.       
+    Log the schedule creation activity with the associated token.
     """,
 )
 async def create_schedule(
@@ -497,6 +519,10 @@ async def create_schedule(
         ]
     ),
     description="""
+    Update an existing schedule belonging to the operator's company.        
+    Requires operator role with `update_schedule` permission.       
+    Ensures the schedule is owned by the operator's company.        
+    Log the schedule updating activity with the associated token.
     """,
 )
 async def update_schedule(
@@ -543,6 +569,10 @@ async def update_schedule(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
+    Delete an existing schedule by ID.          
+    Requires operator role with `delete_schedule` permission.       
+    Ensures the schedule is owned by the operator's company.        
+    Log the schedule deletion activity with the associated token.
     """,
 )
 async def delete_schedule(
@@ -580,6 +610,9 @@ async def delete_schedule(
     response_model=List[ScheduleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch a list of all schedules owned by the operator's company.          
+    Only available to users with a valid operator token.        
+    Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_schedule(
