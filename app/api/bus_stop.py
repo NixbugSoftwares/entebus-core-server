@@ -169,7 +169,7 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
             exceptions.NoPermission,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.InvalidValue(BusStop.landmark_id),
+            exceptions.UnknownValue(BusStop.landmark_id),
             exceptions.BusStopOutsideLandmark,
         ]
     ),
@@ -199,7 +199,7 @@ async def create_bus_stop(
             session.query(Landmark).filter(Landmark.id == fParam.landmark_id).first()
         )
         if landmark is None:
-            raise exceptions.InvalidValue(BusStop.landmark_id)
+            raise exceptions.UnknownValue(BusStop.landmark_id)
 
         boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
         if not boundaryGeom.contains(locationGeom):

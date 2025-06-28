@@ -48,7 +48,7 @@ class OperatorSchema(BaseModel):
 
 
 ## Input Forms
-class CreateForm(BaseModel):
+class CreateFormForOP(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
     gender: GenderType = Field(
@@ -63,11 +63,11 @@ class CreateForm(BaseModel):
     )
 
 
-class CreateFormForEX(CreateForm):
+class CreateFormForEX(CreateFormForOP):
     company_id: int = Field(Form())
 
 
-class UpdateForm(BaseModel):
+class UpdateFormForOP(BaseModel):
     id: int | None = Field(Form(default=None))
     password: str | None = Field(
         Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
@@ -87,7 +87,7 @@ class UpdateForm(BaseModel):
     )
 
 
-class UpdateFormForEX(UpdateForm):
+class UpdateFormForEX(UpdateFormForOP):
     id: int = Field(Form())
 
 
@@ -107,7 +107,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamsForOP(BaseModel):
     username: str | None = Field(Query(default=None))
     gender: GenderType | None = Field(
         Query(default=None, description=enumStr(GenderType))
@@ -137,13 +137,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def updateOperator(
-    session: Session, operator: Operator, fParam: UpdateForm | UpdateFormForEX
+    session: Session, operator: Operator, fParam: UpdateFormForOP | UpdateFormForEX
 ):
     if fParam.password is not None:
         operator.password = argon2.makePassword(fParam.password)
@@ -164,7 +164,7 @@ def updateOperator(
 
 
 def searchOperator(
-    session: Session, qParam: QueryParams | QueryParamsForEX
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
 ) -> List[Operator]:
     query = session.query(Operator)
 
@@ -172,7 +172,7 @@ def searchOperator(
     if qParam.username is not None:
         query = query.filter(Operator.username.ilike(f"%{qParam.username}%"))
     if qParam.company_id is not None:
-        query = query.filter(Operator.company_id == Operator.company_id)
+        query = query.filter(Operator.company_id == qParam.company_id)
     if qParam.gender is not None:
         query = query.filter(Operator.gender == qParam.gender)
     if qParam.full_name is not None:
@@ -228,13 +228,11 @@ def searchOperator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status.
-
-    - Only executive with `create_operator` permission can create operator.
-    - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new operator account with an active status.       
+    Only executive with `create_operator` permission can create operator.       
+    Logs the operator account creation activity with the associated token.     
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.
     """,
 )
 async def create_operator(
@@ -284,14 +282,12 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account.
-
-    - Executive with `update_operator` permission can update other operators.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the executive account update activity with the associated token.
+    Updates an existing operator account.       
+    Executive with `update_operator` permission can update operators.     
+    Follow patterns for smooth creation of password.        
+    The password is hashed using Argon2 before storing.         
+    If the status is set to`SUSPENDED, all tokens associated with that operator are revoked.      
+    Logs the operator account update activity with the associated token.
     """,
 )
 async def update_operator(
@@ -336,6 +332,9 @@ async def update_operator(
         ]
     ),
     description="""
+    Delete an existing operator by ID.  
+    Requires executive permissions with `delete_operator` role.  
+    Deletes the operator and logs the deletion event.
     """,
 )
 async def delete_operator(
@@ -369,6 +368,13 @@ async def delete_operator(
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch operator accounts with filtering, sorting, and pagination.    
+    Filter by company_id, username, gender, designation, contact details, status, and creation/update timestamps.   
+    Filter by ID ranges or lists.    
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.    
+    Returns a list of operator accounts matching the criteria.      
+    Requires a valid executive token.
     """,
 )
 async def fetch_operator(
@@ -398,17 +404,16 @@ async def fetch_operator(
         ]
     ),
     description="""
-    Creates a new operator account with an active status.
-
-    - Only operator with `create_operator` permission can create operator.
-    - Logs the operator account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new operator account with an active status, associated with the current operator company.     
+    Only operator with `create_operator` permission can create operator.        
+    Logs the operator account creation activity with the associated token.      
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.         
+    Duplicate usernames are not allowed.
     """,
 )
 async def create_operator(
-    fParam: CreateForm = Depends(),
+    fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
@@ -454,20 +459,17 @@ async def create_operator(
         ]
     ),
     description="""
-    Updates an existing operator account.
-
-    - Operator can update their own account details.
-    - Operator with `update_operator` permission can update other operators.
-    - An operator cannot update their own status.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that operator are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the operator account update activity with the associated token.
+    Updates an existing operator account associated with the current operator company.      
+    Operator can update their own account but cannot update their own status.       
+    Operator with `update_operator` permission can update other operators.      
+    Follow patterns for smooth creation of username and password.       
+    Password changes are securely hashed.       
+    If the status is set to SUSPENDED, all tokens associated with that operator are revoked.      
+    Logs the operator account update activity with the associated token.
     """,
 )
 async def update_operator(
-    fParam: UpdateForm = Depends(),
+    fParam: UpdateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
@@ -485,7 +487,12 @@ async def update_operator(
         if fParam.status == AccountStatus.SUSPENDED and isSelfUpdate:
             raise exceptions.NoPermission()
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == fParam.id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
+        )
         if operator is None:
             raise exceptions.InvalidIdentifier()
 
@@ -516,6 +523,11 @@ async def update_operator(
         ]
     ),
     description="""
+    Delete an operator account associated with the current operator company.        
+    Only users with the `delete_operator` permission can delete operator accounts.        
+    Self-deletion is not allowed for safety reasons.    
+    If the specified operator exists, it will be deleted permanently.    
+    The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_operator(
@@ -530,10 +542,15 @@ async def delete_operator(
         validators.operatorPermission(role, OperatorRole.delete_operator)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.operator_id:
             raise exceptions.NoPermission()
 
-        operator = session.query(Operator).filter(Operator.id == fParam.id).first()
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == fParam.id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
+        )
         if operator is not None:
             session.delete(operator)
             session.commit()
@@ -553,10 +570,17 @@ async def delete_operator(
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch the operator information associated with the current operator company.     
+    Filter by username, gender, designation, contact details, status, and creation/update timestamps.      
+    Filter by ID ranges or lists.       
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.        
+    Returns a list of operator accounts matching the criteria.      
+    Requires a valid operator token.
     """,
 )
 async def fetch_operator(
-    qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()

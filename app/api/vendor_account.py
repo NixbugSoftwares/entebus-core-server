@@ -48,7 +48,7 @@ class VendorSchema(BaseModel):
 
 
 ## Input Forms
-class CreateForm(BaseModel):
+class CreateFormForVE(BaseModel):
     username: str = Field(Form(pattern=REGEX_USERNAME, min_length=4, max_length=32))
     password: str = Field(Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32))
     gender: GenderType = Field(
@@ -63,11 +63,11 @@ class CreateForm(BaseModel):
     )
 
 
-class CreateFormForEX(CreateForm):
+class CreateFormForEX(CreateFormForVE):
     business_id: int = Field(Form())
 
 
-class UpdateForm(BaseModel):
+class UpdateFormForVE(BaseModel):
     id: int | None = Field(Form(default=None))
     password: str | None = Field(
         Form(pattern=REGEX_PASSWORD, min_length=8, max_length=32, default=None)
@@ -87,7 +87,7 @@ class UpdateForm(BaseModel):
     )
 
 
-class UpdateFormForEX(UpdateForm):
+class UpdateFormForEX(UpdateFormForVE):
     id: int = Field(Form())
 
 
@@ -107,7 +107,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class QueryParams(BaseModel):
+class QueryParamForVE(BaseModel):
     username: str | None = Field(Query(default=None))
     gender: GenderType | None = Field(
         Query(default=None, description=enumStr(GenderType))
@@ -137,13 +137,13 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParams):
+class QueryParamsForEX(QueryParamForVE):
     business_id: int | None = Field(Query(default=None))
 
 
 ## Function
 def updateVendor(
-    session: Session, vendor: Vendor, fParam: UpdateForm | UpdateFormForEX
+    session: Session, vendor: Vendor, fParam: UpdateFormForVE | UpdateFormForEX
 ):
     if fParam.password is not None:
         vendor.password = argon2.makePassword(fParam.password)
@@ -164,7 +164,7 @@ def updateVendor(
 
 
 def searchVendor(
-    session: Session, qParam: QueryParams | QueryParamsForEX
+    session: Session, qParam: QueryParamForVE | QueryParamsForEX
 ) -> List[Vendor]:
     query = session.query(Vendor)
 
@@ -172,7 +172,7 @@ def searchVendor(
     if qParam.username is not None:
         query = query.filter(Vendor.username.ilike(f"%{qParam.username}%"))
     if qParam.business_id is not None:
-        query = query.filter(Vendor.business_id == Vendor.business_id)
+        query = query.filter(Vendor.business_id == qParam.business_id)
     if qParam.gender is not None:
         query = query.filter(Vendor.gender == qParam.gender)
     if qParam.full_name is not None:
@@ -228,13 +228,11 @@ def searchVendor(
         ]
     ),
     description="""
-    Creates a new vendor account with an active status.
-
-    - Only executive with `create_vendor` permission can create vendor.
-    - Logs the executive account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new vendor account with an active status.       
+    Only executive with `create_vendor` permission can create vendor.       
+    Logs the vendor account creation activity with the associated token.     
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.
     """,
 )
 async def create_vendor(
@@ -284,12 +282,12 @@ async def create_vendor(
         ]
     ),
     description="""
-    Updates an existing vendor account.
-
-    - Executive with `update_vendor` permission can update other vendors.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that vendor are revoked.
-    - Logs the executive account update activity with the associated token.
+    Updates an existing vendor account.       
+    Executive with `update_vendor` permission can update vendors account.     
+    Follow patterns for smooth creation of password.        
+    The password is hashed using Argon2 before storing.         
+    If the status is set to`SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
 async def update_vendor(
@@ -334,6 +332,9 @@ async def update_vendor(
         ]
     ),
     description="""
+    Delete an existing vendor by ID.  
+    Requires executive permissions with `delete_vendor` role.  
+    Deletes the vendor and logs the deletion event.
     """,
 )
 async def delete_vendor(
@@ -367,6 +368,13 @@ async def delete_vendor(
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch vendor accounts with filtering, sorting, and pagination.    
+    Filter by business_id, username, gender, designation, contact details, status, and creation/update timestamps.   
+    Filter by ID ranges or lists.    
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.    
+    Returns a list of vendor accounts matching the criteria.      
+    Requires a valid executive token.
     """,
 )
 async def fetch_vendor(
@@ -396,17 +404,16 @@ async def fetch_vendor(
         ]
     ),
     description="""
-    Creates a new vendor account with an active status.
-
-    - Only vendor with `create_vendor` permission can create vendor.
-    - Logs the vendor account creation activity with the associated token.
-    - Follow patterns for smooth creation of username and password.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
+    Creates a new vendor account with an active status, associated with the current vendor business.     
+    Only vendor with `create_vendor` permission can create vendor.        
+    Logs the vendor account creation activity with the associated token.      
+    Follow patterns for smooth creation of username and password.       
+    The password is hashed using Argon2 before storing.         
+    Duplicate usernames are not allowed.
     """,
 )
 async def create_vendor(
-    fParam: CreateForm = Depends(),
+    fParam: CreateFormForVE = Depends(),
     bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
@@ -452,20 +459,17 @@ async def create_vendor(
         ]
     ),
     description="""
-    Updates an existing vendor account.
-
-    - Vendor can update their own account details.
-    - Vendor with `update_vendor` permission can update other vendors.
-    - An vendor cannot update their own status.
-    - Follow patterns for smooth creation of password.
-    - If the status is set to `SUSPENDED`, all tokens associated with that vendor are revoked.
-    - Phone number must follow RFC3966 format.
-    - Email ID must follow RFC5322 format.
-    - Logs the vendor account update activity with the associated token.
+    Updates an existing vendor account associated with the current vendor business.      
+    Vendor can update their own account but cannot update their own status.       
+    Vendor with `update_vendor` permission can update other vendors.      
+    Follow patterns for smooth creation of username and password.       
+    Password changes are securely hashed.       
+    If the status is set to SUSPENDED, all tokens associated with that vendor are revoked.      
+    Logs the vendor account update activity with the associated token.
     """,
 )
 async def update_vendor(
-    fParam: UpdateForm = Depends(),
+    fParam: UpdateFormForVE = Depends(),
     bearer=Depends(bearer_vendor),
     request_info=Depends(getters.requestInfo),
 ):
@@ -483,7 +487,12 @@ async def update_vendor(
         if fParam.status == AccountStatus.SUSPENDED and isSelfUpdate:
             raise exceptions.NoPermission()
 
-        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
+            .first()
+        )
         if vendor is None:
             raise exceptions.InvalidIdentifier()
 
@@ -514,6 +523,11 @@ async def update_vendor(
         ]
     ),
     description="""
+    Delete an vendor account associated with the current vendor business.        
+    Only users with the `delete_vendor` permission can delete vendor accounts.        
+    Self-deletion is not allowed for safety reasons.    
+    If the specified vendor exists, it will be deleted permanently.    
+    The deleted account details are logged for audit purposes.
     """,
 )
 async def delete_vendor(
@@ -528,10 +542,15 @@ async def delete_vendor(
         validators.vendorPermission(role, VendorRole.delete_vendor)
 
         # Prevent self deletion
-        if token.id == fParam.id:
+        if fParam.id == token.business_id:
             raise exceptions.NoPermission()
 
-        vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
+        vendor = (
+            session.query(Vendor)
+            .filter(Vendor.id == fParam.id)
+            .filter(Vendor.business_id == token.business_id)
+            .first()
+        )
         if vendor is not None:
             session.delete(vendor)
             session.commit()
@@ -551,9 +570,18 @@ async def delete_vendor(
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
+    Fetch the vendor information associated with the current vendor business.     
+    Filter by username, gender, designation, contact details, status, and creation/update timestamps.      
+    Filter by ID ranges or lists.       
+    Sort by ID, creation date, or update date in ascending or descending order.     
+    Paginate using offset and limit.        
+    Returns a list of vendor accounts matching the criteria.      
+    Requires a valid vendor token.
     """,
 )
-async def fetch_vendor(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
+async def fetch_vendor(
+    qParam: QueryParamForVE = Depends(), bearer=Depends(bearer_vendor)
+):
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
