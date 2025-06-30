@@ -24,7 +24,6 @@ OPENOBSERVE_STREAM = environ.get("OPENOBSERVE_STREAM", "entebus-core-server")
 # Redis DB configuration
 REDIS_HOST = environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = environ.get("REDIS_PORT", "6379")
-REDIS_DB = environ.get("REDIS_DB", "0")
 REDIS_PASSWORD = environ.get("REDIS_PASSWORD", "password")
 
 # MinIO configuration
