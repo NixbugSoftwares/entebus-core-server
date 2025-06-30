@@ -212,7 +212,7 @@ class TicketCreator:
         except Exception:
             return False
 
-    def getPEMprivateKey(self) -> bytes:
+    def getPEMprivateKeyBytes(self) -> bytes:
         """
         Serializes the private key to PEM format.
 
@@ -225,7 +225,7 @@ class TicketCreator:
             encryption_algorithm=serialization.NoEncryption(),
         )
 
-    def getPEMpublicKey(self) -> bytes:
+    def getPEMpublicKeyBytes(self) -> bytes:
         """
         Serializes the public key to PEM format.
 
@@ -236,6 +236,24 @@ class TicketCreator:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
+
+    def getPEMprivateKeyString(self) -> str:
+        """
+        Serializes the private key to PEM format.
+
+        Returns:
+            str: PEM-encoded private key.
+        """
+        return self.getPEMprivateKeyBytes().decode("utf-8")
+
+    def getPEMpublicKeyString(self) -> str:
+        """
+        Serializes the public key to PEM format.
+
+        Returns:
+            str: PEM-encoded public key.
+        """
+        return self.getPEMpublicKeyBytes().decode("utf-8")
 
     def getPrivateKey(self) -> ec.EllipticCurvePrivateKey:
         """
