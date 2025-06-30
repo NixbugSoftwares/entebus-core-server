@@ -160,7 +160,7 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Function
 def updateCompany(
-    session: Session | None, company: Company, fParam: UpdateFormForEX | UpdateFormForOP
+    session: Session, company: Company, fParam: UpdateFormForEX | UpdateFormForOP
 ):
     companyStatusTransition = {
         CompanyStatus.UNDER_VERIFICATION: [
@@ -556,7 +556,7 @@ async def update_company(
         if company is None or company.id != token.company_id:
             raise exceptions.InvalidIdentifier()
 
-        updateCompany(None, company, fParam)
+        updateCompany(session, company, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
