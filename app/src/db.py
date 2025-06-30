@@ -1949,22 +1949,19 @@ class Service(ORMbase):
         id (Integer):
             Primary key. Unique identifier for the service.
 
-        name (String):
-            Name of the service.
-            Must not be null and unique.
-            Maximum 128 characters.
-
         company_id (Integer):
             Foreign key referencing `company.id`.
             Indicates the company that owns this service.
             Indexed for faster queries.
 
-        route_id (JSONB):
-            JSON object representing the route id associated with the service.
+        route (JSONB):
+            JSON object storing the route data associated with the service.
+            Route once set cannot be changed.
             Must not be null.
 
-        fare_id (Integer):
-            JSON object representing the fare id associated with the service.
+        fare (JSONB):
+            JSON object storing the fare data associated with the service.
+            Fare once set cannot be changed.
             Must not be null.
 
         bus_id (Integer):
@@ -1986,7 +1983,7 @@ class Service(ORMbase):
             when the service begins operation,  based on route information.
 
         ending_at (DateTime):
-            Timestamp indicating the actual start time
+            Timestamp indicating the actual ending time
             when the service finishes operation, based on route information.
 
         private_key (TEXT):
@@ -2004,11 +2001,9 @@ class Service(ORMbase):
             Maximum 1024 characters.
 
         started_on (DateTime):
-            Timestamp indicating the actual start time.
             Time at which the first operator joined the duty.
 
         finished_on (DateTime):
-            Timestamp indicating the expected end time.
             Time at which the Service is ended by the operator or when the statement is generated.
 
         updated_on (DateTime):
@@ -2023,10 +2018,9 @@ class Service(ORMbase):
     __tablename__ = "service"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(128), nullable=False, unique=True)
     company_id = Column(Integer, ForeignKey("company.id"), index=True)
-    route_id = Column(JSONB, nullable=False)
-    fare_id = Column(JSONB, nullable=False)
+    route = Column(JSONB, nullable=False)
+    fare = Column(JSONB, nullable=False)
     bus_id = Column(Integer, ForeignKey("bus.id"))
     ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)

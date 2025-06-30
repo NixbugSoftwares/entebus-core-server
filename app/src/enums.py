@@ -109,3 +109,4 @@ class ServiceStatus(IntEnum):
     STARTED = 2
     TERMINATED = 3
     ENDED = 4
+    AUDITED = 5
