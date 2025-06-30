@@ -54,6 +54,13 @@ def createTables():
 
 def initDB():
     session = sessionMaker()
+    companyWallet = Wallet(
+        name="Nixbug company wallet",
+        balance=0,
+    )
+    session.add(companyWallet)
+    session.flush()
+
     company = Company(
         name="Nixbug company",
         status=CompanyStatus.VERIFIED,
@@ -64,6 +71,13 @@ def initDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
+    companyWalletMapping = CompanyWallet(
+        company_id=company.id,
+        wallet_id=companyWallet.id,
+    )
+    session.add(companyWalletMapping)
     session.flush()
 
     password = argon2.makePassword("password")
