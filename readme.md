@@ -64,6 +64,16 @@ docker run -d \
     public.ecr.aws/zinclabs/openobserve:latest
 ```
 
+**Redis DB**
+
+The redis image provides tags for running Redis DB. Redis is an in-memory key-value store, commonly used for caching, real-time analytics, session storage, and queue systems.
+```
+docker run --name redis \
+    -p 6379:6379 \
+    -e REDIS_PASSWORD=password \
+    -d redis
+```
+
 For creating and removing the table and bucket you can use arguments `-cr` and `-rm`. For initializing the table with sample data you can use `-init`. For running the test the Postgres DB must be running and the tables should be created and initialized with sample data.
 ```
 # Activate the python virtual environment
