@@ -20,7 +20,14 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_vendor
-from app.src.db import Business, ExecutiveRole, VendorRole, sessionMaker
+from app.src.db import (
+    Business,
+    ExecutiveRole,
+    VendorRole,
+    Wallet,
+    BusinessWallet,
+    sessionMaker,
+)
 from app.src import exceptions, validators, getters
 from app.src.enums import BusinessStatus, BusinessType
 from app.src.loggers import logEvent
@@ -300,6 +307,23 @@ async def create_business(
             location=fParam.location,
         )
         session.add(business)
+
+        # Create Wallet
+        walletName = fParam.name + " Wallet"
+        wallet = Wallet(
+            name=walletName,
+            balance=0,
+        )
+        session.add(wallet)
+        session.flush()
+
+        # Link Business to Wallet
+        businessWallet = BusinessWallet(
+            wallet_id=wallet.id,
+            business_id=business.id,
+        )
+        session.add(businessWallet)
+
         session.commit()
         logEvent(token, request_info, jsonable_encoder(business))
         return business
