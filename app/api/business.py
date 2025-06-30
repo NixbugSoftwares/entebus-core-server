@@ -160,9 +160,14 @@ class QueryParamsForEX(QueryParamsForVE):
 
 
 ## Function
-def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateFormForEX):
+def updateBusiness(
+    business: Business, wallet: Wallet | None, fParam: UpdateFormForVE | UpdateFormForEX
+):
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and business.name != fParam.name:
+            if wallet is not None:
+                walletName = fParam.name + " wallet"
+                wallet.name = walletName
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
             business.status = fParam.status
@@ -309,7 +314,7 @@ async def create_business(
         session.add(business)
 
         # Create Wallet
-        walletName = fParam.name + " Wallet"
+        walletName = fParam.name + " wallet"
         wallet = Wallet(
             name=walletName,
             balance=0,
@@ -366,8 +371,16 @@ async def update_business(
         business = session.query(Business).filter(Business.id == fParam.id).first()
         if business is None:
             raise exceptions.InvalidIdentifier()
+        wallet = (
+            session.query(Wallet)
+            .join(BusinessWallet, Wallet.id == BusinessWallet.wallet_id)
+            .filter(BusinessWallet.business_id == fParam.id)
+            .first()
+        )
+        if wallet is None:
+            raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, fParam)
+        updateBusiness(business, wallet, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()
@@ -491,7 +504,7 @@ async def update_business(
         if business is None or business.id != token.business_id:
             raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, fParam)
+        updateBusiness(business, None, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()

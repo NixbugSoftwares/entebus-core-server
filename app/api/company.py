@@ -388,7 +388,7 @@ async def update_company(
         wallet = (
             session.query(Wallet)
             .join(CompanyWallet, Wallet.id == CompanyWallet.wallet_id)
-            .filter(CompanyWallet.company_id == company.id)
+            .filter(CompanyWallet.company_id == fParam.id)
             .first()
         )
         if wallet is None:
