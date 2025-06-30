@@ -42,6 +42,7 @@ from app.src.enums import (
     TicketingMode,
     TriggeringMode,
     ServiceStatus,
+    CreatedMode,
 )
 
 
@@ -1935,85 +1936,116 @@ class CompanyWallet(ORMbase):
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
+
 class Service(ORMbase):
     """
-    Represents an instance of a transport service execution.
-    This table manages the lifecycle of a service run, including operational timing,
-    linked entities such as company, route, fare, and bus, and the cryptographic keys
-    required for secure ticket validation. Each record corresponds to one discrete
-    execution of a transport service.
+    Represents a transport service operated by a company.
+
+    This table stores details about individual service instances,
+    including their assigned route, fare, bus, and operational timeframes.
+    It also maintains cryptographic keys for secure ticketing
+    and records various states and modes related to the service.
+
     Columns:
         id (Integer):
-            Primary key. Unique identifier for the service instance.
+            Primary key. Unique identifier for the service.
+
+        name (String):
+            Name of the service.
+            Must not be null and unique.
+            Maximum 128 characters.
+
         company_id (Integer):
-            Foreign key referencing the company that owns the service.
-            Must be non-null. Used for scoping services under each company.
-            Indexed for performance.
+            Foreign key referencing `company.id`.
+            Indicates the company that owns this service.
+            Indexed for faster queries.
+
         route_id (Integer):
-            Foreign key referencing the route being serviced.
-            Must be non-null. Links the service to a predefined route.
-            If the route is deleted, this field remains unchanged.
+            Foreign key referencing `route.id`.
+            Specifies the route assigned to this service.
+
         fare_id (Integer):
-            Foreign key referencing the fare configuration applied for this service.
-            Must be non-null. Determines pricing and ticket validation rules.
+            Foreign key referencing `fare.id`.
+            Specifies the fare configuration used for this service.
+
         bus_id (Integer):
-            Foreign key referencing the bus assigned for this service.
-            Must be non-null. Specifies which physical vehicle is operating the service.
+            Foreign key referencing `bus.id`.
+            Specifies the bus assigned to this service.
+
         ticket_mode (Integer):
-            Defines the ticketing mode for the service.
-            Mapped from `TicketMode`.
-            Defaults to `HYBRID`.
+            Enum representing the ticketing mode.
+            Defaults to `TicketingMode.HYBRID`.
+            Mapped from the `TicketingMode` enum.
+
         status (Integer):
-            Current status of the service lifecycle.
-            Mapped from `ServiceStatus`.
-            Defaults to `CREATED`.
-        private_key (TEXT):
-            Cryptographic private key for ticket validation.
-            Must be non-null. Generated at service creation.
-            Used internally by the ticketing system.
-        public_key (TEXT):
-            Cryptographic public key for ticket validation.
-            Must be non-null. Distributed to clients for ticket signing/validation.
-        remark (TEXT):
-            Optional free-text notes or operational remarks for the service.
-            Useful for internal annotations, issues, or service notes.
+            Enum representing the current status of the service.
+            Defaults to `ServiceStatus.CREATED`.
+            Mapped from the `ServiceStatus` enum.
+
+        created_mode (Integer):
+            Enum indicating how the service was created.
+            Defaults to `CreatedMode.MANUAL`.
+            Mapped from the `CreatedMode` enum.
+
         starting_at (DateTime):
-            Scheduled start time for the service.
-            Must be non-null. Defines when the service is expected to begin.
+            Timestamp indicating the actual start time
+            when the service begins operation,  based on route information.
+
         ending_at (DateTime):
-            Scheduled end time for the service.
-            Must be non-null. Defines when the service is expected to complete.
+            Timestamp indicating the actual start time
+            when the service finishes operation, based on route information.
+
+        private_key (TEXT):
+            Private cryptographic key for the service.
+            Used for secure ticket generation and validation.
+            Must not be null.
+
+        public_key (TEXT):
+            Public cryptographic key corresponding to the private key.
+            Shared for ticket verification.
+            Must not be null.
+
+        remark (TEXT):
+            Optional text field for additional remarks or notes related to the service.
+            Maximum 1024 characters.
+        
+        can_join_at (DateTime):
+            Timestamp indicating when the service becomes available for operators to join.
+
         started_on (DateTime):
-            Actual timestamp when the service was started.
-            Nullable. Populated when the service transitions to `STARTED`.
+            Timestamp indicating the actual start time.
+            Time at which the first operator joined the duty.
+            
         finished_on (DateTime):
-            Actual timestamp when the service finished.
-            Nullable. Populated when the service transitions to TERMINATED or ENDED.
+            Timestamp indicating the expected end time.
+            Time at which the Service is ended by the operator or when the statement is generated.
+
         updated_on (DateTime):
-            Timestamp automatically updated whenever the service record is modified.
+            Timestamp automatically updated whenever the company wallet record is modified.
+            Useful for auditing or syncing purposes.
+
         created_on (DateTime):
-            Timestamp when the service was created.
-            Must be non-null. Defaults to the current time.
+            Timestamp indicating when the service record was created.
+            Automatically set to the current timestamp at insertion.
     """
 
     __tablename__ = "service"
 
     id = Column(Integer, primary_key=True)
+    name = Column(String(128), nullable=False, unique=True)
     company_id = Column(Integer, ForeignKey("company.id"), index=True)
     route_id = Column(Integer, ForeignKey("route.id"))
     fare_id = Column(Integer, ForeignKey("fare.id"))
     bus_id = Column(Integer, ForeignKey("bus.id"))
-
     ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
-
-    private_key = Column(TEXT, nullable=False)
-    public_key = Column(TEXT, nullable=False)
-
-    remark = Column(TEXT)
+    created_mode = Column(Integer, nullable=False, default=CreatedMode.MANUAL)
     starting_at = Column(DateTime(timezone=True), nullable=False)
     ending_at = Column(DateTime(timezone=True), nullable=False)
-
+    private_key = Column(TEXT, nullable=False)
+    public_key = Column(TEXT, nullable=False)
+    remark = Column(TEXT)
+    can_join_at = Column(DateTime(timezone=True), nullable=False)
     started_on = Column(DateTime(timezone=True))
     finished_on = Column(DateTime(timezone=True))
     # Metadata

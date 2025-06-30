@@ -109,3 +109,8 @@ class ServiceStatus(IntEnum):
     STARTED = 2
     TERMINATED = 3
     ENDED = 4
+
+
+class CreatedMode(IntEnum):
+    MANUAL = 1
+    AUTOMATIC = 2
