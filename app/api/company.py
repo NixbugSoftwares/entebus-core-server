@@ -160,7 +160,7 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Function
 def updateCompany(
-    company: Company, wallet: Wallet | None, fParam: UpdateFormForEX | UpdateFormForOP
+    session: Session | None, company: Company, fParam: UpdateFormForEX | UpdateFormForOP
 ):
     companyStatusTransition = {
         CompanyStatus.UNDER_VERIFICATION: [
@@ -173,6 +173,12 @@ def updateCompany(
 
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and company.name != fParam.name:
+            wallet = (
+                session.query(Wallet)
+                .join(CompanyWallet, Wallet.id == CompanyWallet.wallet_id)
+                .filter(CompanyWallet.company_id == fParam.id)
+                .first()
+            )
             if wallet is not None:
                 walletName = fParam.name + " wallet"
                 wallet.name = walletName
@@ -385,16 +391,8 @@ async def update_company(
         company = session.query(Company).filter(Company.id == fParam.id).first()
         if company is None:
             raise exceptions.InvalidIdentifier()
-        wallet = (
-            session.query(Wallet)
-            .join(CompanyWallet, Wallet.id == CompanyWallet.wallet_id)
-            .filter(CompanyWallet.company_id == fParam.id)
-            .first()
-        )
-        if wallet is None:
-            raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, wallet, fParam)
+        updateCompany(session, company, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
@@ -558,7 +556,7 @@ async def update_company(
         if company is None or company.id != token.company_id:
             raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, None, fParam)
+        updateCompany(None, company, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
