@@ -1,7 +1,9 @@
 import argparse
-from datetime import time
+from datetime import datetime, time, timedelta, timezone
+from fastapi.encoders import jsonable_encoder
 
 from app.src import argon2
+from app.src.digital_ticket import v1
 from app.src.enums import (
     CompanyStatus,
     Day,
@@ -20,6 +22,7 @@ from app.src.db import (
     Fare,
     Business,
     Schedule,
+    Service,
     Vendor,
     VendorRole,
     VendorRoleMap,
@@ -350,14 +353,22 @@ def testDB():
     )
     session.add(fare)
     session.flush()
+    session.refresh(fare)
 
+    # Calculate UTC start time + 1 minute
+    nowUTC = datetime.now(timezone.utc)
+    routeStartDateTime = nowUTC + timedelta(minutes=1)
+    routeStartTime = time(
+        routeStartDateTime.hour, routeStartDateTime.minute, routeStartDateTime.second
+    )
     route = Route(
         company_id=company.id,
         name="Varkala -> Edava",
-        start_time=time(11, 0, 0),
+        start_time=routeStartTime,
     )
     session.add(route)
     session.flush()
+    session.refresh(route)
 
     landmark1InRoute = LandmarkInRoute(
         company_id=company.id,
@@ -377,6 +388,8 @@ def testDB():
     )
     session.add_all([landmark1InRoute, landmark2InRoute])
     session.flush()
+    session.refresh(landmark1InRoute)
+    session.refresh(landmark2InRoute)
 
     bus1 = Bus(
         company_id=company.id,
@@ -420,6 +433,29 @@ def testDB():
         ],
     )
     session.add(schedule)
+    session.flush()
+
+    routeInJSON = jsonable_encoder(route)
+    routeInJSON["landmark"] = [
+        jsonable_encoder(landmark1InRoute),
+        jsonable_encoder(landmark2InRoute),
+    ]
+    ticketCreator = v1.TicketCreator()
+    privateKey = ticketCreator.getPEMprivateKeyString()
+    publicKey = ticketCreator.getPEMpublicKeyString()
+    service = Service(
+        company_id=company.id,
+        route=routeInJSON,
+        fare=jsonable_encoder(fare),
+        bus_id=bus2.id,
+        starting_at=routeStartDateTime,
+        ending_at=(
+            routeStartDateTime + timedelta(minutes=landmark2InRoute.departure_delta)
+        ),
+        private_key=privateKey,
+        public_key=publicKey,
+    )
+    session.add(service)
     session.flush()
 
     businessWallet = Wallet(

@@ -1976,6 +1976,7 @@ class Service(ORMbase):
         status (Integer):
             Enum representing the current status of the service.
             Defaults to `ServiceStatus.CREATED`.
+            A service cannot be created before 24 hours from the `starting_at` time.
             Mapped from the `ServiceStatus` enum.
 
         starting_at (DateTime):
