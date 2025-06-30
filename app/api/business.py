@@ -161,7 +161,7 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Function
 def updateBusiness(
-    session: Session | None,
+    session: Session,
     business: Business,
     fParam: UpdateFormForVE | UpdateFormForEX,
 ):
@@ -504,7 +504,7 @@ async def update_business(
         if business is None or business.id != token.business_id:
             raise exceptions.InvalidIdentifier()
 
-        updateBusiness(None, business, fParam)
+        updateBusiness(session, business, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()
