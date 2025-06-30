@@ -12,7 +12,7 @@ PSQL_DB_PASSWORD = environ.get("PSQL_DB_PASSWORD", "password")
 PSQL_DB_HOST = environ.get("PSQL_DB_HOST", "localhost")
 PSQL_DB_NAME = environ.get("PSQL_DB_NAME", "postgres")
 
-# OpenObserve configuraton
+# OpenObserve configuration
 OPENOBSERVE_PROTOCOL = environ.get("OPENOBSERVE_PROTOCOL", "http")
 OPENOBSERVE_HOST = environ.get("OPENOBSERVE_HOST", "localhost")
 OPENOBSERVE_PORT = environ.get("OPENOBSERVE_PORT", "5080")
