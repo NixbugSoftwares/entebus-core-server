@@ -26,6 +26,9 @@ from app.src.db import (
     BusStop,
     Bus,
     Route,
+    Wallet,
+    CompanyWallet,
+    BusinessWallet,
     sessionMaker,
     engine,
     ORMbase,
@@ -157,6 +160,13 @@ def initDB():
 
 def testDB():
     session = sessionMaker()
+    wallet1 = Wallet(
+        name="Test company wallet",
+        balance=0,
+    )
+    session.add(wallet1)
+    session.flush()
+
     company = Company(
         name="Test company",
         status=CompanyStatus.VERIFIED,
@@ -167,6 +177,13 @@ def testDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
+    companyWallet = CompanyWallet(
+        company_id=company.id,
+        wallet_id=wallet1.id,
+    )
+    session.add(companyWallet)
     session.flush()
 
     password = argon2.makePassword("password")
@@ -391,6 +408,13 @@ def testDB():
     session.add(schedule)
     session.flush()
 
+    wallet2 = Wallet(
+        name="Test business wallet",
+        balance=0,
+    )
+    session.add(wallet2)
+    session.flush()
+
     business = Business(
         name="Test business",
         contact_person="RedBus Pvt Ltd",
@@ -400,6 +424,13 @@ def testDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(business)
+    session.flush()
+
+    businessWallet = BusinessWallet(
+        business_id=business.id,
+        wallet_id=wallet2.id,
+    )
+    session.add(businessWallet)
     session.flush()
 
     adminRole = VendorRole(

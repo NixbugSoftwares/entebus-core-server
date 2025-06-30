@@ -1448,6 +1448,11 @@ class Wallet(ORMbase):
             The current balance of the wallet.
             Must be zero before deletion is permitted.
 
+        status (Integer):
+            Enum representing the current status of the wallet.
+            Defaults to `AccountStatus.ACTIVE`.
+            Mapped from the `AccountStatus` enum.
+
         updated_on (DateTime):
             The timestamp of the last balance update or modification.
             This is automatically set to the current time when the wallet is modified.
@@ -1462,6 +1467,7 @@ class Wallet(ORMbase):
     id = Column(Integer, primary_key=True)
     name = Column(TEXT, nullable=False)
     balance = Column(Numeric(10, 2), nullable=False)
+    status = Column(Integer, nullable=False, default=AccountStatus.ACTIVE)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1830,48 +1836,6 @@ class Schedule(ORMbase):
     triggering_mode = Column(Integer, nullable=False, default=TriggeringMode.AUTO)
     next_trigger_on = Column(DateTime(timezone=True))
     last_trigger_on = Column(DateTime(timezone=True))
-    # Metadata
-    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
-    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
-
-
-class Wallet(ORMbase):
-    """
-    Represents a digital wallet entity used to store and manage balances
-    for companies and businesses.
-
-    This table maintains the current balance and status of the wallet.
-    Each wallet can be associated with a company or a business through
-    linking tables like `CompanyWallet` and `BusinessWallet`.
-
-    Columns:
-        id (Integer):
-            Primary key. Unique identifier for the wallet.
-
-        balance (Integer):
-            Current balance available in the wallet.
-            Must not be null.
-            Represents the amount in the currency unit.
-
-        status (Integer):
-            Enum representing the current status of the wallet.
-            Defaults to `AccountStatus.ACTIVE`.
-            Mapped from the `AccountStatus` enum.
-
-        updated_on (DateTime):
-            Timestamp automatically updated whenever the wallet record is modified.
-            Useful for auditing or syncing purposes.
-
-        created_on (DateTime):
-            Timestamp indicating when the wallet was created.
-            Automatically set to the current timestamp at insertion.
-    """
-
-    __tablename__ = "wallet"
-
-    id = Column(Integer, primary_key=True)
-    balance = Column(Integer, nullable=False)
-    status = Column(Integer, nullable=False, default=AccountStatus.ACTIVE)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
