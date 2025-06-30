@@ -179,9 +179,8 @@ def updateCompany(
                 .filter(CompanyWallet.company_id == fParam.id)
                 .first()
             )
-            if wallet is not None:
-                walletName = fParam.name + " wallet"
-                wallet.name = walletName
+            walletName = fParam.name + " wallet"
+            wallet.name = walletName
             company.name = fParam.name
         if fParam.status is not None and company.status != fParam.status:
             validators.stateTransition(
