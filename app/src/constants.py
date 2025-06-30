@@ -12,7 +12,7 @@ PSQL_DB_PASSWORD = environ.get("PSQL_DB_PASSWORD", "password")
 PSQL_DB_HOST = environ.get("PSQL_DB_HOST", "localhost")
 PSQL_DB_NAME = environ.get("PSQL_DB_NAME", "postgres")
 
-# OpenObserve configuraton
+# OpenObserve configuration
 OPENOBSERVE_PROTOCOL = environ.get("OPENOBSERVE_PROTOCOL", "http")
 OPENOBSERVE_HOST = environ.get("OPENOBSERVE_HOST", "localhost")
 OPENOBSERVE_PORT = environ.get("OPENOBSERVE_PORT", "5080")
@@ -20,6 +20,11 @@ OPENOBSERVE_USERNAME = environ.get("OPENOBSERVE_USERNAME", "admin@entebus.com")
 OPENOBSERVE_PASSWORD = environ.get("OPENOBSERVE_PASSWORD", "password")
 OPENOBSERVE_ORG = environ.get("OPENOBSERVE_ORG", "nixbug")
 OPENOBSERVE_STREAM = environ.get("OPENOBSERVE_STREAM", "entebus-core-server")
+
+# Redis DB configuration
+REDIS_HOST = environ.get("REDIS_HOST", "localhost")
+REDIS_PORT = environ.get("REDIS_PORT", "6379")
+REDIS_PASSWORD = environ.get("REDIS_PASSWORD", "password")
 
 # MinIO configuration
 MINIO_HOST = environ.get("MINIO_HOST", "localhost")
