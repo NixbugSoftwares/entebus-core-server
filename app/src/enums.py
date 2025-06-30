@@ -102,3 +102,10 @@ class TriggeringMode(IntEnum):
     AUTO = 2
     MANUAL = 3
     IMMEDIATE = 4
+
+
+class ServiceStatus(IntEnum):
+    CREATED = 1
+    STARTED = 2
+    TERMINATED = 3
+    ENDED = 4

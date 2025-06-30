@@ -41,6 +41,7 @@ from app.src.enums import (
     BusStatus,
     TicketingMode,
     TriggeringMode,
+    ServiceStatus,
 )
 
 
@@ -1930,6 +1931,91 @@ class CompanyWallet(ORMbase):
         nullable=False,
         unique=True,
     )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+class Service(ORMbase):
+    """
+    Represents an instance of a transport service execution.
+    This table manages the lifecycle of a service run, including operational timing,
+    linked entities such as company, route, fare, and bus, and the cryptographic keys
+    required for secure ticket validation. Each record corresponds to one discrete
+    execution of a transport service.
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the service instance.
+        company_id (Integer):
+            Foreign key referencing the company that owns the service.
+            Must be non-null. Used for scoping services under each company.
+            Indexed for performance.
+        route_id (Integer):
+            Foreign key referencing the route being serviced.
+            Must be non-null. Links the service to a predefined route.
+            If the route is deleted, this field remains unchanged.
+        fare_id (Integer):
+            Foreign key referencing the fare configuration applied for this service.
+            Must be non-null. Determines pricing and ticket validation rules.
+        bus_id (Integer):
+            Foreign key referencing the bus assigned for this service.
+            Must be non-null. Specifies which physical vehicle is operating the service.
+        ticket_mode (Integer):
+            Defines the ticketing mode for the service.
+            Mapped from `TicketMode`.
+            Defaults to `HYBRID`.
+        status (Integer):
+            Current status of the service lifecycle.
+            Mapped from `ServiceStatus`.
+            Defaults to `CREATED`.
+        private_key (TEXT):
+            Cryptographic private key for ticket validation.
+            Must be non-null. Generated at service creation.
+            Used internally by the ticketing system.
+        public_key (TEXT):
+            Cryptographic public key for ticket validation.
+            Must be non-null. Distributed to clients for ticket signing/validation.
+        remark (TEXT):
+            Optional free-text notes or operational remarks for the service.
+            Useful for internal annotations, issues, or service notes.
+        starting_at (DateTime):
+            Scheduled start time for the service.
+            Must be non-null. Defines when the service is expected to begin.
+        ending_at (DateTime):
+            Scheduled end time for the service.
+            Must be non-null. Defines when the service is expected to complete.
+        started_on (DateTime):
+            Actual timestamp when the service was started.
+            Nullable. Populated when the service transitions to `STARTED`.
+        finished_on (DateTime):
+            Actual timestamp when the service finished.
+            Nullable. Populated when the service transitions to TERMINATED or ENDED.
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the service record is modified.
+        created_on (DateTime):
+            Timestamp when the service was created.
+            Must be non-null. Defaults to the current time.
+    """
+
+    __tablename__ = "service"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("company.id"), index=True)
+    route_id = Column(Integer, ForeignKey("route.id"))
+    fare_id = Column(Integer, ForeignKey("fare.id"))
+    bus_id = Column(Integer, ForeignKey("bus.id"))
+
+    ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
+
+    private_key = Column(TEXT, nullable=False)
+    public_key = Column(TEXT, nullable=False)
+
+    remark = Column(TEXT)
+    starting_at = Column(DateTime(timezone=True), nullable=False)
+    ending_at = Column(DateTime(timezone=True), nullable=False)
+
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
