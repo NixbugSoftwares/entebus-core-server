@@ -1833,3 +1833,145 @@ class Schedule(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Wallet(ORMbase):
+    """
+    Represents a digital wallet entity used to store and manage balances
+    for companies and businesses.
+
+    This table maintains the current balance and status of the wallet.
+    Each wallet can be associated with a company or a business through
+    linking tables like `CompanyWallet` and `BusinessWallet`.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the wallet.
+
+        balance (Integer):
+            Current balance available in the wallet.
+            Must not be null.
+            Represents the amount in the currency unit.
+
+        status (Integer):
+            Enum representing the current status of the wallet.
+            Defaults to `AccountStatus.ACTIVE`.
+            Mapped from the `AccountStatus` enum.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the wallet record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the wallet was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "wallet"
+
+    id = Column(Integer, primary_key=True)
+    balance = Column(Integer, nullable=False)
+    status = Column(Integer, nullable=False, default=AccountStatus.ACTIVE)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class BusinessWallet(ORMbase):
+    """
+    Represents the association between a business entity and its wallet.
+
+    This table links a specific business to a wallet for managing its
+    service usage.
+
+    Each business can have only one wallet. The wallet relationship
+    supports cascading delete to remove the wallet if the business is deleted.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the business wallet entry.
+
+        wallet_id (Integer):
+            Foreign key referencing the `wallet.id`.
+            Must not be null.
+            Deletion of the business cascades to its business wallet.
+
+        business_id (Integer):
+            Foreign key referencing `business.id`.
+            Must not be null and must be unique.
+            Each business can have only one wallet.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the business wallet record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the business wallet record was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "business_wallet"
+
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(
+        Integer, ForeignKey("wallet.id", ondelete="CASCADE"), nullable=False
+    )
+    business_id = Column(
+        Integer,
+        ForeignKey("business.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class CompanyWallet(ORMbase):
+    """
+    Represents the association between a company and its wallet.
+
+    This table links a company to a wallet used for managing
+    company-level financial operations and balance tracking.
+
+    Each company can have only one wallet. The relationship supports
+    cascading delete to maintain referential integrity.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the company wallet entry.
+
+        wallet_id (Integer):
+            Foreign key referencing the `wallet.id`.
+            Must not be null.
+            Deletion of the company cascades to its company wallet.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Must not be null and must be unique.
+            Each company can have only one wallet.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the company wallet record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the company wallet record was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "company_wallet"
+
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(
+        Integer, ForeignKey("wallet.id", ondelete="CASCADE"), nullable=False
+    )
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
