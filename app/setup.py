@@ -408,11 +408,11 @@ def testDB():
     session.add(schedule)
     session.flush()
 
-    wallet2 = Wallet(
+    businessWallet = Wallet(
         name="Test business wallet",
         balance=0,
     )
-    session.add(wallet2)
+    session.add(businessWallet)
     session.flush()
 
     business = Business(
@@ -426,11 +426,11 @@ def testDB():
     session.add(business)
     session.flush()
 
-    businessWallet = BusinessWallet(
+    businessWalletMapping = BusinessWallet(
         business_id=business.id,
-        wallet_id=wallet2.id,
+        wallet_id=businessWallet.id,
     )
-    session.add(businessWallet)
+    session.add(businessWalletMapping)
     session.flush()
 
     adminRole = VendorRole(
