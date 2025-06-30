@@ -160,11 +160,11 @@ def initDB():
 
 def testDB():
     session = sessionMaker()
-    wallet1 = Wallet(
+    companyWallet = Wallet(
         name="Test company wallet",
         balance=0,
     )
-    session.add(wallet1)
+    session.add(companyWallet)
     session.flush()
 
     company = Company(
@@ -179,11 +179,11 @@ def testDB():
     session.add(company)
     session.flush()
 
-    companyWallet = CompanyWallet(
+    companyWalletMapping = CompanyWallet(
         company_id=company.id,
-        wallet_id=wallet1.id,
+        wallet_id=companyWallet.id,
     )
-    session.add(companyWallet)
+    session.add(companyWalletMapping)
     session.flush()
 
     password = argon2.makePassword("password")
