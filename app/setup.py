@@ -15,6 +15,7 @@ from app.src.db import (
     ExecutiveRoleMap,
     Company,
     LandmarkInRoute,
+    LandmarkInService,
     Operator,
     OperatorRole,
     OperatorRoleMap,
@@ -456,6 +457,21 @@ def testDB():
         public_key=publicKey,
     )
     session.add(service)
+    session.flush()
+
+    landmark1InService = LandmarkInService(
+        landmark_id=landmark1InRoute.id,
+        service_id=service.id,
+        arrival_time=service.starting_at,
+        departure_time=service.starting_at,
+    )
+    landmark2InService = LandmarkInService(
+        landmark_id=landmark2InRoute.id,
+        service_id=service.id,
+        arrival_time=service.ending_at,
+        departure_time=service.ending_at,
+    )
+    session.add_all([landmark1InService, landmark2InService])
     session.flush()
 
     businessWallet = Wallet(

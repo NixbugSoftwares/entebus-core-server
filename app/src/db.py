@@ -2035,3 +2035,38 @@ class Service(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class LandmarkInService(ORMbase):
+    """
+    Temporal representation of all landmarks in a service based on the time.
+
+    This table tracks the relationship between landmarks and services,
+    including the expected arrival and departure times at each landmark
+    during the course of a service.
+
+    Columns:
+        landmark_id (Integer):
+            Foreign key referencing `landmark.id`.
+            Identifies the specific landmark associated with the service.
+
+        service_id (Integer):
+            Foreign key referencing `service.id`.
+            Identifies the transport service to which the landmark belongs.
+
+        arrival_time (DateTime):
+            Timestamp indicating the expected arrival time at the landmark.
+            Must not be null.
+
+        departure_time (DateTime):
+            Timestamp indicating the expected departure time from the landmark.
+            Must not be null.
+    """
+
+    __tablename__ = "landmark_in_service"
+
+    id = Column(Integer, primary_key=True)
+    landmark_id = Column(Integer, ForeignKey("landmark.id"))
+    service_id = Column(Integer, ForeignKey("service.id"))
+    arrival_time = Column(DateTime(timezone=True), nullable=False)
+    departure_time = Column(DateTime(timezone=True), nullable=False)
