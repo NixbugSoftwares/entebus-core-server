@@ -161,10 +161,18 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Function
 def updateBusiness(
-    business: Business, wallet: Wallet | None, fParam: UpdateFormForVE | UpdateFormForEX
+    session: Session | None,
+    business: Business,
+    fParam: UpdateFormForVE | UpdateFormForEX,
 ):
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and business.name != fParam.name:
+            wallet = (
+                session.query(Wallet)
+                .join(BusinessWallet, Wallet.id == BusinessWallet.wallet_id)
+                .filter(BusinessWallet.business_id == fParam.id)
+                .first()
+            )
             if wallet is not None:
                 walletName = fParam.name + " wallet"
                 wallet.name = walletName
@@ -371,16 +379,8 @@ async def update_business(
         business = session.query(Business).filter(Business.id == fParam.id).first()
         if business is None:
             raise exceptions.InvalidIdentifier()
-        wallet = (
-            session.query(Wallet)
-            .join(BusinessWallet, Wallet.id == BusinessWallet.wallet_id)
-            .filter(BusinessWallet.business_id == fParam.id)
-            .first()
-        )
-        if wallet is None:
-            raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, wallet, fParam)
+        updateBusiness(session, business, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()
@@ -504,7 +504,7 @@ async def update_business(
         if business is None or business.id != token.business_id:
             raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, None, fParam)
+        updateBusiness(None, business, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()
