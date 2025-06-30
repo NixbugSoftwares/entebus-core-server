@@ -159,7 +159,9 @@ class QueryParamsForEX(QueryParamsForVE):
 
 
 ## Function
-def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
+def updateCompany(
+    company: Company, wallet: Wallet | None, fParam: UpdateFormForEX | UpdateFormForOP
+):
     companyStatusTransition = {
         CompanyStatus.UNDER_VERIFICATION: [
             CompanyStatus.VERIFIED,
@@ -171,6 +173,9 @@ def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
 
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and company.name != fParam.name:
+            if wallet is not None:
+                walletName = fParam.name + " wallet"
+                wallet.name = walletName
             company.name = fParam.name
         if fParam.status is not None and company.status != fParam.status:
             validators.stateTransition(
@@ -317,7 +322,7 @@ async def create_company(
         session.add(company)
 
         # Create Wallet
-        walletName = fParam.name + " Wallet"
+        walletName = fParam.name + " wallet"
         wallet = Wallet(
             name=walletName,
             balance=0,
@@ -380,8 +385,16 @@ async def update_company(
         company = session.query(Company).filter(Company.id == fParam.id).first()
         if company is None:
             raise exceptions.InvalidIdentifier()
+        wallet = (
+            session.query(Wallet)
+            .join(CompanyWallet, Wallet.id == CompanyWallet.wallet_id)
+            .filter(CompanyWallet.company_id == company.id)
+            .first()
+        )
+        if wallet is None:
+            raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, fParam)
+        updateCompany(company, wallet, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
@@ -545,7 +558,7 @@ async def update_company(
         if company is None or company.id != token.company_id:
             raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, fParam)
+        updateCompany(company, None, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
