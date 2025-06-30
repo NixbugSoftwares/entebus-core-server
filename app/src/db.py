@@ -42,7 +42,6 @@ from app.src.enums import (
     TicketingMode,
     TriggeringMode,
     ServiceStatus,
-    CreatedMode,
 )
 
 
@@ -1960,13 +1959,13 @@ class Service(ORMbase):
             Indicates the company that owns this service.
             Indexed for faster queries.
 
-        route_id (Integer):
-            Foreign key referencing `route.id`.
-            Specifies the route assigned to this service.
+        route_id (JSONB):
+            JSON object representing the route id associated with the service.
+            Must not be null.
 
         fare_id (Integer):
-            Foreign key referencing `fare.id`.
-            Specifies the fare configuration used for this service.
+            JSON object representing the fare id associated with the service.
+            Must not be null.
 
         bus_id (Integer):
             Foreign key referencing `bus.id`.
@@ -1981,11 +1980,6 @@ class Service(ORMbase):
             Enum representing the current status of the service.
             Defaults to `ServiceStatus.CREATED`.
             Mapped from the `ServiceStatus` enum.
-
-        created_mode (Integer):
-            Enum indicating how the service was created.
-            Defaults to `CreatedMode.MANUAL`.
-            Mapped from the `CreatedMode` enum.
 
         starting_at (DateTime):
             Timestamp indicating the actual start time
@@ -2008,14 +2002,11 @@ class Service(ORMbase):
         remark (TEXT):
             Optional text field for additional remarks or notes related to the service.
             Maximum 1024 characters.
-        
-        can_join_at (DateTime):
-            Timestamp indicating when the service becomes available for operators to join.
 
         started_on (DateTime):
             Timestamp indicating the actual start time.
             Time at which the first operator joined the duty.
-            
+
         finished_on (DateTime):
             Timestamp indicating the expected end time.
             Time at which the Service is ended by the operator or when the statement is generated.
@@ -2034,18 +2025,16 @@ class Service(ORMbase):
     id = Column(Integer, primary_key=True)
     name = Column(String(128), nullable=False, unique=True)
     company_id = Column(Integer, ForeignKey("company.id"), index=True)
-    route_id = Column(Integer, ForeignKey("route.id"))
-    fare_id = Column(Integer, ForeignKey("fare.id"))
+    route_id = Column(JSONB, nullable=False)
+    fare_id = Column(JSONB, nullable=False)
     bus_id = Column(Integer, ForeignKey("bus.id"))
     ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
-    created_mode = Column(Integer, nullable=False, default=CreatedMode.MANUAL)
     starting_at = Column(DateTime(timezone=True), nullable=False)
     ending_at = Column(DateTime(timezone=True), nullable=False)
     private_key = Column(TEXT, nullable=False)
     public_key = Column(TEXT, nullable=False)
     remark = Column(TEXT)
-    can_join_at = Column(DateTime(timezone=True), nullable=False)
     started_on = Column(DateTime(timezone=True))
     finished_on = Column(DateTime(timezone=True))
     # Metadata
