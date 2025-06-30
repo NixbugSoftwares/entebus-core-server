@@ -173,9 +173,8 @@ def updateBusiness(
                 .filter(BusinessWallet.business_id == fParam.id)
                 .first()
             )
-            if wallet is not None:
-                walletName = fParam.name + " wallet"
-                wallet.name = walletName
+            walletName = fParam.name + " wallet"
+            wallet.name = walletName
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
             business.status = fParam.status
