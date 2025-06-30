@@ -20,7 +20,14 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_vendor
-from app.src.db import Business, ExecutiveRole, VendorRole, sessionMaker
+from app.src.db import (
+    Business,
+    ExecutiveRole,
+    VendorRole,
+    Wallet,
+    BusinessWallet,
+    sessionMaker,
+)
 from app.src import exceptions, validators, getters
 from app.src.enums import BusinessStatus, BusinessType
 from app.src.loggers import logEvent
@@ -153,9 +160,21 @@ class QueryParamsForEX(QueryParamsForVE):
 
 
 ## Function
-def updateBusiness(business: Business, fParam: UpdateFormForVE | UpdateFormForEX):
+def updateBusiness(
+    session: Session,
+    business: Business,
+    fParam: UpdateFormForVE | UpdateFormForEX,
+):
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and business.name != fParam.name:
+            wallet = (
+                session.query(Wallet)
+                .join(BusinessWallet, Wallet.id == BusinessWallet.wallet_id)
+                .filter(BusinessWallet.business_id == fParam.id)
+                .first()
+            )
+            walletName = fParam.name + " wallet"
+            wallet.name = walletName
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
             business.status = fParam.status
@@ -300,6 +319,23 @@ async def create_business(
             location=fParam.location,
         )
         session.add(business)
+
+        # Create Wallet
+        walletName = fParam.name + " wallet"
+        wallet = Wallet(
+            name=walletName,
+            balance=0,
+        )
+        session.add(wallet)
+        session.flush()
+
+        # Link Business to Wallet
+        businessWallet = BusinessWallet(
+            wallet_id=wallet.id,
+            business_id=business.id,
+        )
+        session.add(businessWallet)
+
         session.commit()
         logEvent(token, request_info, jsonable_encoder(business))
         return business
@@ -343,7 +379,7 @@ async def update_business(
         if business is None:
             raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, fParam)
+        updateBusiness(session, business, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()
@@ -467,7 +503,7 @@ async def update_business(
         if business is None or business.id != token.business_id:
             raise exceptions.InvalidIdentifier()
 
-        updateBusiness(business, fParam)
+        updateBusiness(session, business, fParam)
         haveUpdates = session.is_modified(business)
         if haveUpdates:
             session.commit()

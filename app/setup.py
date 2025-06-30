@@ -26,6 +26,9 @@ from app.src.db import (
     BusStop,
     Bus,
     Route,
+    Wallet,
+    CompanyWallet,
+    BusinessWallet,
     sessionMaker,
     engine,
     ORMbase,
@@ -51,6 +54,13 @@ def createTables():
 
 def initDB():
     session = sessionMaker()
+    companyWallet = Wallet(
+        name="Nixbug company wallet",
+        balance=0,
+    )
+    session.add(companyWallet)
+    session.flush()
+
     company = Company(
         name="Nixbug company",
         status=CompanyStatus.VERIFIED,
@@ -61,6 +71,13 @@ def initDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
+    companyWalletMapping = CompanyWallet(
+        company_id=company.id,
+        wallet_id=companyWallet.id,
+    )
+    session.add(companyWalletMapping)
     session.flush()
 
     password = argon2.makePassword("password")
@@ -157,6 +174,13 @@ def initDB():
 
 def testDB():
     session = sessionMaker()
+    companyWallet = Wallet(
+        name="Test company wallet",
+        balance=0,
+    )
+    session.add(companyWallet)
+    session.flush()
+
     company = Company(
         name="Test company",
         status=CompanyStatus.VERIFIED,
@@ -167,6 +191,13 @@ def testDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(company)
+    session.flush()
+
+    companyWalletMapping = CompanyWallet(
+        company_id=company.id,
+        wallet_id=companyWallet.id,
+    )
+    session.add(companyWalletMapping)
     session.flush()
 
     password = argon2.makePassword("password")
@@ -391,6 +422,13 @@ def testDB():
     session.add(schedule)
     session.flush()
 
+    businessWallet = Wallet(
+        name="Test business wallet",
+        balance=0,
+    )
+    session.add(businessWallet)
+    session.flush()
+
     business = Business(
         name="Test business",
         contact_person="RedBus Pvt Ltd",
@@ -400,6 +438,13 @@ def testDB():
         location="POINT(76.68899711264336 8.761725176790257)",
     )
     session.add(business)
+    session.flush()
+
+    businessWalletMapping = BusinessWallet(
+        business_id=business.id,
+        wallet_id=businessWallet.id,
+    )
+    session.add(businessWalletMapping)
     session.flush()
 
     adminRole = VendorRole(

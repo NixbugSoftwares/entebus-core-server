@@ -20,7 +20,14 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import Company, ExecutiveRole, OperatorRole, sessionMaker
+from app.src.db import (
+    Company,
+    ExecutiveRole,
+    OperatorRole,
+    Wallet,
+    CompanyWallet,
+    sessionMaker,
+)
 from app.src import exceptions, validators, getters
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
@@ -152,7 +159,9 @@ class QueryParamsForEX(QueryParamsForVE):
 
 
 ## Function
-def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
+def updateCompany(
+    session: Session, company: Company, fParam: UpdateFormForEX | UpdateFormForOP
+):
     companyStatusTransition = {
         CompanyStatus.UNDER_VERIFICATION: [
             CompanyStatus.VERIFIED,
@@ -164,6 +173,14 @@ def updateCompany(company: Company, fParam: UpdateFormForEX | UpdateFormForOP):
 
     if isinstance(fParam, UpdateFormForEX):
         if fParam.name is not None and company.name != fParam.name:
+            wallet = (
+                session.query(Wallet)
+                .join(CompanyWallet, Wallet.id == CompanyWallet.wallet_id)
+                .filter(CompanyWallet.company_id == fParam.id)
+                .first()
+            )
+            walletName = fParam.name + " wallet"
+            wallet.name = walletName
             company.name = fParam.name
         if fParam.status is not None and company.status != fParam.status:
             validators.stateTransition(
@@ -308,6 +325,23 @@ async def create_company(
             location=fParam.location,
         )
         session.add(company)
+
+        # Create Wallet
+        walletName = fParam.name + " wallet"
+        wallet = Wallet(
+            name=walletName,
+            balance=0,
+        )
+        session.add(wallet)
+        session.flush()
+
+        # Link Company to Wallet
+        companyWallet = CompanyWallet(
+            wallet_id=wallet.id,
+            company_id=company.id,
+        )
+        session.add(companyWallet)
+
         session.commit()
         logEvent(token, request_info, jsonable_encoder(company))
         return company
@@ -357,7 +391,7 @@ async def update_company(
         if company is None:
             raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, fParam)
+        updateCompany(session, company, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
@@ -521,7 +555,7 @@ async def update_company(
         if company is None or company.id != token.company_id:
             raise exceptions.InvalidIdentifier()
 
-        updateCompany(company, fParam)
+        updateCompany(session, company, fParam)
         haveUpdates = session.is_modified(company)
         if haveUpdates:
             session.commit()
