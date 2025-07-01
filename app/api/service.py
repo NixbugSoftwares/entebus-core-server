@@ -27,9 +27,16 @@ from app.src.db import (
 )
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import TicketingMode, ServiceStatus, FareScope
+from app.src.enums import (
+    TicketingMode,
+    ServiceStatus,
+    FareScope,
+    CompanyStatus,
+    BusStatus,
+)
 from app.src.functions import enumStr, makeExceptionResponses
 from app.src.digital_ticket import v1
+from app.src.constants import SERVICE_START_BUFFER_TIME
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -64,6 +71,7 @@ class CreateFormForOP(BaseModel):
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
     starting_at: date = Field(Form())
+    started_on: datetime | None = Field(Form(default=None))
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -234,6 +242,7 @@ def searchService(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.InactiveAccount,
         ]
     ),
     description="""
@@ -266,6 +275,11 @@ async def create_service(
         if fare is None:
             raise exceptions.UnknownValue(Service.fare)
 
+        if company.status != CompanyStatus.VERIFIED:
+            raise exceptions.InactiveAccount()
+        if bus.status != BusStatus.ACTIVE:
+            raise exceptions.InactiveAccount()
+
         if bus.company_id != company.id:
             raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
         if route.company_id != company.id:
@@ -274,6 +288,11 @@ async def create_service(
         if fare.scope != FareScope.GLOBAL:
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
+
+        if fParam.starting_at < date.today():
+            raise exceptions.InvalidValue(Service.starting_at)
+        if fParam.starting_at.year > 2050:
+            raise exceptions.InvalidValue(Service.starting_at)
 
         landmarksInRoute = (
             session.query(LandmarkInRoute)
@@ -286,6 +305,12 @@ async def create_service(
         lastLandmark = landmarksInRoute[0]
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+        
+        if fParam.started_on is not None:
+            bufferTime = fParam.starting_at + timedelta(minutes=SERVICE_START_BUFFER_TIME)
+            if fParam.started_on < bufferTime:
+                raise exceptions.InvalidValue(Service.started_on)
+        
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -505,6 +530,17 @@ async def create_service(
             if fare.company_id != token.company_id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
+        company = session.query(Company).filter(Company.id == token.company_id).first()
+        if company.status != CompanyStatus.VERIFIED:
+            raise exceptions.InactiveAccount()
+        if bus.status != BusStatus.ACTIVE:
+            raise exceptions.InactiveAccount()
+        
+        if fParam.starting_at < date.today():
+            raise exceptions.InvalidValue(Service.starting_at)
+        if fParam.starting_at.year > 2050:
+            raise exceptions.InvalidValue(Service.starting_at)
+        
         landmarksInRoute = (
             session.query(LandmarkInRoute)
             .filter(LandmarkInRoute.route_id == route.id)
@@ -516,6 +552,12 @@ async def create_service(
         lastLandmark = landmarksInRoute[0]
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+
+        if fParam.started_on is not None:
+            bufferTime = fParam.starting_at + timedelta(minutes=SERVICE_START_BUFFER_TIME)
+            if fParam.started_on > bufferTime:
+                raise exceptions.InvalidValue(Service.started_on)
+        
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
