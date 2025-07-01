@@ -161,6 +161,15 @@ class ExecutiveRole(ORMbase):
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
+        create_service (Boolean):
+            Whether this role permits the creation of a new service.
+
+        update_service (Boolean):
+            Whether this role permits editing the existing service.
+
+        delete_service (Boolean):
+            Whether this role permits deletion of a service.
+
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
     """
@@ -209,6 +218,10 @@ class ExecutiveRole(ORMbase):
     create_schedule = Column(Boolean, nullable=False)
     update_schedule = Column(Boolean, nullable=False)
     delete_schedule = Column(Boolean, nullable=False)
+    # Service management permission
+    create_service = Column(Boolean, nullable=False)
+    update_service = Column(Boolean, nullable=False)
+    delete_service = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -735,6 +748,15 @@ class OperatorRole(ORMbase):
         delete_schedule (Boolean):
             Grants permission to delete schedules.
 
+        create_service (Boolean):
+            Whether this role permits the creation of a new service.
+
+        update_service (Boolean):
+            Whether this role permits editing the existing service.
+
+        delete_service (Boolean):
+            Whether this role permits deletion of a service.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -775,6 +797,10 @@ class OperatorRole(ORMbase):
     create_schedule = Column(Boolean, nullable=False)
     update_schedule = Column(Boolean, nullable=False)
     delete_schedule = Column(Boolean, nullable=False)
+    # Service management permission
+    create_service = Column(Boolean, nullable=False)
+    update_service = Column(Boolean, nullable=False)
+    delete_service = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

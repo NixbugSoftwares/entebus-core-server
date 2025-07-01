@@ -162,6 +162,9 @@ def initDB():
         create_schedule=False,
         update_schedule=False,
         delete_schedule=False,
+        create_service=False,
+        update_service=False,
+        delete_service=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -234,6 +237,9 @@ def testDB():
         create_schedule=True,
         update_schedule=True,
         delete_schedule=True,
+        create_service=True,
+        update_service=True,
+        delete_service=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -252,6 +258,9 @@ def testDB():
         create_schedule=False,
         update_schedule=False,
         delete_schedule=False,
+        create_service=False,
+        update_service=False,
+        delete_service=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
