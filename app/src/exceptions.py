@@ -178,3 +178,9 @@ class InvalidAssociation(APIException):
     def __init__(self, column_name_1: str, column_name_2: str):
         detail = f"The {column_name_1.key} is not associated with {column_name_2.key}"
         super().__init__(detail=detail)
+
+
+class InvalidRoute(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Route is not usable"
+    headers = {"X-Error": "UnusableRoute"}
