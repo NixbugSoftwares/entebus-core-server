@@ -326,6 +326,7 @@ async def create_service(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidStateTransition("status"),
         ]
     ),
     description="""
@@ -482,6 +483,65 @@ async def create_service(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_service)
 
+        bus = (
+            session.query(Bus)
+            .filter(Bus.id == fParam.bus_id)
+            .filter(Bus.company_id == token.company_id)
+            .first()
+        )
+        if bus is None:
+            raise exceptions.UnknownValue(Service.bus_id)
+        route = (
+            session.query(Route)
+            .filter(Route.id == fParam.route)
+            .filter(Route.company_id == token.company_id)
+            .first()
+        )
+        if route is None:
+            raise exceptions.UnknownValue(Service.route)
+        validators.landmarkInRoute(route.id, session)
+        fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
+        if fare and fare.scope != FareScope.GLOBAL:
+            if fare.company_id != token.company_id:
+                raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
+
+        landmarksInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.route_id == route.id)
+            .order_by(LandmarkInRoute.distance_from_start.desc())
+            .all()
+        )
+        if landmarksInRoute is None:
+            raise exceptions.InvalidRoute()
+        lastLandmark = landmarksInRoute[0]
+        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
+        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+        routeData = jsonable_encoder(route)
+        for landmark in landmarksInRoute:
+            routeData["landmark"] = [jsonable_encoder(landmark)]
+
+        fareData = jsonable_encoder(fare)
+        ticketCreator = v1.TicketCreator()
+        privateKey = ticketCreator.getPEMprivateKeyString()
+        publicKey = ticketCreator.getPEMpublicKeyString()
+
+        service = Service(
+            company_id=token.company_id,
+            bus_id=fParam.bus_id,
+            route=routeData,
+            fare=fareData,
+            starting_at=fParam.starting_at,
+            ending_at=ending_at,
+            private_key=privateKey,
+            public_key=publicKey,
+        )
+        session.add(service)
+        session.commit()
+
+        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
+        logEvent(token, request_info, serviceData)
+        return service
+
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -497,6 +557,7 @@ async def create_service(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.InvalidStateTransition("status"),
         ]
     ),
     description="""
@@ -526,7 +587,7 @@ async def update_service(
         if service is None:
             raise exceptions.InvalidIdentifier()
 
-        updateService(session, service, fParam)
+        updateService(service, fParam)
         haveUpdates = session.is_modified(service)
         if haveUpdates:
             session.commit()
