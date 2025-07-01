@@ -1,6 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from enum import IntEnum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from fastapi import (
     APIRouter,
     Depends,
@@ -22,12 +22,14 @@ from app.src.db import (
     Route,
     Service,
     Bus,
+    LandmarkInRoute,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import TicketingMode, ServiceStatus
+from app.src.enums import TicketingMode, ServiceStatus, FareScope
 from app.src.functions import enumStr, makeExceptionResponses
+from app.src.digital_ticket import v1
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -38,8 +40,8 @@ route_operator = APIRouter()
 class ServiceSchema(BaseModel):
     id: int
     company_id: int
-    route: Dict[str, int]
-    fare: Dict[str, int]
+    route: Dict[str, Any]
+    fare: Dict[str, Any]
     bus_id: int
     ticket_mode: int
     status: int
@@ -101,8 +103,6 @@ class OrderBy(IntEnum):
 class QueryParamsForOP(BaseModel):
     # Filters
     bus_id: int | None = Field(Query(default=None))
-    # route: Dict[str, int] | None = Field(Query(default=None))
-    # fare: Dict[str, int] | None = Field(Query(default=None))
     ticket_mode: TicketingMode | None = Field(
         Query(default=None, description=enumStr(TicketingMode))
     )
@@ -155,11 +155,11 @@ def updateService(service: Service, fParam: UpdateForm):
         ServiceStatus.ENDED: [ServiceStatus.AUDITED],
     }
     if fParam.ticket_mode is not None and service.ticket_mode != fParam.ticket_mode:
+        service.ticket_mode = fParam.ticket_mode
+    if fParam.status is not None and service.status != fParam.status:
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
-        service.ticket_mode = fParam.ticket_mode
-    if fParam.status is not None and service.status != fParam.status:
         service.status = fParam.status
     if fParam.remark is not None and service.remark != fParam.remark:
         if service.status not in [ServiceStatus.TERMINATED, ServiceStatus.ENDED]:
@@ -175,10 +175,6 @@ def searchService(
     # Filters
     if qParam.bus_id is not None:
         query = query.filter(Service.bus_id == qParam.bus_id)
-    if qParam.route is not None:
-        query = query.filter(Service.route.op("&&")(qParam.route))
-    if qParam.fare is not None:
-        query = query.filter(Service.fare.op("&&")(qParam.fare))
     if qParam.ticket_mode is not None:
         query = query.filter(Service.ticket_mode == qParam.ticket_mode)
     # id-based filters
@@ -257,6 +253,64 @@ async def create_service(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_service)
 
+        company = session.query(Company).filter(Company.id == fParam.company_id).first()
+        if company is None:
+            raise exceptions.UnknownValue(Service.company_id)
+        bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
+        if bus is None:
+            raise exceptions.UnknownValue(Service.bus_id)
+        route = session.query(Route).filter(Route.id == fParam.route).first()
+        if route is None:
+            raise exceptions.UnknownValue(Service.route)
+        fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
+        if fare is None:
+            raise exceptions.UnknownValue(Service.fare)
+
+        if bus.company_id != company.id:
+            raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
+        if route.company_id != company.id:
+            raise exceptions.InvalidAssociation(Service.route, Service.company_id)
+        validators.landmarkInRoute(route.id, session)
+        if fare.scope != FareScope.GLOBAL:
+            if fare.company_id != company.id:
+                raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
+
+        landmarksInRoute = (
+            session.query(LandmarkInRoute)
+            .filter(LandmarkInRoute.route_id == route.id)
+            .order_by(LandmarkInRoute.distance_from_start.desc())
+            .all()
+        )
+        if landmarksInRoute is None:
+            raise exceptions.InvalidRoute()
+        lastLandmark = landmarksInRoute[0]
+        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
+        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+        routeData = jsonable_encoder(route)
+        for landmark in landmarksInRoute:
+            routeData["landmark"] = [jsonable_encoder(landmark)]
+
+        fareData = jsonable_encoder(fare)
+        ticketCreator = v1.TicketCreator()
+        privateKey = ticketCreator.getPEMprivateKeyString()
+        publicKey = ticketCreator.getPEMpublicKeyString()
+
+        service = Service(
+            company_id=fParam.company_id,
+            bus_id=fParam.bus_id,
+            route=routeData,
+            fare=fareData,
+            starting_at=fParam.starting_at,
+            ending_at=ending_at,
+            private_key=privateKey,
+            public_key=publicKey,
+        )
+        session.add(service)
+        session.commit()
+
+        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
+        logEvent(token, request_info, serviceData)
+        return service
     except Exception as e:
         exceptions.handle(e)
     finally:
