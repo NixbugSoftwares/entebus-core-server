@@ -35,12 +35,11 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class Service(BaseModel):
+class ServiceSchema(BaseModel):
     id: int
-    name: str
     company_id: int
-    route_id: Dict[str, int]
-    fare_id: Dict[str, int]
+    route: Dict[str, int]
+    fare: Dict[str, int]
     bus_id: int
     ticket_mode: int
     status: int
@@ -55,11 +54,9 @@ class Service(BaseModel):
 
 
 ## Input Forms
-class CreateForm(BaseModel):
-    name: str = Field(Form(max_length=128))
-    company_id: int = Field(Form())
-    route_id: int = Field(Form())
-    fare_id: int = Field(Form())
+class CreateFormForOP(BaseModel):
+    route: int = Field(Form())
+    fare: int = Field(Form())
     bus_id: int = Field(Form())
     ticket_mode: TicketingMode = Field(
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
@@ -67,9 +64,12 @@ class CreateForm(BaseModel):
     starting_at: date = Field(Form())
 
 
+class CreateFormForEX(CreateFormForOP):
+    company_id: int = Field(Form())
+
+
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    name: str | None = Field(Form(max_length=128, default=None))
     ticket_mode: TicketingMode | None = Field(
         Form(description=enumStr(TicketingMode), default=None)
     )
@@ -100,13 +100,9 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     # Filters
-    name: str | None = Field(Query(default=None))
     bus_id: int | None = Field(Query(default=None))
-    route_id: Dict[str, int] | None = Field(Query(default=None))
-    fare_id: Dict[str, int] | None = Field(Query(default=None))
-    status: ServiceStatus | None = Field(
-        Query(default=None, description=enumStr(ServiceStatus))
-    )
+    # route: Dict[str, int] | None = Field(Query(default=None))
+    # fare: Dict[str, int] | None = Field(Query(default=None))
     ticket_mode: TicketingMode | None = Field(
         Query(default=None, description=enumStr(TicketingMode))
     )
@@ -115,6 +111,13 @@ class QueryParamsForOP(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # status based
+    status: ServiceStatus | None = Field(
+        Query(default=None, description=enumStr(ServiceStatus))
+    )
+    status_list: List[ServiceStatus] | None = Field(
+        Query(default=None, description=enumStr(ServiceStatus))
+    )
     # starting_at based
     starting_at_ge: datetime | None = Field(Query(default=None))
     starting_at_le: datetime | None = Field(Query(default=None))
@@ -135,8 +138,12 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(BaseModel):
+class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
 
 
 # Functions
