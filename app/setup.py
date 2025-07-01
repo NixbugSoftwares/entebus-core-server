@@ -129,6 +129,9 @@ def initDB():
         create_schedule=True,
         update_schedule=True,
         delete_schedule=True,
+        create_service=True,
+        update_service=True,
+        delete_service=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
