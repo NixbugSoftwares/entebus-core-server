@@ -110,7 +110,7 @@ class OrderBy(IntEnum):
     created_on = 6
 
 
-class QueryParamsForOP(BaseModel):
+class QueryParams(BaseModel):
     # Filters
     bus_id: int | None = Field(Query(default=None))
     ticket_mode: TicketingMode | None = Field(
@@ -121,13 +121,6 @@ class QueryParamsForOP(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
-    # status based
-    status: ServiceStatus | None = Field(
-        Query(default=None, description=enumStr(ServiceStatus))
-    )
-    status_list: List[ServiceStatus] | None = Field(
-        Query(default=None, description=enumStr(ServiceStatus))
-    )
     # starting_at based
     starting_at_ge: datetime | None = Field(Query(default=None))
     starting_at_le: datetime | None = Field(Query(default=None))
@@ -148,12 +141,22 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+class QueryParamsForOP(QueryParams):
+    # status based
+    status: ServiceStatus | None = Field(
+        Query(default=None, description=enumStr(ServiceStatus))
+    )
+    status_list: List[ServiceStatus] | None = Field(
+        Query(default=None, description=enumStr(ServiceStatus))
+    )
+
+
 class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
 
 
-class QueryParamsForVE(QueryParamsForEX):
-    pass
+class QueryParamsForVE(QueryParams):
+    company_id: int | None = Field(Query(default=None))
 
 
 # Functions
@@ -173,7 +176,9 @@ def updateService(service: Service, fParam: UpdateForm):
         service.status = fParam.status
     if fParam.started_on is not None and service.started_on != fParam.started_on:
         if fParam.started_on is not None:
-            bufferTime = service.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
+            bufferTime = service.starting_at - timedelta(
+                seconds=SERVICE_START_BUFFER_TIME
+            )
             if fParam.started_on <= bufferTime:
                 raise exceptions.InvalidValue(Service.started_on)
         service.started_on = fParam.started_on
@@ -315,12 +320,14 @@ async def create_service(
         lastLandmark = landmarksInRoute[0]
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
-        
+
         if fParam.started_on is not None:
-            bufferTime = fParam.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
+            bufferTime = fParam.starting_at - timedelta(
+                seconds=SERVICE_START_BUFFER_TIME
+            )
             if fParam.started_on <= bufferTime:
                 raise exceptions.InvalidValue(Service.started_on)
-        
+
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -483,6 +490,12 @@ async def fetch_route(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            status_list=[ServiceStatus.CREATED, ServiceStatus.STARTED],
+            status=None
+        )
+
         return searchService(session, qParam)
     except Exception as e:
         exceptions.handle(e)
@@ -547,12 +560,12 @@ async def create_service(
             raise exceptions.InactiveAccount()
         if bus.status != BusStatus.ACTIVE:
             raise exceptions.InactiveAccount()
-        
+
         if fParam.starting_at < date.today():
             raise exceptions.InvalidValue(Service.starting_at)
         if fParam.starting_at.year > 2050:
             raise exceptions.InvalidValue(Service.starting_at)
-        
+
         landmarksInRoute = (
             session.query(LandmarkInRoute)
             .filter(LandmarkInRoute.route_id == route.id)
@@ -566,10 +579,12 @@ async def create_service(
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
         if fParam.started_on is not None:
-            bufferTime = fParam.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
+            bufferTime = fParam.starting_at - timedelta(
+                seconds=SERVICE_START_BUFFER_TIME
+            )
             if fParam.started_on <= bufferTime:
                 raise exceptions.InvalidValue(Service.started_on)
-        
+
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
