@@ -147,3 +147,411 @@ class QueryParamsForVE(QueryParamsForEX):
 
 
 # Functions
+def updateService(service: Service, fParam: UpdateForm):
+    serviceStatusTransition = {
+        ServiceStatus.CREATED: [ServiceStatus.STARTED, ServiceStatus.TERMINATED],
+        ServiceStatus.STARTED: [ServiceStatus.TERMINATED, ServiceStatus.ENDED],
+        ServiceStatus.TERMINATED: [ServiceStatus.ENDED, ServiceStatus.AUDITED],
+        ServiceStatus.ENDED: [ServiceStatus.AUDITED],
+    }
+    if fParam.ticket_mode is not None and service.ticket_mode != fParam.ticket_mode:
+        validators.stateTransition(
+            serviceStatusTransition, service.status, fParam.status, Service.status
+        )
+        service.ticket_mode = fParam.ticket_mode
+    if fParam.status is not None and service.status != fParam.status:
+        service.status = fParam.status
+    if fParam.remark is not None and service.remark != fParam.remark:
+        if service.status not in [ServiceStatus.TERMINATED, ServiceStatus.ENDED]:
+            raise exceptions.InvalidValue(Service.remark)
+        service.remark = fParam.remark
+
+
+def searchService(
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
+) -> List[Service]:
+    query = session.query(Service)
+
+    # Filters
+    if qParam.bus_id is not None:
+        query = query.filter(Service.bus_id == qParam.bus_id)
+    if qParam.route is not None:
+        query = query.filter(Service.route.op("&&")(qParam.route))
+    if qParam.fare is not None:
+        query = query.filter(Service.fare.op("&&")(qParam.fare))
+    if qParam.ticket_mode is not None:
+        query = query.filter(Service.ticket_mode == qParam.ticket_mode)
+    # id-based filters
+    if qParam.id is not None:
+        query = query.filter(Service.id == qParam.id)
+    if qParam.id_ge is not None:
+        query = query.filter(Service.id >= qParam.id_ge)
+    if qParam.id_le is not None:
+        query = query.filter(Service.id <= qParam.id_le)
+    if qParam.id_list is not None:
+        query = query.filter(Service.id.in_(qParam.id_list))
+    # status based
+    if qParam.status is not None:
+        query = query.filter(Service.status == qParam.status)
+    if qParam.status_list is not None:
+        query = query.filter(Service.status.in_(qParam.status_list))
+    # starting_at-based filters
+    if qParam.starting_at_ge is not None:
+        query = query.filter(Service.starting_at >= qParam.starting_at_ge)
+    if qParam.starting_at_le is not None:
+        query = query.filter(Service.starting_at <= qParam.starting_at_le)
+    # ending_at-based filters
+    if qParam.ending_at_ge is not None:
+        query = query.filter(Service.ending_at >= qParam.ending_at_ge)
+    if qParam.ending_at_le is not None:
+        query = query.filter(Service.ending_at <= qParam.ending_at_le)
+    # updated_on-based filters
+    if qParam.updated_on_ge is not None:
+        query = query.filter(Service.updated_on >= qParam.updated_on_ge)
+    if qParam.updated_on_le is not None:
+        query = query.filter(Service.updated_on <= qParam.updated_on_le)
+    # created_on-based filters
+    if qParam.created_on_ge is not None:
+        query = query.filter(Service.created_on >= qParam.created_on_ge)
+    if qParam.created_on_le is not None:
+        query = query.filter(Service.created_on <= qParam.created_on_le)
+
+    # Ordering
+    orderingAttribute = getattr(Service, OrderBy(qParam.order_by).name)
+    if qParam.order_in == OrderIn.ASC:
+        query = query.order_by(orderingAttribute.asc())
+    else:
+        query = query.order_by(orderingAttribute.desc())
+
+    # Pagination
+    query = query.offset(qParam.offset).limit(qParam.limit)
+    return query.all()
+
+
+## API endpoints [Executive]
+@route_executive.post(
+    "/company/service",
+    tags=["Service"],
+    response_model=ServiceSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Create a new service for a specified company.           
+    Requires executive role with `create_service` permission.        
+    Log the service creation activity with the associated token.
+    """,
+)
+async def create_service(
+    fParam: CreateFormForEX = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.create_service)
+
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.patch(
+    "/company/service",
+    tags=["Service"],
+    response_model=ServiceSchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Update an existing service by ID.      
+    Requires executive role with `update_service` permission.   
+    Log the service update activity with the associated token.
+    """,
+)
+async def update_service(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.update_service)
+
+        service = session.query(Service).filter(Service.id == fParam.id).first()
+        if service is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateService(session, service, fParam)
+        haveUpdates = session.is_modified(service)
+        if haveUpdates:
+            session.commit()
+            session.refresh(service)
+
+        serviceData = jsonable_encoder(service)
+        if haveUpdates:
+            logEvent(token, request_info, serviceData)
+        return serviceData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.delete(
+    "/company/service",
+    tags=["Service"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Delete an existing service by ID.      
+    Requires executive role with `delete_service` permission.      
+    Deletes the service if it exists and logs the action.
+    """,
+)
+async def delete_service(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.delete_service)
+
+        service = session.query(Service).filter(Service.id == fParam.id).first()
+        if service is not None:
+            session.delete(service)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(service))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.get(
+    "/company/service",
+    tags=["Service"],
+    response_model=List[ServiceSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch a list of all services across companies.     
+    Only available to users with a valid executive token.       
+    Supports filtering, sorting, and pagination.
+    """,
+)
+async def fetch_service(
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        validators.executiveToken(bearer.credentials, session)
+
+        return searchService(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company/service",
+    tags=["Service"],
+    response_model=List[ServiceSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch a list of all service across companies.  
+    Only available to users with a valid vendor token.  
+    Supports filtering, sorting, and pagination.
+    """,
+)
+async def fetch_route(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
+
+        return searchService(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Operator]
+@route_operator.post(
+    "/company/service",
+    tags=["Service"],
+    response_model=ServiceSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Create a new service for the operator's own company.       
+    Requires operator role with `create_service` permission.       
+    The company ID is derived from the token, not user input.              
+    Log the service creation activity with the associated token.
+    """,
+)
+async def create_service(
+    fParam: CreateFormForOP = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.create_service)
+
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.patch(
+    "/company/service",
+    tags=["Service"],
+    response_model=ServiceSchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Update an existing service belonging to the operator's company.        
+    Requires operator role with `update_service` permission.       
+    Ensures the service is owned by the operator's company.        
+    Log the service updating activity with the associated token.
+    """,
+)
+async def update_service(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_service)
+
+        service = (
+            session.query(Service)
+            .filter(Service.id == fParam.id)
+            .filter(Service.company_id == token.company_id)
+            .first()
+        )
+        if service is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateService(session, service, fParam)
+        haveUpdates = session.is_modified(service)
+        if haveUpdates:
+            session.commit()
+            session.refresh(service)
+
+        serviceData = jsonable_encoder(service)
+        if haveUpdates:
+            logEvent(token, request_info, serviceData)
+        return serviceData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.delete(
+    "/company/service",
+    tags=["Service"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Delete an existing service by ID.          
+    Requires operator role with `delete_service` permission.       
+    Ensures the service is owned by the operator's company.        
+    Log the service deletion activity with the associated token.
+    """,
+)
+async def delete_service(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.delete_service)
+
+        service = (
+            session.query(Service)
+            .filter(Service.id == fParam.id)
+            .filter(Service.company_id == token.company_id)
+            .first()
+        )
+
+        if service is not None:
+            session.delete(service)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(service))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.get(
+    "/company/service",
+    tags=["Service"],
+    response_model=List[ServiceSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch a list of all services owned by the operator's company.          
+    Only available to users with a valid operator token.        
+    Supports filtering, sorting, and pagination.
+    """,
+)
+async def fetch_service(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        return searchService(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
