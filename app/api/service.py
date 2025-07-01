@@ -400,7 +400,7 @@ async def update_service(
             session.commit()
             session.refresh(service)
 
-        serviceData = jsonable_encoder(service)
+        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
         if haveUpdates:
             logEvent(token, request_info, serviceData)
         return serviceData
@@ -664,7 +664,7 @@ async def update_service(
             session.commit()
             session.refresh(service)
 
-        serviceData = jsonable_encoder(service)
+        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
         if haveUpdates:
             logEvent(token, request_info, serviceData)
         return serviceData
