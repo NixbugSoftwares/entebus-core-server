@@ -36,7 +36,6 @@ from app.src.enums import (
 )
 from app.src.functions import enumStr, makeExceptionResponses
 from app.src.digital_ticket import v1
-from app.src.constants import SERVICE_START_BUFFER_TIME
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -71,7 +70,6 @@ class CreateFormForOP(BaseModel):
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
     starting_at: date = Field(Form())
-    started_on: datetime | None = Field(Form(default=None))
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -86,8 +84,6 @@ class UpdateForm(BaseModel):
     status: ServiceStatus | None = Field(
         Form(description=enumStr(ServiceStatus), default=None)
     )
-    started_on: datetime | None = Field(Form(default=None))
-    finished_on: datetime | None = Field(Form(default=None))
     remark: str | None = Field(Form(max_length=1024, default=None))
 
 
@@ -174,16 +170,6 @@ def updateService(service: Service, fParam: UpdateForm):
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
         service.status = fParam.status
-    if fParam.started_on is not None and service.started_on != fParam.started_on:
-        if fParam.started_on is not None:
-            bufferTime = service.starting_at - timedelta(
-                seconds=SERVICE_START_BUFFER_TIME
-            )
-            if fParam.started_on <= bufferTime:
-                raise exceptions.InvalidValue(Service.started_on)
-        service.started_on = fParam.started_on
-    if fParam.finished_on is not None and service.finished_on != fParam.finished_on:
-        service.finished_on = fParam.finished_on
     if fParam.remark is not None and service.remark != fParam.remark:
         if service.status not in [ServiceStatus.TERMINATED, ServiceStatus.ENDED]:
             raise exceptions.InvalidValue(Service.remark)
@@ -321,13 +307,6 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        if fParam.started_on is not None:
-            bufferTime = fParam.starting_at - timedelta(
-                seconds=SERVICE_START_BUFFER_TIME
-            )
-            if fParam.started_on <= bufferTime:
-                raise exceptions.InvalidValue(Service.started_on)
-
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -343,7 +322,6 @@ async def create_service(
             route=routeData,
             fare=fareData,
             starting_at=fParam.starting_at,
-            started_on=fParam.started_on,
             ending_at=ending_at,
             private_key=privateKey,
             public_key=publicKey,
@@ -370,7 +348,6 @@ async def create_service(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
-            exceptions.InvalidValue(Service.started_on),
         ]
     ),
     description="""
@@ -578,13 +555,6 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        if fParam.started_on is not None:
-            bufferTime = fParam.starting_at - timedelta(
-                seconds=SERVICE_START_BUFFER_TIME
-            )
-            if fParam.started_on <= bufferTime:
-                raise exceptions.InvalidValue(Service.started_on)
-
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -600,7 +570,6 @@ async def create_service(
             route=routeData,
             fare=fareData,
             starting_at=fParam.starting_at,
-            started_on=fParam.started_on,
             ending_at=ending_at,
             private_key=privateKey,
             public_key=publicKey,
@@ -628,7 +597,6 @@ async def create_service(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
-            exceptions.InvalidValue(Service.started_on),
         ]
     ),
     description="""
