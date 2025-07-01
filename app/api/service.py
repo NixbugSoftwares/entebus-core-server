@@ -292,7 +292,9 @@ async def create_service(
 
         if fParam.starting_at < date.today():
             raise exceptions.InvalidValue(Service.starting_at)
-        if fParam.starting_at.year > 2050:
+        if fParam.starting_at != date.today() and fParam.starting_at != (
+            date.today() + timedelta(days=1)
+        ):
             raise exceptions.InvalidValue(Service.starting_at)
 
         landmarksInRoute = (
@@ -540,7 +542,9 @@ async def create_service(
 
         if fParam.starting_at < date.today():
             raise exceptions.InvalidValue(Service.starting_at)
-        if fParam.starting_at.year > 2050:
+        if fParam.starting_at != date.today() and fParam.starting_at != (
+            date.today() + timedelta(days=1)
+        ):
             raise exceptions.InvalidValue(Service.starting_at)
 
         landmarksInRoute = (
