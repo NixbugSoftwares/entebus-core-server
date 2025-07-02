@@ -35,6 +35,7 @@ from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -552,6 +553,41 @@ async def fetch_business(
         if business is not None:
             businessData = jsonable_encoder(business, exclude={"location"})
             businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
+        return [businessData]
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_public.get(
+    "/business",
+    tags=["Business"],
+    response_model=List[BusinessSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Fetch the business information associated with the provided ID.  
+    Returns the business if ID provided.    
+    Requires no authentication.
+    """,
+)
+async def fetch_business_public(
+    qParam: QueryParamsForVE = Depends(),
+):
+    try:
+        session = sessionMaker()
+
+        if qParam.id is None:
+            raise exceptions.InvalidIdentifier()
+        business = session.query(Business).filter(Business.id == qParam.id).first()
+        if business is None:
+            return []
+        businessData = jsonable_encoder(business, exclude={"location"})
+        businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
         return [businessData]
     except Exception as e:
         exceptions.handle(e)

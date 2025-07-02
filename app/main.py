@@ -3,8 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.src import schemas
 from app.src.constants import API_TITLE, API_VERSION
-from app.api.controller import app_executive, app_operator, app_vendor
-from app.api.controller import app_public
+from app.api.controller import app_executive, app_operator, app_vendor, app_public
 
 
 app = FastAPI(title=API_TITLE, version=API_VERSION)

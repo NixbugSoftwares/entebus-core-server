@@ -36,6 +36,7 @@ from app.src.functions import enumStr, makeExceptionResponses
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -597,6 +598,80 @@ async def fetch_company(bearer=Depends(bearer_operator)):
         companyData = jsonable_encoder(company, exclude={"location"})
         companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
         return [companyData]
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_public.get(
+    "/public/company",
+    tags=["Company"],
+    response_model=List[CompanySchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Fetch the company information with optional filters like name, type, location, etc.  
+    Supports sorting and pagination.  
+    Requires no authentication.
+    """,
+)
+async def fetch_company_public(
+    qParam: QueryParamsForVE = Depends(),
+):
+    try:
+        session = sessionMaker()
+
+        query = session.query(Company)
+
+        # Filters
+        if qParam.name is not None:
+            query = query.filter(Company.name.ilike(f"%{qParam.name}%"))
+        if qParam.type is not None:
+            query = query.filter(Company.type == qParam.type)
+        if qParam.location is not None:
+            query = query.filter(Company.location.ilike(f"%{qParam.location}%"))
+        # id based
+        if qParam.id is not None:
+            query = query.filter(Company.id == qParam.id)
+        if qParam.id_ge is not None:
+            query = query.filter(Company.id >= qParam.id_ge)
+        if qParam.id_le is not None:
+            query = query.filter(Company.id <= qParam.id_le)
+        if qParam.id_list is not None:
+            query = query.filter(Company.id.in_(qParam.id_list))
+        # updated_on based
+        if qParam.updated_on_ge is not None:
+            query = query.filter(Company.updated_on >= qParam.updated_on_ge)
+        if qParam.updated_on_le is not None:
+            query = query.filter(Company.updated_on <= qParam.updated_on_le)
+        # created_on based
+        if qParam.created_on_ge is not None:
+            query = query.filter(Company.created_on >= qParam.created_on_ge)
+        if qParam.created_on_le is not None:
+            query = query.filter(Company.created_on <= qParam.created_on_le)
+
+        # Ordering
+        orderingAttribute = getattr(Company, OrderBy(qParam.order_by).name)
+        if qParam.order_in == OrderIn.ASC:
+            query = query.order_by(orderingAttribute.asc())
+        else:
+            query = query.order_by(orderingAttribute.desc())
+
+        # Pagination
+        query = query.offset(qParam.offset).limit(qParam.limit)
+
+        companies = query.all()
+        companiesData = []
+        for company in companies:
+            companyData = jsonable_encoder(company, exclude={"location"})
+            companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+            companiesData.append(companyData)
+
+        return companiesData
     except Exception as e:
         exceptions.handle(e)
     finally:
