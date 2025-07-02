@@ -1933,3 +1933,75 @@ class CompanyWallet(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Public(ORMbase):
+    """
+    Represents a general public user, typically someone with no permissions or with limited permissions.
+
+
+    This model defines named public entities associated with a company and business. These entities can be
+    used for categorization, grouping, or functional separation within the business and company.
+
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the public entity.
+
+
+        company_id (Integer):
+            Foreign key referencing the associated company entity.
+            Must not be null.
+            Cascading deletion is applied when the company is deleted,
+            meaning all related public entities will also be removed.
+
+
+        business_id (Integer):
+            Foreign key referencing the associated business entity.
+            Must not be null.
+            Indexed for fast lookup.
+            Cascading deletion is applied when the business is deleted,
+            meaning all related public entities will also be removed.
+
+
+        name (String(128)):
+            Name of the public entity.
+            Must not be null.
+            Indexed for faster search and filtering.
+            Maximum length is 128 characters.
+            Must be unique in combination with the company (enforced via a unique constraint
+            on `(company_id, name)` to prevent duplicate names under the same company).
+
+
+        updated_on (DateTime):
+            Timestamp of the last update to the public entity.
+            Automatically updated whenever the public entity is modified.
+
+
+        created_on (DateTime):
+            Timestamp indicating when the public entity was created.
+            Automatically set at the time of entity creation.
+
+
+    Table Constraints:
+        UniqueConstraint(company_id, name):
+            Ensures that each public entity name is unique within a company.
+    """
+
+    __tablename__ = "public"
+    __table_args__ = (UniqueConstraint("company_id", "name"),)
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", ondelete="CASCADE"), nullable=False
+    )
+    business_id = Column(
+        Integer,
+        ForeignKey("business.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name = Column(String(128), nullable=False, index=True)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

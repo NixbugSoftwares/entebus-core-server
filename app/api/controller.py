@@ -15,6 +15,7 @@ from app.api import (
     landmark_in_route,
     vendor_account,
     schedule,
+    public,
 )
 from app.src.enums import AppID
 
@@ -22,10 +23,12 @@ from app.src.enums import AppID
 app_executive = FastAPI()
 app_vendor = FastAPI()
 app_operator = FastAPI()
+app_public = FastAPI()
 
 app_executive.state.id = AppID.EXECUTIVE
 app_vendor.state.id = AppID.VENDOR
 app_operator.state.id = AppID.OPERATOR
+app_public.state.id = AppID.PUBLIC
 
 
 app_executive.include_router(executive_token.route_executive)
@@ -73,3 +76,5 @@ app_vendor.include_router(bus.route_vendor)
 
 app_executive.include_router(schedule.route_executive)
 app_operator.include_router(schedule.route_operator)
+
+app_public.include_router(public.route_public)

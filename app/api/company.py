@@ -28,6 +28,7 @@ from app.src.db import (
     CompanyWallet,
     sessionMaker,
 )
+
 from app.src import exceptions, validators, getters
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
