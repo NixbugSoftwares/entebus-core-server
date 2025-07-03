@@ -565,11 +565,6 @@ async def fetch_business(
     "/business",
     tags=["Business"],
     response_model=List[BusinessSchema],
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidIdentifier,
-        ]
-    ),
     description="""
     Fetch a list of businesses or a specific business by ID.
     If ID is not provided, all businesses are returned.

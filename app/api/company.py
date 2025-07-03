@@ -577,12 +577,6 @@ async def update_company(
     "/company",
     tags=["Company"],
     response_model=List[CompanySchema],
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.InvalidIdentifier,
-        ]
-    ),
     description="""
     Fetch the company information associated with the current operator.  
     Returns a list with a single item.  
