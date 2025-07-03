@@ -184,3 +184,14 @@ class InvalidRoute(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     detail = "Route is not usable"
     headers = {"X-Error": "UnusableRoute"}
+
+
+class InactiveResource(APIException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    headers = {"X-Error": "InactiveResource"}
+
+    def __init__(self, orm_class):
+        detail = (
+            f"The status of {orm_class.__name__} is not in an active or useful state"
+        )
+        super().__init__(detail=detail)

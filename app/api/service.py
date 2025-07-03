@@ -252,7 +252,11 @@ def searchService(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.InactiveAccount,
+            exceptions.UnknownValue(Service.bus_id),
+            exceptions.InvalidAssociation(Service.fare, Service.company_id),
+            exceptions.InactiveResource(Bus),
+            exceptions.InvalidRoute(),
+            exceptions.InvalidValue(Service.starting_at)
         ]
     ),
     description="""
@@ -295,7 +299,7 @@ async def create_service(
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
         if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveAccount()
+            raise exceptions.InactiveResource(Bus)
         validateDate(fParam.starting_at)
 
         landmarksInRoute = (
@@ -493,6 +497,11 @@ async def fetch_route(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.UnknownValue(Service.bus_id),
+            exceptions.InvalidAssociation(Service.fare, Service.company_id),
+            exceptions.InactiveResource(Bus),
+            exceptions.InvalidRoute(),
+            exceptions.InvalidValue(Service.starting_at)
         ]
     ),
     description="""
@@ -536,7 +545,7 @@ async def create_service(
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
         if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveAccount()
+            raise exceptions.InactiveResource(Bus)
         validateDate(fParam.starting_at)
 
         landmarksInRoute = (
