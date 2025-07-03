@@ -156,6 +156,22 @@ class QueryParamsForVE(QueryParams):
 
 
 # Functions
+def validateStatus(company: Company, bus: Bus):
+    if company.status != CompanyStatus.VERIFIED:
+        raise exceptions.InactiveAccount()
+    if bus.status != BusStatus.ACTIVE:
+        raise exceptions.InactiveAccount()
+
+
+def validateDate(starting_at: date):
+    if starting_at < date.today():
+        raise exceptions.InvalidValue(Service.starting_at)
+    if starting_at != date.today() and starting_at != (
+        date.today() + timedelta(days=1)
+    ):
+        raise exceptions.InvalidValue(Service.starting_at)
+
+
 def updateService(service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
         ServiceStatus.CREATED: [ServiceStatus.STARTED, ServiceStatus.TERMINATED],
@@ -276,11 +292,6 @@ async def create_service(
         if fare is None:
             raise exceptions.UnknownValue(Service.fare)
 
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveAccount()
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveAccount()
-
         if bus.company_id != company.id:
             raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
         if route.company_id != company.id:
@@ -290,13 +301,8 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        if fParam.starting_at < date.today():
-            raise exceptions.InvalidValue(Service.starting_at)
-        if fParam.starting_at != date.today() and fParam.starting_at != (
-            date.today() + timedelta(days=1)
-        ):
-            raise exceptions.InvalidValue(Service.starting_at)
-
+        validateStatus(company, bus)
+        validateDate(fParam.starting_at)
         landmarksInRoute = (
             session.query(LandmarkInRoute)
             .filter(LandmarkInRoute.route_id == route.id)
@@ -535,17 +541,8 @@ async def create_service(
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveAccount()
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveAccount()
-
-        if fParam.starting_at < date.today():
-            raise exceptions.InvalidValue(Service.starting_at)
-        if fParam.starting_at != date.today() and fParam.starting_at != (
-            date.today() + timedelta(days=1)
-        ):
-            raise exceptions.InvalidValue(Service.starting_at)
+        validateStatus(company, bus)
+        validateDate(fParam.starting_at)
 
         landmarksInRoute = (
             session.query(LandmarkInRoute)
