@@ -60,4 +60,4 @@ MAX_ROUTE_DISTANCE = 10000 * 1000  # Maximum length of a route
 MAX_ROUTE_DELTA = 10000 * 1000  # Maximum length between two landmarks in a route
 
 # Service constants
-SERVICE_START_BUFFER_TIME = 60 * 60  # Buffer time in minutes for duty initialization before services start time
+SERVICE_START_BUFFER_TIME = 60 * 60  # Minimum lead time to create a duty before service (in minutes)
