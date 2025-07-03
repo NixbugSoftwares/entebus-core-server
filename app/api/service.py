@@ -256,7 +256,7 @@ def searchService(
             exceptions.InvalidAssociation(Service.fare, Service.company_id),
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
-            exceptions.InvalidValue(Service.starting_at)
+            exceptions.InvalidValue(Service.starting_at),
         ]
     ),
     description="""
@@ -514,7 +514,7 @@ async def fetch_route(
             exceptions.InvalidAssociation(Service.fare, Service.company_id),
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
-            exceptions.InvalidValue(Service.starting_at)
+            exceptions.InvalidValue(Service.starting_at),
         ]
     ),
     description="""
