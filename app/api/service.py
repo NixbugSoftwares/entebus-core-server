@@ -390,7 +390,7 @@ async def update_service(
         if service is None:
             raise exceptions.InvalidIdentifier()
 
-        updateService(session, service, fParam)
+        updateService(service, fParam)
         haveUpdates = session.is_modified(service)
         if haveUpdates:
             session.commit()
@@ -399,7 +399,7 @@ async def update_service(
         serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
         if haveUpdates:
             logEvent(token, request_info, serviceData)
-        return serviceData
+        return service
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -435,7 +435,11 @@ async def delete_service(
         if service is not None:
             session.delete(service)
             session.commit()
-            logEvent(token, request_info, jsonable_encoder(service))
+            logEvent(
+                token,
+                request_info,
+                jsonable_encoder(service, exclude={"private_key", "public_key"}),
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
@@ -664,7 +668,7 @@ async def update_service(
         serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
         if haveUpdates:
             logEvent(token, request_info, serviceData)
-        return serviceData
+        return service
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -707,7 +711,11 @@ async def delete_service(
         if service is not None:
             session.delete(service)
             session.commit()
-            logEvent(token, request_info, jsonable_encoder(service))
+            logEvent(
+                token,
+                request_info,
+                jsonable_encoder(service, exclude={"private_key", "public_key"}),
+            )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
