@@ -15,6 +15,7 @@ from app.api import (
     landmark_in_route,
     vendor_account,
     schedule,
+    fare,
 )
 from app.src.enums import AppID
 
@@ -73,3 +74,6 @@ app_vendor.include_router(bus.route_vendor)
 
 app_executive.include_router(schedule.route_executive)
 app_operator.include_router(schedule.route_operator)
+
+app_executive.include_router(fare.route_executive)
+app_operator.include_router(fare.route_operator)
