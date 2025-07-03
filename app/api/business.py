@@ -560,6 +560,7 @@ async def fetch_business(
         session.close()
 
 
+## API endpoints [Public]
 @route_public.get(
     "/business",
     tags=["Business"],
@@ -570,25 +571,28 @@ async def fetch_business(
         ]
     ),
     description="""
-    Fetch the business information associated with the provided ID.  
-    Returns the business if ID provided.    
+    Fetch a list of businesses or a specific business by ID.
+    If ID is not provided, all businesses are returned.
     Requires no authentication.
     """,
 )
-async def fetch_business_public(
+async def fetch_business(
     qParam: QueryParamsForVE = Depends(),
 ):
     try:
         session = sessionMaker()
 
-        if qParam.id is None:
-            raise exceptions.InvalidIdentifier()
-        business = session.query(Business).filter(Business.id == qParam.id).first()
-        if business is None:
-            return []
-        businessData = jsonable_encoder(business, exclude={"location"})
-        businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
-        return [businessData]
+        if qParam.id is not None:
+            query = session.query(Business).filter(Business.id == qParam.id)
+        else:
+            query = session.query(Business)
+        businesses = query.all()
+        businessList = []
+        for business in businesses:
+            businessData = jsonable_encoder(business, exclude={"location"})
+            businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
+            businessList.append(businessData)
+        return businessList
     except Exception as e:
         exceptions.handle(e)
     finally:
