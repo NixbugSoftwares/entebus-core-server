@@ -169,8 +169,8 @@ def updateService(service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
         ServiceStatus.CREATED: [ServiceStatus.STARTED, ServiceStatus.TERMINATED],
         ServiceStatus.STARTED: [ServiceStatus.TERMINATED, ServiceStatus.ENDED],
-        ServiceStatus.TERMINATED: [ServiceStatus.STARTED, ServiceStatus.ENDED, ServiceStatus.AUDITED],
-        ServiceStatus.ENDED: [ServiceStatus.STARTED, ServiceStatus.AUDITED],
+        ServiceStatus.TERMINATED: [ServiceStatus.STARTED],
+        ServiceStatus.ENDED: [ServiceStatus.STARTED],
     }
     if fParam.ticket_mode is not None and service.ticket_mode != fParam.ticket_mode:
         service.ticket_mode = fParam.ticket_mode
@@ -373,9 +373,6 @@ async def create_service(
         CREATED → TERMINATED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
-        TERMINATED ↔ ENDED
-        TERMINATED → AUDITED
-        ENDED → AUDITED
     """,
 )
 async def update_service(
@@ -636,10 +633,6 @@ async def create_service(
         CREATED → TERMINATED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
-        TERMINATED ↔ ENDED
-        TERMINATED → AUDITED
-        ENDED → AUDITED
-
     """,
 )
 async def update_service(
