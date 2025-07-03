@@ -156,13 +156,6 @@ class QueryParamsForVE(QueryParams):
 
 
 # Functions
-def validateStatus(company: Company, bus: Bus):
-    if company.status != CompanyStatus.VERIFIED:
-        raise exceptions.InactiveAccount()
-    if bus.status != BusStatus.ACTIVE:
-        raise exceptions.InactiveAccount()
-
-
 def validateDate(starting_at: date):
     if starting_at < date.today():
         raise exceptions.InvalidValue(Service.starting_at)
@@ -189,8 +182,6 @@ def updateService(service: Service, fParam: UpdateForm):
         )
         service.status = fParam.status
     if fParam.remark is not None and service.remark != fParam.remark:
-        if service.status not in [ServiceStatus.TERMINATED, ServiceStatus.ENDED]:
-            raise exceptions.InvalidValue(Service.remark)
         service.remark = fParam.remark
 
 
@@ -303,8 +294,10 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        validateStatus(company, bus)
+        if bus.status != BusStatus.ACTIVE:
+            raise exceptions.InactiveAccount()
         validateDate(fParam.starting_at)
+
         landmarksInRoute = (
             session.query(LandmarkInRoute)
             .filter(LandmarkInRoute.route_id == route.id)
@@ -542,8 +535,8 @@ async def create_service(
             if fare.company_id != token.company_id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        company = session.query(Company).filter(Company.id == token.company_id).first()
-        validateStatus(company, bus)
+        if bus.status != BusStatus.ACTIVE:
+            raise exceptions.InactiveAccount()
         validateDate(fParam.starting_at)
 
         landmarksInRoute = (
