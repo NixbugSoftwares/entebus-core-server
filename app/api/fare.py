@@ -135,7 +135,7 @@ def updateFare(fare: Fare, fParam: UpdateForm):
         fare.function = fParam.function
 
 
-def searchFares(
+def searchFare(
     session: Session, qParam: QueryParamsForOP | QueryParamsForEX
 ) -> List[Fare]:
     query = session.query(Fare)
@@ -209,7 +209,27 @@ async def create_fare(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.create_fare)
+
+        fare = Fare(
+            name=fParam.name,
+            attributes=fParam.attributes,
+            function=fParam.function,
+            company_id=fParam.company_id,
+            scope=fParam.scope,
+        )
+        session.add(fare)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(fare))
+        return fare
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.patch(
@@ -236,7 +256,25 @@ async def update_fare(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.update_fare)
+
+        fare = session.query(Fare).filter(Fare.id == fParam.id).first()
+        if fare is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateFare(fare, fParam)
+        haveUpdate = session.is_modified(fare)
+        if haveUpdate:
+            logEvent(token, request_info, jsonable_encoder(fare))
+        return fare
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.delete(
@@ -259,7 +297,22 @@ async def delete_fare(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.delete_fare)
+
+        fare = session.query(Fare).filter(Fare.id == fParam.id).first()
+        if fare is not None:
+            session.delete(fare)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(fare))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_executive.get(
@@ -277,7 +330,15 @@ async def fetch_fare(
     qParam: QueryParamsForEX = Depends(),
     bearer=Depends(bearer_executive),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        validators.executiveToken(bearer.credentials, session)
+
+        return searchFare(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 ## API endpoints [Operator]
@@ -301,7 +362,27 @@ async def create_fare(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.create_fare)
+
+        fare = Fare(
+            name=fParam.name,
+            attributes=fParam.attributes,
+            function=fParam.function,
+            company_id=token.company_id,
+            scope=FareScope.LOCAL,
+        )
+        session.add(fare)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(fare))
+        return fare
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_operator.patch(
@@ -328,7 +409,30 @@ async def update_fare(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_fare)
+
+        fare = (
+            session.query(Fare)
+            .filter(Fare.id == fParam.id)
+            .filter(Fare.company_id == token.company_id)
+            .first()
+        )
+        if fare is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateFare(fare, fParam)
+        haveUpdated = session.is_modified(fare)
+        if haveUpdated:
+            logEvent(token, request_info, jsonable_encoder(fare))
+        return fare
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_operator.delete(
@@ -350,7 +454,22 @@ async def delete_fare(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.delete_fare)
+
+        fare = session.query(Fare).filter(Fare.id == fParam.id).first()
+        if fare is not None:
+            session.delete(fare)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(fare))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
 
 
 @route_operator.get(
@@ -367,4 +486,17 @@ async def delete_fare(
 async def fetch_fare(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
-    pass
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            company_id=token.company_id,
+            scope=[FareScope.LOCAL, FareScope.GLOBAL],
+        )
+        return searchFare(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
