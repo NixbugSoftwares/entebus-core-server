@@ -261,7 +261,12 @@ def searchService(
     ),
     description="""
     Create a new service for a specified company.           
-    Requires executive role with `create_service` permission.        
+    Requires executive role with `create_service` permission.   
+    In this bus_id, route_id must be associated with the company.       
+    If fare_id is in Local scope, it must be associated with the company.
+    The bus must be in active status.     
+    The starting_at is derived from the route start_time, not user input.
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.   
     Log the service creation activity with the associated token.
     """,
 )
@@ -360,7 +365,17 @@ async def create_service(
     description="""
     Update an existing service by ID.      
     Requires executive role with `update_service` permission.   
-    Log the service update activity with the associated token.
+    Log the service update activity with the associated token.  
+    The status=AUDITED is not accepted by user input.
+
+    Allowed status transitions:
+        CREATED → STARTED
+        CREATED → TERMINATED
+        STARTED ↔ TERMINATED
+        STARTED ↔ ENDED
+        TERMINATED ↔ ENDED
+        TERMINATED → AUDITED
+        ENDED → AUDITED
     """,
 )
 async def update_service(
@@ -403,7 +418,8 @@ async def update_service(
     ),
     description="""
     Delete an existing service by ID.      
-    Requires executive role with `delete_service` permission.      
+    Requires executive role with `delete_service` permission.   
+    Service can not be deleted if there are tickets associated with it.    
     Deletes the service if it exists and logs the action.
     """,
 )
@@ -462,8 +478,8 @@ async def fetch_service(
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all service across companies.  
-    Only available to users with a valid vendor token.  
+    Fetch a list of all service  which are in CREATED or STARTED status across companies.   
+    Only available to users with a valid vendor token.      
     Supports filtering, sorting, and pagination.
     """,
 )
@@ -505,9 +521,14 @@ async def fetch_route(
         ]
     ),
     description="""
-    Create a new service for the operator's own company.       
-    Requires operator role with `create_service` permission.       
-    The company ID is derived from the token, not user input.              
+    Create a new service for the operator's own company.	          
+    Requires operator role with `create_service` permission.  
+    The company ID is derived from the token, not user input.   
+    In this bus_id, route_id must be associated with the company.       
+    If fare_id is in Local scope, it must be associated with the company.
+    The bus must be in active status.     
+    The starting_at is derived from the route start_time, not user input.
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.
     Log the service creation activity with the associated token.
     """,
 )
@@ -606,9 +627,19 @@ async def create_service(
     ),
     description="""
     Update an existing service belonging to the operator's company.        
-    Requires operator role with `update_service` permission.       
-    Ensures the service is owned by the operator's company.        
-    Log the service updating activity with the associated token.
+    Requires operator role with `update_service` permission.              
+    Log the service updating activity with the associated token.    
+    The status=AUDITED is not accepted by user input.
+
+    Allowed status transitions:
+        CREATED → STARTED
+        CREATED → TERMINATED
+        STARTED ↔ TERMINATED
+        STARTED ↔ ENDED
+        TERMINATED ↔ ENDED
+        TERMINATED → AUDITED
+        ENDED → AUDITED
+
     """,
 )
 async def update_service(
@@ -657,7 +688,8 @@ async def update_service(
     description="""
     Delete an existing service by ID.          
     Requires operator role with `delete_service` permission.       
-    Ensures the service is owned by the operator's company.        
+    Ensures the service is owned by the operator's company.  
+    Service can not be deleted if there are tickets associated with it.           
     Log the service deletion activity with the associated token.
     """,
 )
