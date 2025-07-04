@@ -167,6 +167,19 @@ def validateDate(starting_at: date):
         raise exceptions.InvalidValue(Service.starting_at)
 
 
+def serviceName(session: Session, route: Route, starting_at: datetime) -> str:
+    landmarks = (
+        session.query(Landmark)
+        .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.asc())
+        .all()
+    )
+    firstLandmark = landmarks[0].name
+    lastLandmark = landmarks[-1].name
+    return f"{firstLandmark} -> {lastLandmark} : {starting_at}"
+
+
 def updateService(service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
         ServiceStatus.CREATED: [],
@@ -326,16 +339,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        landmarks = (
-            session.query(Landmark)
-            .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.asc())
-            .all()
-        )
-        firstLandmark = landmarks[0].name
-        lastLandmark = landmarks[-1].name
-        name = f"{firstLandmark} -> {lastLandmark} : {fParam.starting_at}"
+        name = serviceName(session, route, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
@@ -612,16 +616,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        landmarks = (
-            session.query(Landmark)
-            .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.asc())
-            .all()
-        )
-        firstLandmark = landmarks[0].name
-        lastLandmark = landmarks[-1].name
-        name = f"{firstLandmark} -> {lastLandmark} : {fParam.starting_at}"
+        name = serviceName(session, route, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
