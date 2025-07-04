@@ -1980,6 +1980,11 @@ class Service(ORMbase):
             Indicates the company that owns this service.
             Indexed for faster queries.
 
+        name (String):
+            Name of the service.
+            Must not be null.
+            Maximum 128 characters.
+
         route (JSONB):
             JSON object storing the route data associated with the service.
             Route once set cannot be changed.
@@ -2046,6 +2051,7 @@ class Service(ORMbase):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(Integer, ForeignKey("company.id"), index=True)
+    name = Column(String(128), nullable=False)
     route = Column(JSONB, nullable=False)
     fare = Column(JSONB, nullable=False)
     bus_id = Column(Integer, ForeignKey("bus.id"))

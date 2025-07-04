@@ -457,6 +457,7 @@ def testDB():
     privateKey = ticketCreator.getPEMprivateKeyString()
     publicKey = ticketCreator.getPEMpublicKeyString()
     service = Service(
+        name=f"Varkala -> Edava : {routeStartDateTime}",
         company_id=company.id,
         route=routeInJSON,
         fare=jsonable_encoder(fare),
