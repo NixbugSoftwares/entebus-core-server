@@ -732,7 +732,8 @@ async def delete_service(
             .filter(Service.company_id == token.company_id)
             .first()
         )
-
+        if service and service.status != ServiceStatus.CREATED:
+            raise exceptions.DataInUse(Service)
         if service is not None:
             session.delete(service)
             session.commit()
