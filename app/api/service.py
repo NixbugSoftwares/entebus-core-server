@@ -263,12 +263,17 @@ def searchService(
     description="""
     Create a new service for a specified company.           
     Requires executive role with `create_service` permission.   
-    In this bus_id, route_id must be associated with the company.       
-    If fare_id is in Local scope, it must be associated with the company.
-    The bus must be in active status.     
-    The starting_at is derived from the route start_time, not user input.
-    The ending_at is derived from the route last landmarks arrival_delta, not user input.  
-    The service by default created in CREATED status.    
+    In this bus_id, route_id must be associated with the company_id.       
+    If fare_id is in Local scope, it must be associated with the company_id.
+    The bus must be in active status.    
+    The route must have at least two landmarks associated with it.        
+    The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
+    For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
+    The last landmark must have equal values for arrival_delta and departure_delta.    
+    The route name is derived from the names of the first and last landmarks + the route start_time, not from user input.      
+    The starting_at is derived from the route start_time, not user input.           
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.     
+    The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
 )
@@ -379,8 +384,8 @@ async def create_service(
     description="""
     Update an existing service by ID.      
     Requires executive role with `update_service` permission.       
+    The status=AUDITED and STARTED is not accepted by user input.   
     Log the service update activity with the associated token.      
-    The status=AUDITED and STARTED is not accepted by user input.
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
@@ -423,12 +428,17 @@ async def update_service(
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.DataInUse(Service),
+        ]
     ),
     description="""
     Delete an existing service by ID.      
     Requires executive role with `delete_service` permission.   
     Service can not be deleted if there are tickets associated with it.    
+    Service can not be deleted if there are not in CREATED status.      
     Deletes the service if it exists and logs the action.
     """,
 )
@@ -539,12 +549,17 @@ async def fetch_route(
     Create a new service for the operator's own company.	          
     Requires operator role with `create_service` permission.    
     The company ID is derived from the token, not user input.    
-    In this bus_id, route_id must be associated with the company.        
-    If fare_id is in Local scope, it must be associated with the company.       
-    The bus must be in active status.     
+    In this bus_id, route_id must be associated with the operator's own company.        
+    If fare_id is in Local scope, it must be associated with the operator's own company.       
+    The bus must be in active status.   
+    The route must have at least two landmarks associated with it.        
+    The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
+    For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
+    The last landmark must have equal values for arrival_delta and departure_delta.    
+    The route name is derived from the names of the first and last landmarks + the route start_time, not from user input.         
     The starting_at is derived from the route start_time, not user input.       
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
-    The service by default created in CREATED status.   
+    The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
 )
@@ -656,8 +671,8 @@ async def create_service(
     description="""
     Update an existing service belonging to the operator's company.        
     Requires operator role with `update_service` permission.              
+    The status=AUDITED and STARTED is not accepted by user input.   
     Log the service updating activity with the associated token.    
-    The status=AUDITED and STARTED is not accepted by user input.
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
@@ -705,13 +720,18 @@ async def update_service(
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.DataInUse(Service),
+        ]
     ),
     description="""
     Delete an existing service by ID.          
     Requires operator role with `delete_service` permission.       
     Ensures the service is owned by the operator's company.  
-    Service can not be deleted if there are tickets associated with it.           
+    Service can not be deleted if there are tickets associated with it.     
+    Service can not be deleted if there are not in CREATED status.      
     Log the service deletion activity with the associated token.
     """,
 )
