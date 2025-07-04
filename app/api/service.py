@@ -167,16 +167,15 @@ def validateDate(starting_at: date):
 
 def updateService(service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
-        ServiceStatus.CREATED: [ServiceStatus.STARTED, ServiceStatus.TERMINATED],
+        ServiceStatus.CREATED: [],
         ServiceStatus.STARTED: [ServiceStatus.TERMINATED, ServiceStatus.ENDED],
         ServiceStatus.TERMINATED: [ServiceStatus.STARTED],
         ServiceStatus.ENDED: [ServiceStatus.STARTED],
+        ServiceStatus.AUDITED: [],
     }
     if fParam.ticket_mode is not None and service.ticket_mode != fParam.ticket_mode:
         service.ticket_mode = fParam.ticket_mode
     if fParam.status is not None and service.status != fParam.status:
-        if fParam.status == ServiceStatus.AUDITED:
-            raise exceptions.InvalidStateTransition(Service.status)
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
