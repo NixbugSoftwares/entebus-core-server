@@ -223,6 +223,13 @@ async def create_fare(
 
         FareAttributes.model_validate(attributes)
         validators.fareFunction(function, attributes)
+        company = session.query(Company).filter(Company.id == fParam.company_id).first()
+        if company is None:
+            raise exceptions.UnknownValue(Fare.company_id)
+        if fParam.scope == FareScope.GLOBAL and fParam.company_id is not None:
+            raise exceptions.UnexpectedParameter(Fare.company_id)
+        if fParam.scope == FareScope.LOCAL and fParam.company_id is None:
+            raise exceptions.MissingParameter(Fare.company_id)
         fare = Fare(
             name=fParam.name,
             attributes=attributes,
