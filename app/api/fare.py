@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Annotated
 from fastapi import (
     APIRouter,
     Depends,
@@ -52,7 +52,6 @@ class FareSchema(BaseModel):
     attributes: FareAttributes
     function: str
     scope: FareScope
-    amount: float
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -60,12 +59,11 @@ class FareSchema(BaseModel):
 ## Input Forms
 class CreateFormForOP(BaseModel):
     name: str = Field(Form(max_length=32))
-    attributes: Json = Field(Form())
     function: str = Field(Form(max_length=2048))
 
 
 class CreateFormForEX(CreateFormForOP):
-    company_id: int | None = Field(Form())
+    company_id: int | None = Field(Form(default=None))
     scope: FareScope = Field(
         Form(description=enumStr(FareScope), default=FareScope.GLOBAL)
     )
@@ -97,6 +95,7 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
+    scope: FareScope | None = Field(Query(default=None, description=enumStr(FareScope)))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -122,7 +121,6 @@ class QueryParamsForOP(BaseModel):
 
 class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
-    scope: FareScope | None = Field(Query(default=None, description=enumStr(FareScope)))
 
 
 ## Function
@@ -205,6 +203,7 @@ def searchFare(
     """,
 )
 async def create_fare(
+    attributes: Annotated[Json, Form()],
     fParam: CreateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
@@ -215,9 +214,10 @@ async def create_fare(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_fare)
 
+        FareAttributes.model_validate(attributes)
         fare = Fare(
             name=fParam.name,
-            attributes=fParam.attributes,
+            attributes=attributes,
             function=fParam.function,
             company_id=fParam.company_id,
             scope=fParam.scope,
@@ -358,6 +358,7 @@ async def fetch_fare(
     """,
 )
 async def create_fare(
+    attributes: Annotated[Json, Form()],
     fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
@@ -368,9 +369,10 @@ async def create_fare(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_fare)
 
+        FareAttributes.model_validate(attributes)
         fare = Fare(
             name=fParam.name,
-            attributes=fParam.attributes,
+            attributes=attributes,
             function=fParam.function,
             company_id=token.company_id,
             scope=FareScope.LOCAL,
@@ -492,8 +494,7 @@ async def fetch_fare(
 
         qParam = QueryParamsForEX(
             **qParam.model_dump(),
-            company_id=token.company_id,
-            scope=[FareScope.LOCAL, FareScope.GLOBAL],
+            company_id=token.company_id or None,
         )
         return searchFare(session, qParam)
     except Exception as e:
