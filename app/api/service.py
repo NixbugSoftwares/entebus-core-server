@@ -23,6 +23,7 @@ from app.src.db import (
     Service,
     Bus,
     LandmarkInRoute,
+    Landmark,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
@@ -46,6 +47,7 @@ route_operator = APIRouter()
 class ServiceSchema(BaseModel):
     id: int
     company_id: int
+    name: str
     route: Dict[str, Any]
     fare: Dict[str, Any]
     bus_id: int
@@ -318,6 +320,17 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
+        landmarks = (
+            session.query(Landmark)
+            .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+            .filter(LandmarkInRoute.route_id == route.id)
+            .order_by(LandmarkInRoute.distance_from_start.asc())
+            .all()
+        )
+        firstLandmark = landmarks[0].name
+        lastLandmark = landmarks[-1].name
+        name = f"{firstLandmark} -> {lastLandmark} : {fParam.starting_at}"
+
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -329,6 +342,7 @@ async def create_service(
 
         service = Service(
             company_id=fParam.company_id,
+            name=name,
             bus_id=fParam.bus_id,
             route=routeData,
             fare=fareData,
@@ -495,7 +509,7 @@ async def fetch_route(
         qParam = QueryParamsForEX(
             **qParam.model_dump(),
             status_list=[ServiceStatus.CREATED, ServiceStatus.STARTED],
-            status=None
+            status=None,
         )
 
         return searchService(session, qParam)
@@ -583,6 +597,17 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
+        landmarks = (
+            session.query(Landmark)
+            .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+            .filter(LandmarkInRoute.route_id == route.id)
+            .order_by(LandmarkInRoute.distance_from_start.asc())
+            .all()
+        )
+        firstLandmark = landmarks[0].name
+        lastLandmark = landmarks[-1].name
+        name = f"{firstLandmark} -> {lastLandmark} : {fParam.starting_at}"
+
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
             routeData["landmark"] = [jsonable_encoder(landmark)]
@@ -594,6 +619,7 @@ async def create_service(
 
         service = Service(
             company_id=token.company_id,
+            name=name,
             bus_id=fParam.bus_id,
             route=routeData,
             fare=fareData,
