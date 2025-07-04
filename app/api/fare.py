@@ -131,6 +131,8 @@ def updateFare(fare: Fare, fParam: UpdateForm):
         fare.attributes = fParam.attributes
     if fParam.function is not None and fParam.function != fare.function:
         fare.function = fParam.function
+    FareAttributes.model_validate(fare.attributes)
+    validators.fareFunction(function, fare.attributes)
 
 
 def searchFare(
@@ -215,6 +217,7 @@ async def create_fare(
         validators.executivePermission(role, ExecutiveRole.create_fare)
 
         FareAttributes.model_validate(attributes)
+        validators.fareFunction(function, attributes)
         fare = Fare(
             name=fParam.name,
             attributes=attributes,
@@ -370,6 +373,7 @@ async def create_fare(
         validators.operatorPermission(role, OperatorRole.create_fare)
 
         FareAttributes.model_validate(attributes)
+        validators.fareFunction(function, attributes)
         fare = Fare(
             name=fParam.name,
             attributes=attributes,
