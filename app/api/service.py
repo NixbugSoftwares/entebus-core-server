@@ -379,11 +379,9 @@ async def create_service(
     Update an existing service by ID.      
     Requires executive role with `update_service` permission.   
     Log the service update activity with the associated token.  
-    The status=AUDITED is not accepted by user input.
+    The status=AUDITED and STARTED is not accepted by user input.
 
     Allowed status transitions:
-        CREATED → STARTED
-        CREATED → TERMINATED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
     """,
@@ -657,11 +655,9 @@ async def create_service(
     Update an existing service belonging to the operator's company.        
     Requires operator role with `update_service` permission.              
     Log the service updating activity with the associated token.    
-    The status=AUDITED is not accepted by user input.
+    The status=AUDITED and STARTED is not accepted by user input.
 
     Allowed status transitions:
-        CREATED → STARTED
-        CREATED → TERMINATED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
     """,
