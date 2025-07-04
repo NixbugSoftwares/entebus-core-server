@@ -267,7 +267,8 @@ def searchService(
     If fare_id is in Local scope, it must be associated with the company.
     The bus must be in active status.     
     The starting_at is derived from the route start_time, not user input.
-    The ending_at is derived from the route last landmarks arrival_delta, not user input.   
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.  
+    The service by default created in CREATED status.    
     Log the service creation activity with the associated token.
     """,
 )
@@ -377,8 +378,8 @@ async def create_service(
     ),
     description="""
     Update an existing service by ID.      
-    Requires executive role with `update_service` permission.   
-    Log the service update activity with the associated token.  
+    Requires executive role with `update_service` permission.       
+    Log the service update activity with the associated token.      
     The status=AUDITED and STARTED is not accepted by user input.
 
     Allowed status transitions:
@@ -536,13 +537,14 @@ async def fetch_route(
     ),
     description="""
     Create a new service for the operator's own company.	          
-    Requires operator role with `create_service` permission.  
-    The company ID is derived from the token, not user input.   
-    In this bus_id, route_id must be associated with the company.       
-    If fare_id is in Local scope, it must be associated with the company.
+    Requires operator role with `create_service` permission.    
+    The company ID is derived from the token, not user input.    
+    In this bus_id, route_id must be associated with the company.        
+    If fare_id is in Local scope, it must be associated with the company.       
     The bus must be in active status.     
-    The starting_at is derived from the route start_time, not user input.
-    The ending_at is derived from the route last landmarks arrival_delta, not user input.
+    The starting_at is derived from the route start_time, not user input.       
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.       
+    The service by default created in CREATED status.   
     Log the service creation activity with the associated token.
     """,
 )
