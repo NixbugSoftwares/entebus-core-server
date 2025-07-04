@@ -204,8 +204,10 @@ def searchFare(
         ]
     ),
     description="""
-    Create a new fare for a specified company.           
-    Requires executive role with `create_fare` permission.      
+    Create a new fare in global scope or in local  scope for a  specified company.           
+    Requires executive role with `create_fare` permission.    
+    If the fare is in Local scope, it must be associated with the company.
+    If the fare is in Global scope, company_id must be None.   
     Log the fare creation activity with the associated token.
     """,
 )
@@ -222,10 +224,7 @@ async def create_fare(
         validators.executivePermission(role, ExecutiveRole.create_fare)
 
         FareAttributes.model_validate(attributes)
-        validators.fareFunction(function, attributes)
-        company = session.query(Company).filter(Company.id == fParam.company_id).first()
-        if company is None:
-            raise exceptions.UnknownValue(Fare.company_id)
+        validators.fareFunction(fParam.function, attributes)
         if fParam.scope == FareScope.GLOBAL and fParam.company_id is not None:
             raise exceptions.UnexpectedParameter(Fare.company_id)
         if fParam.scope == FareScope.LOCAL and fParam.company_id is None:
@@ -411,7 +410,7 @@ async def create_fare(
         validators.operatorPermission(role, OperatorRole.create_fare)
 
         FareAttributes.model_validate(attributes)
-        validators.fareFunction(function, attributes)
+        validators.fareFunction(fParam.function, attributes)
         fare = Fare(
             name=fParam.name,
             attributes=attributes,
