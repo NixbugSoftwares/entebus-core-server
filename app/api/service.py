@@ -431,6 +431,8 @@ async def delete_service(
         validators.executivePermission(role, ExecutiveRole.delete_service)
 
         service = session.query(Service).filter(Service.id == fParam.id).first()
+        if service and service.status != ServiceStatus.CREATED:
+            raise exceptions.DataInUse(Service)
         if service is not None:
             session.delete(service)
             session.commit()

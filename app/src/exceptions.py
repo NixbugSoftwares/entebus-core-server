@@ -195,3 +195,12 @@ class InactiveResource(APIException):
             f"The status of {orm_class.__name__} is not in an active or useful state"
         )
         super().__init__(detail=detail)
+
+
+class DataInUse(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "DataInUse"}
+
+    def __init__(self, orm_class):
+        detail = f"The {orm_class.__name__} is currently in use"
+        super().__init__(detail=detail)
