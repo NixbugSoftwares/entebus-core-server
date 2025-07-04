@@ -13,7 +13,7 @@ from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, Json
 
-from app.api.bearer import bearer_executive, bearer_operator
+from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import (
     Company,
     ExecutiveRole,
@@ -28,6 +28,7 @@ from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
 route_operator = APIRouter()
+route_vendor = APIRouter()
 
 
 ## Output Schema
@@ -121,6 +122,10 @@ class QueryParamsForOP(BaseModel):
 
 class QueryParamsForEX(QueryParamsForOP):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForEX):
+    pass
 
 
 ## Function
@@ -336,6 +341,32 @@ async def fetch_fare(
     try:
         session = sessionMaker()
         validators.executiveToken(bearer.credentials, session)
+
+        return searchFare(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Vendor]
+@route_vendor.get(
+    "/company/fare",
+    tags=["Fare"],
+    response_model=List[FareSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch a list of all fare across companies.   
+    Only available to users with a valid vendor token.      
+    Supports filtering, sorting, and pagination.
+    """,
+)
+async def fetch_route(
+    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
+):
+    try:
+        session = sessionMaker()
+        validators.vendorToken(bearer.credentials, session)
 
         return searchFare(session, qParam)
     except Exception as e:

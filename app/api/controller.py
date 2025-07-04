@@ -77,3 +77,4 @@ app_operator.include_router(schedule.route_operator)
 
 app_executive.include_router(fare.route_executive)
 app_operator.include_router(fare.route_operator)
+app_vendor.include_router(fare.route_vendor)
