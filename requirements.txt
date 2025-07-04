@@ -16,3 +16,4 @@ minio
 requests
 pyproj
 redis
+pythonmonkey
