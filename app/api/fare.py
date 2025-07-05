@@ -1,18 +1,10 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional, Dict, Any, Annotated
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-    Body
-)
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, Query, Response, status, Body
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field, Json
+from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import (
@@ -59,27 +51,27 @@ class FareSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(..., max_length=32)
-    attributes: FareAttributes = Field(...)
-    function: str = Field(..., max_length=2048)
+    name: str = Field(Body(max_length=32))
+    attributes: FareAttributes = Field(Body())
+    function: str = Field(Body(max_length=2048))
 
 
 class CreateFormForEX(CreateFormForOP):
-    company_id: int | None = Field(default=None)
+    company_id: int | None = Field(Body(default=None))
     scope: FareScope = Field(
-        description=enumStr(FareScope), default=FareScope.GLOBAL)
-    
+        Body(description=enumStr(FareScope), default=FareScope.GLOBAL)
+    )
 
 
 class UpdateForm(BaseModel):
-    id: int = Field(Form())
-    name: str | None = Field(Form(default=None, max_length=32))
-    attributes: Json | None = Field(Form(default=None))
-    function: str | None = Field(Form(default=None, max_length=2048))
+    id: int = Field(Body())
+    name: str | None = Field(Body(default=None, max_length=32))
+    attributes: FareAttributes | None = Field(Body(default=None))
+    function: str | None = Field(Body(default=None, max_length=2048))
 
 
 class DeleteForm(BaseModel):
-    id: int = Field(Form())
+    id: int = Field(Body())
 
 
 ## Query Parameters
@@ -213,7 +205,7 @@ def searchFare(
     """,
 )
 async def create_fare(
-    fParam: CreateFormForEX = Body(),
+    fParam: CreateFormForEX = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
