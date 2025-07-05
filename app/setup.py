@@ -4,6 +4,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.src import argon2
 from app.src.digital_ticket import v1
+from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src.enums import (
     CompanyStatus,
     Day,
@@ -448,6 +449,9 @@ def testDB():
     session.add(schedule)
     session.flush()
 
+    UTCtime = routeStartDateTime.replace(tzinfo=TMZ_PRIMARY)
+    ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
+    startingAt = ISTtime.strftime("%Y-%m-%d %H:%M %p")
     routeInJSON = jsonable_encoder(route)
     routeInJSON["landmark"] = [
         jsonable_encoder(landmark1InRoute),
@@ -457,7 +461,7 @@ def testDB():
     privateKey = ticketCreator.getPEMprivateKeyString()
     publicKey = ticketCreator.getPEMpublicKeyString()
     service = Service(
-        name=f"Varkala -> Edava : {routeStartDateTime}",
+        name=f"{startingAt} {landmark1.name} -> {landmark2.name} ({bus2.registration_number})",
         company_id=company.id,
         route=routeInJSON,
         fare=jsonable_encoder(fare),

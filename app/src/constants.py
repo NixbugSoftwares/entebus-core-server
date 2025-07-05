@@ -1,4 +1,5 @@
 from os import environ
+from zoneinfo import ZoneInfo
 
 # Application constants
 API_TITLE = "EnteBus API Server"
@@ -63,3 +64,7 @@ MAX_ROUTE_DELTA = 10000 * 1000  # Maximum length between two landmarks in a rout
 SERVICE_START_BUFFER_TIME = (
     60 * 60
 )  # Minimum lead time to create a duty before service (in minutes)
+
+# Timezone constants
+TMZ_PRIMARY = ZoneInfo("UTC")
+TMZ_SECONDARY = ZoneInfo("Asia/Kolkata")
