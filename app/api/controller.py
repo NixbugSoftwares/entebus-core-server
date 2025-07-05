@@ -23,10 +23,12 @@ from app.src.enums import AppID
 app_executive = FastAPI()
 app_vendor = FastAPI()
 app_operator = FastAPI()
+app_public = FastAPI()
 
 app_executive.state.id = AppID.EXECUTIVE
 app_vendor.state.id = AppID.VENDOR
 app_operator.state.id = AppID.OPERATOR
+app_public.state.id = AppID.PUBLIC
 
 
 app_executive.include_router(executive_token.route_executive)
@@ -56,9 +58,11 @@ app_executive.include_router(vendor_account.route_executive)
 app_executive.include_router(company.route_executive)
 app_vendor.include_router(company.route_vendor)
 app_operator.include_router(company.route_operator)
+app_public.include_router(company.route_public)
 
 app_executive.include_router(business.route_executive)
 app_vendor.include_router(business.route_vendor)
+app_public.include_router(business.route_public)
 
 app_executive.include_router(route.route_executive)
 app_operator.include_router(route.route_operator)

@@ -36,6 +36,7 @@ from app.src.functions import enumStr, makeExceptionResponses
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -576,12 +577,6 @@ async def update_company(
     "/company",
     tags=["Company"],
     response_model=List[CompanySchema],
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.InvalidIdentifier,
-        ]
-    ),
     description="""
     Fetch the company information associated with the current operator.  
     Returns a list with a single item.  
@@ -597,6 +592,33 @@ async def fetch_company(bearer=Depends(bearer_operator)):
         companyData = jsonable_encoder(company, exclude={"location"})
         companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
         return [companyData]
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Public]
+@route_public.get(
+    "/company",
+    tags=["Company"],
+    response_model=List[CompanySchemaForVE],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Fetch the company information with optional filters like name, type, location, etc.  
+    Supports sorting and pagination.  
+    Requires no authentication.
+    """,
+)
+async def fetch_company(qParam: QueryParamsForEX = Depends()):
+    try:
+        session = sessionMaker()
+        return searchCompany(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:

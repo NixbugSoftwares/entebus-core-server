@@ -5,6 +5,7 @@ class AppID(IntEnum):
     EXECUTIVE = 1
     VENDOR = 2
     OPERATOR = 3
+    PUBLIC = 4
 
 
 class OrderIn(IntEnum):
