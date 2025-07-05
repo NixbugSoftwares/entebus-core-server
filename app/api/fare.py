@@ -15,7 +15,6 @@ from pydantic import BaseModel, Field, Json
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import (
-    Company,
     ExecutiveRole,
     Fare,
     OperatorRole,
@@ -283,6 +282,9 @@ async def update_fare(
         updateFare(fare, fParam)
         haveUpdate = session.is_modified(fare)
         if haveUpdate:
+            fare.version += 1
+            session.commit()
+            session.refresh(fare)
             logEvent(token, request_info, jsonable_encoder(fare))
         return fare
     except Exception as e:
@@ -470,6 +472,9 @@ async def update_fare(
         updateFare(fare, fParam)
         haveUpdated = session.is_modified(fare)
         if haveUpdated:
+            fare.version += 1
+            session.commit()
+            session.refresh(fare)
             logEvent(token, request_info, jsonable_encoder(fare))
         return fare
     except Exception as e:
