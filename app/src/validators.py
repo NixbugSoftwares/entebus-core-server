@@ -12,7 +12,9 @@ from app.src.db import (
     OperatorToken,
     VendorRole,
     VendorToken,
+    LandmarkInRoute,
 )
+from app.src.constants import MIN_LANDMARK_IN_ROUTE
 from app.src import exceptions
 
 
@@ -132,3 +134,26 @@ def stateTransition(transitions: dict, old_state, new_state, state: Column) -> b
         return True
     else:
         raise exceptions.InvalidStateTransition(state.name)
+
+
+def landmarkInRoute(route: int, session: Session):
+    landmarkInRoute = (
+        session.query(LandmarkInRoute)
+        .filter(LandmarkInRoute.route_id == route)
+        .order_by(LandmarkInRoute.distance_from_start.asc())
+        .all()
+    )
+    if (
+        len(landmarkInRoute) < MIN_LANDMARK_IN_ROUTE
+        or landmarkInRoute[0].distance_from_start != 0
+    ):
+        raise exceptions.InvalidRoute()
+    if (
+        landmarkInRoute[0].arrival_delta
+        or landmarkInRoute[0].departure_delta
+        or landmarkInRoute[-1].arrival_delta != landmarkInRoute[-1].departure_delta
+    ):
+        raise exceptions.InvalidRoute()
+    for index, route in enumerate(landmarkInRoute[1:-1]):
+        if route.arrival_delta < landmarkInRoute[index].departure_delta:
+            raise exceptions.InvalidRoute()
