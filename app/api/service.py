@@ -26,6 +26,7 @@ from app.src.db import (
     Landmark,
     sessionMaker,
 )
+from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import (
@@ -166,17 +167,29 @@ def validateStartingDate(starting_at: date):
         raise exceptions.InvalidValue(Service.starting_at)
 
 
-def getServiceName(session: Session, route: Route, starting_at: datetime) -> str:
-    landmarks = (
+def getServiceName(
+    session: Session, route: Route, bus: Bus, starting_at: datetime
+) -> str:
+    firstLandmark = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
         .filter(LandmarkInRoute.route_id == route.id)
         .order_by(LandmarkInRoute.distance_from_start.asc())
-        .all()
+        .first()
     )
-    firstLandmark = landmarks[0].name
-    lastLandmark = landmarks[-1].name
-    return f"{firstLandmark} -> {lastLandmark} : {starting_at}"
+    lastLandmark = (
+        session.query(Landmark)
+        .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.desc())
+        .first()
+    )
+    if not firstLandmark or not lastLandmark:
+        raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
+    UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
+    ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
+    startingAt = ISTtime.strftime("%Y-%m-%d %H:%M %p")
+    return f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
 
 
 def updateService(service: Service, fParam: UpdateForm):
@@ -338,7 +351,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        name = getServiceName(session, route, fParam.starting_at)
+        name = getServiceName(session, route, bus, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
@@ -615,7 +628,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        name = getServiceName(session, route, fParam.starting_at)
+        name = getServiceName(session, route, bus, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
