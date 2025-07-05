@@ -53,6 +53,14 @@ class BusinessSchema(BaseModel):
     created_on: datetime
 
 
+class BusinessSchemaForPB(BusinessSchema):
+    id: int
+    name: str
+    type: int
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
 ## Input Forms
 class CreateForm(BaseModel):
     name: str = Field(Form(max_length=32))
@@ -564,30 +572,23 @@ async def fetch_business(
 @route_public.get(
     "/business",
     tags=["Business"],
-    response_model=List[BusinessSchema],
+    response_model=List[BusinessSchemaForPB],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
     description="""
     Fetch a list of businesses or a specific business by ID.
     If ID is not provided, all businesses are returned.
     Requires no authentication.
     """,
 )
-async def fetch_business(
-    qParam: QueryParamsForVE = Depends(),
-):
+async def fetch_business(qParam: QueryParamsForEX = Depends()):
     try:
         session = sessionMaker()
-
-        if qParam.id is not None:
-            query = session.query(Business).filter(Business.id == qParam.id)
-        else:
-            query = session.query(Business)
-        businesses = query.all()
-        businessList = []
-        for business in businesses:
-            businessData = jsonable_encoder(business, exclude={"location"})
-            businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
-            businessList.append(businessData)
-        return businessList
+        return searchBusiness(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:

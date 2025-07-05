@@ -605,7 +605,8 @@ async def fetch_company(bearer=Depends(bearer_operator)):
     response_model=List[CompanySchema],
     responses=makeExceptionResponses(
         [
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
         ]
     ),
     description="""
