@@ -32,7 +32,6 @@ from app.src.enums import (
     TicketingMode,
     ServiceStatus,
     FareScope,
-    CompanyStatus,
     BusStatus,
 )
 from app.src.functions import enumStr, makeExceptionResponses
