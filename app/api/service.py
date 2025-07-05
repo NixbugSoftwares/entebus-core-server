@@ -222,7 +222,7 @@ def searchService(
         query = query.filter(Service.status == qParam.status)
     if qParam.status_list is not None:
         query = query.filter(Service.status.in_(qParam.status_list))
-    # starting_at-based filters
+    # starting_at based filters
     if qParam.starting_at_ge is not None:
         query = query.filter(Service.starting_at >= qParam.starting_at_ge)
     if qParam.starting_at_le is not None:
@@ -232,12 +232,12 @@ def searchService(
         query = query.filter(Service.ending_at >= qParam.ending_at_ge)
     if qParam.ending_at_le is not None:
         query = query.filter(Service.ending_at <= qParam.ending_at_le)
-    # updated_on-based filters
+    # updated_on based filters
     if qParam.updated_on_ge is not None:
         query = query.filter(Service.updated_on >= qParam.updated_on_ge)
     if qParam.updated_on_le is not None:
         query = query.filter(Service.updated_on <= qParam.updated_on_le)
-    # created_on-based filters
+    # created_on based filters
     if qParam.created_on_ge is not None:
         query = query.filter(Service.created_on >= qParam.created_on_ge)
     if qParam.created_on_le is not None:
