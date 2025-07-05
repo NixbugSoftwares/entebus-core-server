@@ -158,7 +158,7 @@ class QueryParamsForVE(QueryParams):
 
 
 # Functions
-def validateDate(starting_at: date):
+def validateStartingDate(starting_at: date):
     if starting_at < date.today():
         raise exceptions.InvalidValue(Service.starting_at)
     if starting_at != date.today() and starting_at != (
@@ -325,7 +325,7 @@ async def create_service(
 
         if bus.status != BusStatus.ACTIVE:
             raise exceptions.InactiveResource(Bus)
-        validateDate(fParam.starting_at)
+        validateStartingDate(fParam.starting_at)
 
         landmarksInRoute = (
             session.query(LandmarkInRoute)
@@ -602,7 +602,7 @@ async def create_service(
 
         if bus.status != BusStatus.ACTIVE:
             raise exceptions.InactiveResource(Bus)
-        validateDate(fParam.starting_at)
+        validateStartingDate(fParam.starting_at)
 
         landmarksInRoute = (
             session.query(LandmarkInRoute)
