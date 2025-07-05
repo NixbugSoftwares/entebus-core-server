@@ -39,26 +39,21 @@ route_public = APIRouter()
 
 
 ## Output Schema
-class BusinessSchema(BaseModel):
+class BusinessSchemaForPU(BaseModel):
     id: int
     name: str
-    status: int
     type: int
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+class BusinessSchema(BusinessSchemaForPU):
+    status: int
     address: str
     contact_person: str
     phone_number: str
     email_id: str
     location: str
-    updated_on: Optional[datetime]
-    created_on: datetime
-
-
-class BusinessSchemaForPB(BusinessSchema):
-    id: int
-    name: str
-    type: int
-    updated_on: Optional[datetime]
-    created_on: datetime
 
 
 ## Input Forms
@@ -131,21 +126,10 @@ class QueryParamsForVE(BaseModel):
     id: int | None = Field(Query(default=None))
 
 
-class QueryParamsForEX(QueryParamsForVE):
+class QueryParamsForPU(QueryParamsForVE):
     name: str | None = Field(Query(default=None))
-    status: BusinessStatus | None = Field(
-        Query(default=None, description=enumStr(BusinessStatus))
-    )
     type: BusinessType | None = Field(
         Query(default=None, description=enumStr(BusinessType))
-    )
-    address: str | None = Field(Query(default=None))
-    contact_person: str | None = Field(Query(default=None))
-    phone_number: PhoneNumber | None = Field(
-        Query(default=None, description="Phone number in RFC3966 format")
-    )
-    email_id: EmailStr | None = Field(
-        Query(default=None, description="Email in RFC 5322 format")
     )
     location: str | None = Field(
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
@@ -166,6 +150,20 @@ class QueryParamsForEX(QueryParamsForVE):
     # Pagination
     offset: int = Field(Query(default=0, ge=0))
     limit: int = Field(Query(default=20, gt=0, le=100))
+
+
+class QueryParamsForEX(QueryParamsForPU):
+    status: BusinessStatus | None = Field(
+        Query(default=None, description=enumStr(BusinessStatus))
+    )
+    address: str | None = Field(Query(default=None))
+    contact_person: str | None = Field(Query(default=None))
+    phone_number: PhoneNumber | None = Field(
+        Query(default=None, description="Phone number in RFC3966 format")
+    )
+    email_id: EmailStr | None = Field(
+        Query(default=None, description="Email in RFC 5322 format")
+    )
 
 
 ## Function
@@ -212,7 +210,7 @@ def updateBusiness(
 
 
 def searchBusiness(
-    session: Session, qParam: QueryParamsForVE | QueryParamsForEX
+    session: Session, qParam: QueryParamsForVE | QueryParamsForEX | QueryParamsForPU
 ) -> List[Business]:
     query = session.query(Business)
 
@@ -572,7 +570,7 @@ async def fetch_business(
 @route_public.get(
     "/business",
     tags=["Business"],
-    response_model=List[BusinessSchemaForPB],
+    response_model=List[BusinessSchemaForPU],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidWKTStringOrType,
@@ -585,9 +583,18 @@ async def fetch_business(
     Requires no authentication.
     """,
 )
-async def fetch_business(qParam: QueryParamsForEX = Depends()):
+async def fetch_business(qParam: QueryParamsForPU = Depends()):
     try:
         session = sessionMaker()
+
+        qParam = QueryParamsForEX(
+            **qParam.model_dump(),
+            status=BusinessStatus.ACTIVE,
+            address=None,
+            contact_person=None,
+            phone_number=None,
+            email_id=None,
+        )
         return searchBusiness(session, qParam)
     except Exception as e:
         exceptions.handle(e)

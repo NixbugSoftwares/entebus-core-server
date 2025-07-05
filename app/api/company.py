@@ -602,7 +602,7 @@ async def fetch_company(bearer=Depends(bearer_operator)):
 @route_public.get(
     "/company",
     tags=["Company"],
-    response_model=List[CompanySchema],
+    response_model=List[CompanySchemaForVE],
     responses=makeExceptionResponses(
         [
             exceptions.InvalidWKTStringOrType,
