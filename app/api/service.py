@@ -166,7 +166,7 @@ def validateStartingDate(starting_at: date):
         raise exceptions.InvalidValue(Service.starting_at)
 
 
-def serviceName(session: Session, route: Route, starting_at: datetime) -> str:
+def getServiceName(session: Session, route: Route, starting_at: datetime) -> str:
     landmarks = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
@@ -338,7 +338,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        name = serviceName(session, route, fParam.starting_at)
+        name = getServiceName(session, route, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
@@ -615,7 +615,7 @@ async def create_service(
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
         ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
 
-        name = serviceName(session, route, fParam.starting_at)
+        name = getServiceName(session, route, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
         for landmark in landmarksInRoute:
