@@ -44,7 +44,7 @@ route_operator = APIRouter()
 
 
 ## Output Schema
-class ServiceSchema(BaseModel):
+class ServiceSchemaForVE(BaseModel):
     id: int
     company_id: int
     name: str
@@ -55,12 +55,15 @@ class ServiceSchema(BaseModel):
     status: int
     starting_at: datetime
     ending_at: datetime
-    public_key: str
     remark: Optional[str]
     started_on: Optional[datetime]
     finished_on: Optional[datetime]
     updated_on: Optional[datetime]
     created_on: datetime
+
+
+class ServiceSchema(ServiceSchemaForVE):
+    public_key: str
 
 
 ## Input Forms
@@ -516,7 +519,7 @@ async def fetch_service(
 @route_vendor.get(
     "/company/service",
     tags=["Service"],
-    response_model=List[ServiceSchema],
+    response_model=List[ServiceSchemaForVE],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetch a list of all service  which are in CREATED or STARTED status across companies.   
