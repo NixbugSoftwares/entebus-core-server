@@ -8,6 +8,7 @@ from fastapi import (
     Response,
     status,
     Form,
+    Body
 )
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
@@ -58,15 +59,16 @@ class FareSchema(BaseModel):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    name: str = Field(Form(max_length=32))
-    function: str = Field(Form(max_length=2048))
+    name: str = Field(..., max_length=32)
+    attributes: FareAttributes = Field(...)
+    function: str = Field(..., max_length=2048)
 
 
 class CreateFormForEX(CreateFormForOP):
-    company_id: int | None = Field(Form(default=None))
+    company_id: int | None = Field(default=None)
     scope: FareScope = Field(
-        Form(description=enumStr(FareScope), default=FareScope.GLOBAL)
-    )
+        description=enumStr(FareScope), default=FareScope.GLOBAL)
+    
 
 
 class UpdateForm(BaseModel):
@@ -211,8 +213,7 @@ def searchFare(
     """,
 )
 async def create_fare(
-    attributes: Annotated[Json, Form()],
-    fParam: CreateFormForEX = Depends(),
+    fParam: CreateFormForEX = Body(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -222,15 +223,16 @@ async def create_fare(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_fare)
 
-        FareAttributes.model_validate(attributes)
-        validators.fareFunction(fParam.function, attributes)
+        fParam.attributes = fParam.attributes.model_dump()
+        # FareAttributes.model_validate(fParam.attributes)
+        validators.fareFunction(fParam.function, fParam.attributes)
         if fParam.scope == FareScope.GLOBAL and fParam.company_id is not None:
             raise exceptions.UnexpectedParameter(Fare.company_id)
         if fParam.scope == FareScope.LOCAL and fParam.company_id is None:
             raise exceptions.MissingParameter(Fare.company_id)
         fare = Fare(
             name=fParam.name,
-            attributes=attributes,
+            attributes=fParam.attributes,
             function=fParam.function,
             company_id=fParam.company_id,
             scope=fParam.scope,
@@ -400,7 +402,6 @@ async def fetch_route(
     """,
 )
 async def create_fare(
-    attributes: Annotated[Json, Form()],
     fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
@@ -411,11 +412,11 @@ async def create_fare(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_fare)
 
-        FareAttributes.model_validate(attributes)
-        validators.fareFunction(fParam.function, attributes)
+        FareAttributes.model_validate(fParam.attributes)
+        validators.fareFunction(fParam.function, fParam.attributes)
         fare = Fare(
             name=fParam.name,
-            attributes=attributes,
+            attributes=fParam.attributes,
             function=fParam.function,
             company_id=token.company_id,
             scope=FareScope.LOCAL,
