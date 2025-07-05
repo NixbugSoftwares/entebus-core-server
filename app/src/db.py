@@ -41,6 +41,7 @@ from app.src.enums import (
     BusStatus,
     TicketingMode,
     TriggeringMode,
+    ServiceStatus,
 )
 
 
@@ -157,6 +158,15 @@ class ExecutiveRole(ORMbase):
         delete_schedule (Boolean):
             Grants permission to delete schedules.
 
+        create_service (Boolean):
+            Whether this role permits the creation of a new service.
+
+        update_service (Boolean):
+            Whether this role permits editing the existing service.
+
+        delete_service (Boolean):
+            Whether this role permits deletion of a service.
+            
         create_fare (Boolean):
             Whether this role permits the creation of a new fare.
 
@@ -168,6 +178,7 @@ class ExecutiveRole(ORMbase):
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
+
 
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
@@ -217,6 +228,10 @@ class ExecutiveRole(ORMbase):
     create_schedule = Column(Boolean, nullable=False)
     update_schedule = Column(Boolean, nullable=False)
     delete_schedule = Column(Boolean, nullable=False)
+    # Service management permission
+    create_service = Column(Boolean, nullable=False)
+    update_service = Column(Boolean, nullable=False)
+    delete_service = Column(Boolean, nullable=False)
     # Fare management permission
     create_fare = Column(Boolean, nullable=False)
     update_fare = Column(Boolean, nullable=False)
@@ -747,6 +762,15 @@ class OperatorRole(ORMbase):
         delete_schedule (Boolean):
             Grants permission to delete schedules.
 
+        create_service (Boolean):
+            Whether this role permits the creation of a new service.
+
+        update_service (Boolean):
+            Whether this role permits editing the existing service.
+
+        delete_service (Boolean):
+            Whether this role permits deletion of a service.
+
         create_fare (Boolean):
             Whether this role permits the creation of a new fare.
 
@@ -796,6 +820,10 @@ class OperatorRole(ORMbase):
     create_schedule = Column(Boolean, nullable=False)
     update_schedule = Column(Boolean, nullable=False)
     delete_schedule = Column(Boolean, nullable=False)
+    # Service management permission
+    create_service = Column(Boolean, nullable=False)
+    update_service = Column(Boolean, nullable=False)
+    delete_service = Column(Boolean, nullable=False)
     # Fare management permission
     create_fare = Column(Boolean, nullable=False)
     update_fare = Column(Boolean, nullable=False)
@@ -1959,3 +1987,145 @@ class CompanyWallet(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Service(ORMbase):
+    """
+    Represents a transport service operated by a company.
+
+    This table stores details about individual service instances,
+    including their assigned route, fare, bus, and operational timeframes.
+    It also maintains cryptographic keys for secure ticketing
+    and records various states and modes related to the service.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the service.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Indicates the company that owns this service.
+            Indexed for faster queries.
+
+        name (String):
+            Name of the service.
+            Must not be null.
+            Maximum 128 characters.
+
+        route (JSONB):
+            JSON object storing the route data associated with the service.
+            Route once set cannot be changed.
+            Must not be null.
+
+        fare (JSONB):
+            JSON object storing the fare data associated with the service.
+            Fare once set cannot be changed.
+            Must not be null.
+
+        bus_id (Integer):
+            Foreign key referencing `bus.id`.
+            Specifies the bus assigned to this service.
+
+        ticket_mode (Integer):
+            Enum representing the ticketing mode.
+            Defaults to `TicketingMode.HYBRID`.
+            Mapped from the `TicketingMode` enum.
+
+        status (Integer):
+            Enum representing the current status of the service.
+            Defaults to `ServiceStatus.CREATED`.
+            A service cannot be created before 24 hours from the `starting_at` time.
+            Mapped from the `ServiceStatus` enum.
+
+        starting_at (DateTime):
+            Timestamp indicating the actual start time
+            when the service begins operation,  based on route information.
+
+        ending_at (DateTime):
+            Timestamp indicating the actual ending time
+            when the service finishes operation, based on route information.
+
+        private_key (TEXT):
+            Private cryptographic key for the service.
+            Used for secure ticket generation and validation.
+            Must not be null.
+
+        public_key (TEXT):
+            Public cryptographic key corresponding to the private key.
+            Shared for ticket verification.
+            Must not be null.
+
+        remark (TEXT):
+            Optional text field for additional remarks or notes related to the service.
+            Maximum 1024 characters.
+
+        started_on (DateTime):
+            Time at which the first operator joined the duty.
+
+        finished_on (DateTime):
+            Time at which the Service is ended by the operator or when the statement is generated.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the company wallet record is modified.
+            Useful for auditing or syncing purposes.
+
+        created_on (DateTime):
+            Timestamp indicating when the service record was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "service"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("company.id"), index=True)
+    name = Column(String(128), nullable=False)
+    route = Column(JSONB, nullable=False)
+    fare = Column(JSONB, nullable=False)
+    bus_id = Column(Integer, ForeignKey("bus.id"))
+    ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
+    starting_at = Column(DateTime(timezone=True), nullable=False)
+    ending_at = Column(DateTime(timezone=True), nullable=False)
+    private_key = Column(TEXT, nullable=False)
+    public_key = Column(TEXT, nullable=False)
+    remark = Column(TEXT)
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class LandmarkInService(ORMbase):
+    """
+    Temporal representation of all landmarks in a service based on the time.
+
+    This table tracks the relationship between landmarks and services,
+    including the expected arrival and departure times at each landmark
+    during the course of a service.
+
+    Columns:
+        landmark_id (Integer):
+            Foreign key referencing `landmark.id`.
+            Identifies the specific landmark associated with the service.
+
+        service_id (Integer):
+            Foreign key referencing `service.id`.
+            Identifies the transport service to which the landmark belongs.
+
+        arrival_time (DateTime):
+            Timestamp indicating the expected arrival time at the landmark.
+            Must not be null.
+
+        departure_time (DateTime):
+            Timestamp indicating the expected departure time from the landmark.
+            Must not be null.
+    """
+
+    __tablename__ = "landmark_in_service"
+
+    id = Column(Integer, primary_key=True)
+    landmark_id = Column(Integer, ForeignKey("landmark.id"))
+    service_id = Column(Integer, ForeignKey("service.id"))
+    arrival_time = Column(DateTime(timezone=True), nullable=False)
+    departure_time = Column(DateTime(timezone=True), nullable=False)

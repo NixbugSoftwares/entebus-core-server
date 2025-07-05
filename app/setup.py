@@ -1,7 +1,10 @@
 import argparse
-from datetime import time
+from datetime import datetime, time, timedelta, timezone
+from fastapi.encoders import jsonable_encoder
 
 from app.src import argon2
+from app.src.digital_ticket import v1
+from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src.enums import (
     CompanyStatus,
     Day,
@@ -13,6 +16,7 @@ from app.src.db import (
     ExecutiveRoleMap,
     Company,
     LandmarkInRoute,
+    LandmarkInService,
     Operator,
     OperatorRole,
     OperatorRoleMap,
@@ -20,6 +24,7 @@ from app.src.db import (
     Fare,
     Business,
     Schedule,
+    Service,
     Vendor,
     VendorRole,
     VendorRoleMap,
@@ -125,6 +130,9 @@ def initDB():
         create_schedule=True,
         update_schedule=True,
         delete_schedule=True,
+        create_service=True,
+        update_service=True,
+        delete_service=True,
         create_fare=True,
         update_fare=True,
         delete_fare=True,
@@ -161,6 +169,9 @@ def initDB():
         create_schedule=False,
         update_schedule=False,
         delete_schedule=False,
+        create_service=False,
+        update_service=False,
+        delete_service=False,
         create_fare=False,
         update_fare=False,
         delete_fare=False,
@@ -236,6 +247,9 @@ def testDB():
         create_schedule=True,
         update_schedule=True,
         delete_schedule=True,
+        create_service=True,
+        update_service=True,
+        delete_service=True,
         create_fare=True,
         update_fare=True,
         delete_fare=True,
@@ -257,6 +271,9 @@ def testDB():
         create_schedule=False,
         update_schedule=False,
         delete_schedule=False,
+        create_service=False,
+        update_service=False,
+        delete_service=False,
         create_fare=False,
         update_fare=False,
         delete_fare=False,
@@ -362,14 +379,22 @@ def testDB():
     )
     session.add(fare)
     session.flush()
+    session.refresh(fare)
 
+    # Calculate UTC start time + 1 minute
+    nowUTC = datetime.now(timezone.utc)
+    routeStartDateTime = nowUTC + timedelta(minutes=1)
+    routeStartTime = time(
+        routeStartDateTime.hour, routeStartDateTime.minute, routeStartDateTime.second
+    )
     route = Route(
         company_id=company.id,
         name="Varkala -> Edava",
-        start_time=time(11, 0, 0),
+        start_time=routeStartTime,
     )
     session.add(route)
     session.flush()
+    session.refresh(route)
 
     landmark1InRoute = LandmarkInRoute(
         company_id=company.id,
@@ -389,6 +414,8 @@ def testDB():
     )
     session.add_all([landmark1InRoute, landmark2InRoute])
     session.flush()
+    session.refresh(landmark1InRoute)
+    session.refresh(landmark2InRoute)
 
     bus1 = Bus(
         company_id=company.id,
@@ -432,6 +459,48 @@ def testDB():
         ],
     )
     session.add(schedule)
+    session.flush()
+
+    UTCtime = routeStartDateTime.replace(tzinfo=TMZ_PRIMARY)
+    ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
+    startingAt = ISTtime.strftime("%Y-%m-%d %H:%M %p")
+    routeInJSON = jsonable_encoder(route)
+    routeInJSON["landmark"] = [
+        jsonable_encoder(landmark1InRoute),
+        jsonable_encoder(landmark2InRoute),
+    ]
+    ticketCreator = v1.TicketCreator()
+    privateKey = ticketCreator.getPEMprivateKeyString()
+    publicKey = ticketCreator.getPEMpublicKeyString()
+    service = Service(
+        name=f"{startingAt} {landmark1.name} -> {landmark2.name} ({bus2.registration_number})",
+        company_id=company.id,
+        route=routeInJSON,
+        fare=jsonable_encoder(fare),
+        bus_id=bus2.id,
+        starting_at=routeStartDateTime,
+        ending_at=(
+            routeStartDateTime + timedelta(minutes=landmark2InRoute.departure_delta)
+        ),
+        private_key=privateKey,
+        public_key=publicKey,
+    )
+    session.add(service)
+    session.flush()
+
+    landmark1InService = LandmarkInService(
+        landmark_id=landmark1InRoute.id,
+        service_id=service.id,
+        arrival_time=service.starting_at,
+        departure_time=service.starting_at,
+    )
+    landmark2InService = LandmarkInService(
+        landmark_id=landmark2InRoute.id,
+        service_id=service.id,
+        arrival_time=service.ending_at,
+        departure_time=service.ending_at,
+    )
+    session.add_all([landmark1InService, landmark2InService])
     session.flush()
 
     businessWallet = Wallet(
