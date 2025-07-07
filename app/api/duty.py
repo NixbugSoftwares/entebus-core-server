@@ -507,8 +507,9 @@ async def get_duties(
 ):
     try:
         session = sessionMaker()
-        validators.operatorToken(bearer.credentials, session)
+        token = validators.operatorToken(bearer.credentials, session)
 
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchDuty(session, qParam)
     except Exception as e:
         exceptions.handle(e)
