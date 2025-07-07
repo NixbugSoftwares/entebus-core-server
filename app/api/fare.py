@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Response, status, Body
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
+from sqlalchemy import or_
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import (
@@ -141,7 +142,9 @@ def searchFare(
     if qParam.name is not None:
         query = query.filter(Fare.name.ilike(f"%{qParam.name}%"))
     if qParam.company_id is not None:
-        query = query.filter(Fare.company_id == qParam.company_id)
+        query = query.filter(
+            or_(Fare.company_id == qParam.company_id, Fare.company_id == None)
+        )
     if qParam.scope is not None:
         query = query.filter(Fare.scope == qParam.scope)
     # id based
@@ -531,30 +534,10 @@ async def fetch_fare(
 
         qParam = QueryParamsForEX(
             **qParam.model_dump(),
-            company_id=token.company_id or None,
+            company_id=token.company_id,
         )
         return searchFare(session, qParam)
-    
-        # method 1
-        # fares = fares.filter(or_(Fare.company_id == qParam.company_id, Fare.company_id == None))
-        # return fares
 
-        # method 2
-        # return [
-        #     fare for fare in fares 
-        #     if fare.company_id is None or fare.company_id == token.company_id
-        # ]
-    
-        # method 3
-        # filtered_fares = [
-        #     fare for fare in fares
-        #     if (
-        #         fare.scope == FareScope.GLOBAL or
-        #         (fare.scope == FareScope.LOCAL and fare.company_id == token.company_id)
-        #     )
-        # ]
-        # return filtered_fares
-    
     except Exception as e:
         exceptions.handle(e)
     finally:
