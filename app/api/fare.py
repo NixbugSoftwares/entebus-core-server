@@ -126,11 +126,10 @@ def updateFare(fare: Fare, fParam: UpdateForm):
     if fParam.name is not None and fParam.name != fare.name:
         fare.name = fParam.name
     if fParam.attributes is not None and fParam.attributes != fare.attributes:
-        fare.attributes = fParam.attributes
+        fare.attributes = fParam.attributes.model_dump()
     if fParam.function is not None and fParam.function != fare.function:
         fare.function = fParam.function
-    FareAttributes.model_validate(fare.attributes)
-    validators.fareFunction(function, fare.attributes)
+    validators.fareFunction(fare.function, fare.attributes)
 
 
 def searchFare(
@@ -216,7 +215,6 @@ async def create_fare(
         validators.executivePermission(role, ExecutiveRole.create_fare)
 
         fParam.attributes = fParam.attributes.model_dump()
-        # FareAttributes.model_validate(fParam.attributes)
         validators.fareFunction(fParam.function, fParam.attributes)
         if fParam.scope == FareScope.GLOBAL and fParam.company_id is not None:
             raise exceptions.UnexpectedParameter(Fare.company_id)
@@ -404,7 +402,7 @@ async def create_fare(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_fare)
 
-        FareAttributes.model_validate(fParam.attributes)
+        fParam.attributes = fParam.attributes.model_dump()
         validators.fareFunction(fParam.function, fParam.attributes)
         fare = Fare(
             name=fParam.name,
@@ -536,6 +534,27 @@ async def fetch_fare(
             company_id=token.company_id or None,
         )
         return searchFare(session, qParam)
+    
+        # method 1
+        # fares = fares.filter(or_(Fare.company_id == qParam.company_id, Fare.company_id == None))
+        # return fares
+
+        # method 2
+        # return [
+        #     fare for fare in fares 
+        #     if fare.company_id is None or fare.company_id == token.company_id
+        # ]
+    
+        # method 3
+        # filtered_fares = [
+        #     fare for fare in fares
+        #     if (
+        #         fare.scope == FareScope.GLOBAL or
+        #         (fare.scope == FareScope.LOCAL and fare.company_id == token.company_id)
+        #     )
+        # ]
+        # return filtered_fares
+    
     except Exception as e:
         exceptions.handle(e)
     finally:
