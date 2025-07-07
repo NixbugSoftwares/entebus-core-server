@@ -42,6 +42,7 @@ from app.src.enums import (
     TicketingMode,
     TriggeringMode,
     ServiceStatus,
+    DutyStatus,
 )
 
 
@@ -2102,3 +2103,79 @@ class LandmarkInService(ORMbase):
     service_id = Column(Integer, ForeignKey("service.id"))
     arrival_time = Column(DateTime(timezone=True), nullable=False)
     departure_time = Column(DateTime(timezone=True), nullable=False)
+
+
+class Duty(ORMbase):
+    """
+    Represents a duty assignment where an operator is assigned to a service under a specific company.
+
+    This table tracks operator responsibilities and service execution over time, capturing key
+    lifecycle events like assignment, start, and completion. It is essential for scheduling,
+    monitoring, and auditing operator activities.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the duty record.
+
+        company_id (Integer):
+            Foreign key referencing the `company.id`.
+            Indicates the company under which this duty is assigned.
+            Required and cascades on delete.
+
+        operator_id (Integer):
+            Foreign key referencing the `operator.id`.
+            Identifies the operator assigned to this duty.
+            Required and cascades on delete.
+
+        service_id (Integer):
+            Foreign key referencing the `service.id`.
+            Indicates the service the operator is assigned to perform.
+            Required and cascades on delete.
+
+        status (Integer):
+            Enum representing the current status of the duty.
+            Required. Defaults to `DutyStatus.ASSIGNED`.
+
+        starting_at (DateTime):
+            Scheduled start time of the duty.
+            Required and timezone-aware.
+
+        started_on (DateTime):
+            Actual timestamp when the duty started.
+            Optional and timezone-aware. Set when the operator begins the duty after the buffer time.
+
+        finished_on (DateTime):
+            Timestamp marking when the duty was completed.
+            Optional and timezone-aware.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the duty record is modified.
+            Useful for change tracking and auditing.
+
+        created_on (DateTime):
+            Timestamp indicating when the duty was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "duty"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    operator_id = Column(
+        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
+    )
+    service_id = Column(
+        Integer, ForeignKey("service.id", ondelete="CASCADE"), nullable=False
+    )
+    status = Column(Integer, nullable=False, default=DutyStatus.ASSIGNED)
+    starting_at = Column(DateTime(timezone=True), nullable=False)
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
