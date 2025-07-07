@@ -9,6 +9,7 @@ from app.src.enums import (
     CompanyStatus,
     Day,
     FareScope,
+    DutyStatus,
 )
 from app.src.db import (
     Executive,
@@ -34,6 +35,7 @@ from app.src.db import (
     Wallet,
     CompanyWallet,
     BusinessWallet,
+    Duty,
     sessionMaker,
     engine,
     ORMbase,
@@ -489,6 +491,17 @@ def testDB():
         departure_time=service.ending_at,
     )
     session.add_all([landmark1InService, landmark2InService])
+    session.flush()
+
+    duty = Duty(
+        company_id=company.id,
+        operator_id=admin.id,
+        service_id=service.id,
+        starting_at=service.starting_at,
+        started_on=nowUTC,
+        status=DutyStatus.STARTED,
+    )
+    session.add(duty)
     session.flush()
 
     businessWallet = Wallet(
