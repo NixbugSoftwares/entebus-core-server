@@ -196,6 +196,10 @@ def searchFare(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.UnexpectedParameter(Fare.company_id),
+            exceptions.MissingParameter(Fare.company_id),
+            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.InvalidFareFunction,
         ]
     ),
     description="""
@@ -253,6 +257,8 @@ async def create_fare(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.InvalidFareFunction,
         ]
     ),
     description="""
@@ -338,8 +344,8 @@ async def delete_fare(
 @route_executive.get(
     "/company/fare",
     tags=["Fare"],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
     response_model=List[FareSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of all fares across Global and Local scope.       
     Supports filtering by company ID, name, scope and metadata.  
@@ -396,7 +402,12 @@ async def fetch_route(
     response_model=FareSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.InvalidFareFunction,
+        ]
     ),
     description="""
     Creates a new fare for for the operator's own company.       
@@ -449,6 +460,8 @@ async def create_fare(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.InvalidFareFunction,
         ]
     ),
     description="""
@@ -554,12 +567,8 @@ async def fetch_fare(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(
-            **qParam.model_dump(),
-            company_id=token.company_id,
-        )
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchFare(session, qParam)
-
     except Exception as e:
         exceptions.handle(e)
     finally:
