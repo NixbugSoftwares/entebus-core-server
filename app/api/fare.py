@@ -54,7 +54,7 @@ class FareSchema(BaseModel):
 class CreateFormForOP(BaseModel):
     name: str = Field(Body(max_length=32))
     attributes: FareAttributes = Field(Body())
-    function: str = Field(Body(max_length=2048))
+    function: str = Field(Body(max_length=32768))
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -68,7 +68,7 @@ class UpdateForm(BaseModel):
     id: int = Field(Body())
     name: str | None = Field(Body(default=None, max_length=32))
     attributes: FareAttributes | None = Field(Body(default=None))
-    function: str | None = Field(Body(default=None, max_length=2048))
+    function: str | None = Field(Body(default=None, max_length=32768))
 
 
 class DeleteForm(BaseModel):
