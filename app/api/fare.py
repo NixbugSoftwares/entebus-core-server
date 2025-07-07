@@ -536,7 +536,12 @@ async def delete_fare(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.delete_fare)
 
-        fare = session.query(Fare).filter(Fare.id == fParam.id).first()
+        fare = (
+            session.query(Fare)
+            .filter(Fare.id == fParam.id)
+            .filter(Fare.company_id == token.company_id)
+            .first()
+        )
         if fare is not None:
             session.delete(fare)
             session.commit()
