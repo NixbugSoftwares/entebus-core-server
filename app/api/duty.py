@@ -269,6 +269,20 @@ async def update_duty(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.update_duty)
 
+        duty = session.query(Duty).filter(Duty.id == fParam.id).first()
+        if duty is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateDuty(duty, fParam)
+        haveUpdates = session.is_modified(duty)
+        if haveUpdates:
+            session.commit()
+            session.refresh(duty)
+
+        dutyData = jsonable_encoder(duty)
+        if haveUpdates:
+            logEvent(token, request_info, dutyData)
+        return duty
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -299,6 +313,12 @@ async def delete_duty(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.delete_duty)
 
+        duty = session.query(Duty).filter(Duty.id == fParam.id).first()
+        if duty is not None:
+            session.delete(duty)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(duty))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -313,7 +333,7 @@ async def delete_duty(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Get all duties for a service.   
+    Get all duties for a duty.   
     """,
 )
 async def get_duties(
@@ -403,6 +423,25 @@ async def update_duty(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.update_duty)
 
+        duty = (
+            session.query(Duty)
+            .filter(Duty.id == fParam.id)
+            .filter(Duty.company_id == token.company_id)
+            .first()
+        )
+        if duty is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateDuty(duty, fParam)
+        haveUpdates = session.is_modified(duty)
+        if haveUpdates:
+            session.commit()
+            session.refresh(duty)
+
+        dutyData = jsonable_encoder(duty)
+        if haveUpdates:
+            logEvent(token, request_info, dutyData)
+        return duty
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -433,6 +472,17 @@ async def delete_duty(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.delete_duty)
 
+        duty = (
+            session.query(Duty)
+            .filter(Duty.id == fParam.id)
+            .filter(Duty.company_id == token.company_id)
+            .first()
+        )
+        if duty is not None:
+            session.delete(duty)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(duty))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -447,7 +497,7 @@ async def delete_duty(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Get all duties for a service.   
+    Get all duties for a duty.   
     """,
 )
 async def get_duties(
