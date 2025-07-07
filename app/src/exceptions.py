@@ -204,3 +204,38 @@ class DataInUse(APIException):
     def __init__(self, orm_class):
         detail = f"The {orm_class.__name__} is currently in use"
         super().__init__(detail=detail)
+
+
+class MissingParameter(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "MissingParameter"}
+
+    def __init__(self, column_name_1: str):
+        detail = f"The {column_name_1.key} is missing"
+        super().__init__(detail=detail)
+
+
+class UnexpectedParameter(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "UnexpectedParameter"}
+
+    def __init__(self, column_name_1: str):
+        detail = f"Unexpected parameter {column_name_1.key} is provided"
+        super().__init__(detail=detail)
+
+
+class InvalidFareFunction(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "Invalid fare function"
+    headers = {"X-Error": "InvalidFareFunction"}
+
+
+class UnknownTicketType(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "UnknownTicketType"}
+
+    def __init__(self, ticket_type_name: str):
+        detail = (
+            f"Ticket type '{ticket_type_name}' cannot be validated using the function"
+        )
+        super().__init__(detail=detail)
