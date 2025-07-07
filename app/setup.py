@@ -325,7 +325,7 @@ def testDB():
     fare = Fare(
         company_id=company.id,
         name="Test fare",
-        scope=FareScope.GLOBAL,
+        scope=FareScope.LOCAL,
         attributes={
             "df_version": 1,
             "ticket_types": [
