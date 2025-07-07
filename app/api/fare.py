@@ -199,10 +199,14 @@ def searchFare(
         ]
     ),
     description="""
-    Create a new fare in global scope or in local  scope for a  specified company.           
+    Create a new fare in global scope or in local  scope for a specified company.           
     Requires executive role with `create_fare` permission.    
     If the fare is in Local scope, it must be associated with the company.
     If the fare is in Global scope, company_id must be None.   
+    The DF function and DF attributes are always tightly coupled together.      
+    The DF function is validated against the attributes.    
+    The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
+    The getFare function must return -1 if there is some logical or runtime error occurred during the function call.   
     Log the fare creation activity with the associated token.
     """,
 )
@@ -254,8 +258,13 @@ async def create_fare(
     description="""
     Updates an existing fare belonging to any company.       
     Only executives with `update_fare` permission can perform this operation.        
-    Supports partial updates such as modifying the fare name or function.        
-    Changes are saved only if the fare data has been modified.       
+    Supports partial updates such as modifying the fare name or function.     
+    The DF function and DF attributes are always tightly coupled together.      
+    The DF function is validated against the attributes.    
+    The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
+    The getFare function must return -1 if there is some logical or runtime error occurred during the function call.      
+    Changes are saved only if the fare data has been modified.     
+    The version is automatically incremented, when the fare is modified.    
     Logs the fare updating activity with the associated token.
     """,
 )
@@ -296,7 +305,7 @@ async def update_fare(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing fare belonging to any company.       
+    Deletes an existing fare.       
     Only executives with `delete_fare` permission can perform this operation.    
     Validates the fare ID before deletion.       
     If the fare exists, it is permanently removed from the system.       
@@ -332,8 +341,9 @@ async def delete_fare(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     response_model=List[FareSchema],
     description="""
-    Fetches a list of all fares across companies.       
-    Supports filtering by company ID, name, registration number and metadata.   
+    Fetches a list of all fares across Global and Local scope.       
+    Supports filtering by company ID, name, scope and metadata.  
+    Supports filtering, sorting, and pagination.     
     Requires a valid executive token.
     """,
 )
@@ -359,8 +369,9 @@ async def fetch_fare(
     response_model=List[FareSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all fare across companies.   
-    Only available to users with a valid vendor token.      
+    Fetch a list of all fare across  Global and Local scope.   
+    Only available to users with a valid vendor token.     
+    Supports filtering by company ID, name, scope and metadata.      
     Supports filtering, sorting, and pagination.
     """,
 )
@@ -390,7 +401,12 @@ async def fetch_route(
     description="""
     Creates a new fare for for the operator's own company.       
     Only operator with `create_fare` permission can create fare.      
-    The company ID is derived from the token, not user input.       
+    The company ID is derived from the token, not user input.    
+    The scope of the fare is Local by default, not user input. 
+    The DF function and DF attributes are always tightly coupled together.      
+    The DF function is validated against the attributes.    
+    The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
+    The getFare function must return -1 if there is some logical or runtime error occurred during the function call.          
     Logs the fare account creation activity with the associated token.
     """,
 )
@@ -440,6 +456,11 @@ async def create_fare(
     Only operators with `update_fare` permission can perform this operation.     
     Validates the fare ID and ensures it belongs to the operator's company.             
     Changes are saved only if the fare data has been modified.       
+    The DF function and DF attributes are always tightly coupled together.      
+    The DF function is validated against the attributes.    
+    The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
+    The getFare function must return -1 if there is some logical or runtime error occurred during the function call.   
+    The version is automatically incremented, when the fare is modified.    
     Logs the fare updating activity using the operator's token and request metadata.
     """,
 )
@@ -520,9 +541,10 @@ async def delete_fare(
     response_model=List[FareSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of fares associated with the operator's company.     
+    Fetches a list of fares associated with the operator's company and in global scope.     
     Requires a valid operator token.        
-    Supports filters like ID, registration number, name and creation timestamps.  
+    Supports filters like ID, scope, name and creation timestamps.  
+    Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_fare(
