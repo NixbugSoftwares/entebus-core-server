@@ -159,9 +159,6 @@ class ExecutiveRole(ORMbase):
         delete_schedule (Boolean):
             Grants permission to delete schedules.
 
-        updated_on (DateTime):
-            Timestamp automatically updated whenever the role record is modified.
-
         create_service (Boolean):
             Whether this role permits the creation of a new service.
 
@@ -170,6 +167,18 @@ class ExecutiveRole(ORMbase):
 
         delete_service (Boolean):
             Whether this role permits deletion of a service.
+
+        create_duty (Boolean):
+            Whether this role permits the creation of a new duty.
+
+        update_duty (Boolean):
+            Whether this role permits editing the existing duty.
+
+        delete_duty (Boolean):
+            Whether this role permits deletion of a duty.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the role record is modified.
 
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
@@ -223,6 +232,10 @@ class ExecutiveRole(ORMbase):
     create_service = Column(Boolean, nullable=False)
     update_service = Column(Boolean, nullable=False)
     delete_service = Column(Boolean, nullable=False)
+    # Duty management permission
+    create_duty = Column(Boolean, nullable=False)
+    update_duty = Column(Boolean, nullable=False)
+    delete_duty = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -758,6 +771,15 @@ class OperatorRole(ORMbase):
         delete_service (Boolean):
             Whether this role permits deletion of a service.
 
+        create_duty (Boolean):
+            Whether this role permits the creation of a new duty.
+
+        update_duty (Boolean):
+            Whether this role permits editing the existing duty.
+
+        delete_duty (Boolean):
+            Whether this role permits deletion of a duty.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -802,6 +824,10 @@ class OperatorRole(ORMbase):
     create_service = Column(Boolean, nullable=False)
     update_service = Column(Boolean, nullable=False)
     delete_service = Column(Boolean, nullable=False)
+    # Duty management permission
+    create_duty = Column(Boolean, nullable=False)
+    update_duty = Column(Boolean, nullable=False)
+    delete_duty = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

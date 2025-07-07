@@ -135,6 +135,9 @@ def initDB():
         create_service=True,
         update_service=True,
         delete_service=True,
+        create_duty=True,
+        update_duty=True,
+        delete_duty=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -171,6 +174,9 @@ def initDB():
         create_service=False,
         update_service=False,
         delete_service=False,
+        create_duty=False,
+        update_duty=False,
+        delete_duty=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -246,6 +252,9 @@ def testDB():
         create_service=True,
         update_service=True,
         delete_service=True,
+        create_duty=True,
+        update_duty=True,
+        delete_duty=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -267,6 +276,9 @@ def testDB():
         create_service=False,
         update_service=False,
         delete_service=False,
+        create_duty=False,
+        update_duty=False,
+        delete_duty=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
