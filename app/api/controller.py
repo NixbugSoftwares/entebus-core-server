@@ -16,6 +16,7 @@ from app.api import (
     vendor_account,
     schedule,
     service,
+    duty,
 )
 from app.src.enums import AppID
 
@@ -82,3 +83,7 @@ app_operator.include_router(schedule.route_operator)
 app_executive.include_router(service.route_executive)
 app_operator.include_router(service.route_operator)
 app_vendor.include_router(service.route_vendor)
+
+app_executive.include_router(duty.route_executive)
+app_operator.include_router(duty.route_operator)
+app_vendor.include_router(duty.route_vendor)
