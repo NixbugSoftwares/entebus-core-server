@@ -133,6 +133,9 @@ def initDB():
         create_service=True,
         update_service=True,
         delete_service=True,
+        create_fare=True,
+        update_fare=True,
+        delete_fare=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -169,6 +172,9 @@ def initDB():
         create_service=False,
         update_service=False,
         delete_service=False,
+        create_fare=False,
+        update_fare=False,
+        delete_fare=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -244,6 +250,9 @@ def testDB():
         create_service=True,
         update_service=True,
         delete_service=True,
+        create_fare=True,
+        update_fare=True,
+        delete_fare=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -265,6 +274,9 @@ def testDB():
         create_service=False,
         update_service=False,
         delete_service=False,
+        create_fare=False,
+        update_fare=False,
+        delete_fare=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -313,7 +325,7 @@ def testDB():
     fare = Fare(
         company_id=company.id,
         name="Test fare",
-        scope=FareScope.GLOBAL,
+        scope=FareScope.LOCAL,
         attributes={
             "df_version": 1,
             "ticket_types": [
