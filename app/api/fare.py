@@ -88,8 +88,9 @@ class OrderBy(IntEnum):
     created_on = 4
 
 
-class QueryParamsForOP(BaseModel):
+class QueryParams(BaseModel):
     name: str | None = Field(Query(default=None))
+    company_id: int | None = Field(Query(default=None))
     scope: FareScope | None = Field(Query(default=None, description=enumStr(FareScope)))
     # id based
     id: int | None = Field(Query(default=None))
@@ -114,14 +115,6 @@ class QueryParamsForOP(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
-class QueryParamsForEX(QueryParamsForOP):
-    company_id: int | None = Field(Query(default=None))
-
-
-class QueryParamsForVE(QueryParamsForEX):
-    pass
-
-
 ## Function
 def updateFare(fare: Fare, fParam: UpdateForm):
     if fParam.name is not None and fParam.name != fare.name:
@@ -133,9 +126,7 @@ def updateFare(fare: Fare, fParam: UpdateForm):
     validators.fareFunction(fare.function, fare.attributes)
 
 
-def searchFare(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
-) -> List[Fare]:
+def searchFare(session: Session, qParam: QueryParams) -> List[Fare]:
     query = session.query(Fare)
 
     # Filters
@@ -353,10 +344,7 @@ async def delete_fare(
     Requires a valid executive token.
     """,
 )
-async def fetch_fare(
-    qParam: QueryParamsForEX = Depends(),
-    bearer=Depends(bearer_executive),
-):
+async def fetch_fare(qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)):
     try:
         session = sessionMaker()
         validators.executiveToken(bearer.credentials, session)
@@ -381,9 +369,7 @@ async def fetch_fare(
     Supports filtering, sorting, and pagination.
     """,
 )
-async def fetch_route(
-    qParam: QueryParamsForVE = Depends(), bearer=Depends(bearer_vendor)
-):
+async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
@@ -565,14 +551,11 @@ async def delete_fare(
     Supports filtering, sorting, and pagination.
     """,
 )
-async def fetch_fare(
-    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
-):
+async def fetch_fare(qParam: QueryParams = Depends(), bearer=Depends(bearer_operator)):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
         return searchFare(session, qParam)
     except Exception as e:
         exceptions.handle(e)
