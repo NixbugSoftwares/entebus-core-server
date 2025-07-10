@@ -7,13 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive
-from app.src.db import (
-    Executive,
-    ExecutiveRole,
-    ExecutiveToken,
-    sessionMaker,
-)
-from app.src import argon2, exceptions, validators, getters
+from app.src.db import ExecutiveRole, sessionMaker
+from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
 
@@ -21,8 +16,6 @@ route_executive = APIRouter()
 
 
 ## Output Schema
-
-
 class ExecutiveRoleSchema(BaseModel):
     id: int
     name: str
@@ -252,15 +245,13 @@ class QueryParams(BaseModel):
     response_model=ExecutiveRoleSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new executive role.     
     Only authorized users with `create_ex_role` permission can create a new role.      
-    Duplicate names are not allowed.
+    Duplicate names are not allowed.        
+    Log the role creation activity with the associated token.
     """,
 )
 async def create_role(
@@ -338,7 +329,7 @@ async def create_role(
         ]
     ),
     description="""
-    Updates an existing role belonging to any company.       
+    Updates an existing role belonging.       
     Only executives with `update_ex_role` permission can perform this operation.            
     Logs the role updating activity with the associated token.
     """,
@@ -589,8 +580,10 @@ async def delete_role(
     response_model=List[ExecutiveRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    List all executive roles.     
-    Only authorized users can list executive roles.
+    Fetches a list of all executive role.       
+    Supports filtering by ID, name, permissions and metadata.   
+    Supports filtering, sorting, and pagination.     
+    Requires a valid executive token.
     """,
 )
 async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)):
