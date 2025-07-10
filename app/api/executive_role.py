@@ -515,11 +515,20 @@ async def update_role(
             role.update_fare = fParam.update_fare
         if fParam.delete_fare is not None and fParam.delete_fare != role.delete_fare:
             role.delete_fare = fParam.delete_fare
-        if fParam.create_ex_role is not None and fParam.create_ex_role != role.create_ex_role:
+        if (
+            fParam.create_ex_role is not None
+            and fParam.create_ex_role != role.create_ex_role
+        ):
             role.create_ex_role = fParam.create_ex_role
-        if fParam.update_ex_role is not None and fParam.update_ex_role != role.update_ex_role:
+        if (
+            fParam.update_ex_role is not None
+            and fParam.update_ex_role != role.update_ex_role
+        ):
             role.update_ex_role = fParam.update_ex_role
-        if fParam.delete_ex_role is not None and fParam.delete_ex_role != role.delete_ex_role:
+        if (
+            fParam.delete_ex_role is not None
+            and fParam.delete_ex_role != role.delete_ex_role
+        ):
             role.delete_ex_role = fParam.delete_ex_role
 
         haveUpdates = session.is_modified(role)
