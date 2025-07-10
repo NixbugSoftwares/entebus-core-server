@@ -448,7 +448,7 @@ async def create_duty(
 
         operator = (
             session.query(Operator)
-            .filter(Operator.id == token.operator_id)
+            .filter(Operator.id == fParam.operator_id)
             .filter(Operator.company_id == token.company_id)
             .first()
         )
