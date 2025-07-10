@@ -48,7 +48,7 @@ class QueryParams(BaseModel):
 ## API endpoints [Executive]
 @route_executive.post(
     "/entebus/account/role",
-    tags=["Executive Role"],
+    tags=["Executive Role Map"],
     response_model=ExecutiveRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
@@ -70,7 +70,7 @@ async def create_executive_role_map(
 
 @route_executive.patch(
     "/entebus/account/role",
-    tags=["Executive Role"],
+    tags=["Executive Role Map"],
     response_model=ExecutiveRoleMapSchema,
     responses=makeExceptionResponses(
         [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
@@ -91,7 +91,7 @@ async def update_executive_role_map(
 
 @route_executive.delete(
     "/entebus/account/role",
-    tags=["Executive Role"],
+    tags=["Executive Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
         [exceptions.InvalidToken, exceptions.NoPermission]
@@ -112,7 +112,7 @@ async def delete_executive_role_map(
 
 @route_executive.get(
     "/entebus/account/role",
-    tags=["Executive Role"],
+    tags=["Executive Role Map"],
     response_model=List[ExecutiveRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
