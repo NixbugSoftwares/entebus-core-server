@@ -18,7 +18,7 @@ from app.src.db import (
 from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY, SERVICE_START_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import DutyStatus
+from app.src.enums import DutyStatus, ServiceStatus
 from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
@@ -79,7 +79,6 @@ class OrderBy(IntEnum):
 class QueryParamsForOP(BaseModel):
     # Filters
     operator_id: int | None = Field(Query(default=None))
-    company_id: int | None = Field(Query(default=None))
     service_id: int | None = Field(Query(default=None))
     status: DutyStatus | None = Field(
         Query(default=None, description=enumStr(DutyStatus))
@@ -121,7 +120,7 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 # Functions
-def updateDuty(duty: Duty, fParam: UpdateForm):
+def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     dutyStatusTransition = {
         DutyStatus.ASSIGNED: [],
         DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
@@ -129,6 +128,13 @@ def updateDuty(duty: Duty, fParam: UpdateForm):
         DutyStatus.ENDED: [DutyStatus.STARTED],
     }
     if fParam.service_id is not None and fParam.service_id != duty.service_id:
+        service = session.query(Service).filter(Service.id == fParam.service_id).first()
+        if service is None:
+            raise exceptions.UnknownValue(Duty.service_id)
+        if service.company_id != duty.company_id:
+            raise exceptions.InvalidAssociation(Duty.service_id, Duty.company_id)
+        if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
+            raise exceptions.InactiveResource(Service)
         duty.service_id = fParam.service_id
     if fParam.status is not None and fParam.status != duty.status:
         duty.status = fParam.status
@@ -210,7 +216,7 @@ def searchDuty(
             exceptions.NoPermission,
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
-            exceptions.InactiveResource(Duty),
+            exceptions.InactiveResource(Service),
         ]
     ),
     description="""
@@ -245,6 +251,9 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.UnknownValue(Duty.service_id),
+            exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
+            exceptions.InactiveResource(Service),
         ]
     ),
     description="""
@@ -273,7 +282,7 @@ async def update_duty(
         if duty is None:
             raise exceptions.InvalidIdentifier()
 
-        updateDuty(duty, fParam)
+        updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
         if haveUpdates:
             session.commit()
@@ -330,7 +339,7 @@ async def delete_duty(
     tags=["Duty"],
     response_model=list[DutySchema],
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [exceptions.InvalidToken]
     ),
     description="""
     Get all duties for a duty.   
@@ -397,6 +406,9 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.UnknownValue(Duty.service_id),
+            exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
+            exceptions.InactiveResource(Service),
         ]
     ),
     description="""
@@ -430,7 +442,7 @@ async def update_duty(
         if duty is None:
             raise exceptions.InvalidIdentifier()
 
-        updateDuty(duty, fParam)
+        updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
         if haveUpdates:
             session.commit()
@@ -492,7 +504,7 @@ async def delete_duty(
     tags=["Duty"],
     response_model=list[DutySchema],
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [exceptions.InvalidToken]
     ),
     description="""
     Get all duties for a duty.   
