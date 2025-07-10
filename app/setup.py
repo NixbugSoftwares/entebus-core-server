@@ -136,6 +136,9 @@ def initDB():
         create_fare=True,
         update_fare=True,
         delete_fare=True,
+        create_ex_role=True,
+        update_ex_role=True,
+        delete_ex_role=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",

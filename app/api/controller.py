@@ -17,6 +17,7 @@ from app.api import (
     schedule,
     service,
     fare,
+    executive_role,
 )
 from app.src.enums import AppID
 
