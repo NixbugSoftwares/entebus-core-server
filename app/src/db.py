@@ -176,9 +176,17 @@ class ExecutiveRole(ORMbase):
         delete_fare (Boolean):
             Whether this role permits deletion of a fare.
 
+        create_ex_role (Boolean):
+            Whether this role permits the creation of a new executive role.
+
+        update_ex_role (Boolean):
+            Whether this role permits editing the existing executive role.
+
+        delete_ex_role (Boolean):
+            Whether this role permits deletion of a executive role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
-
 
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
@@ -236,6 +244,10 @@ class ExecutiveRole(ORMbase):
     create_fare = Column(Boolean, nullable=False)
     update_fare = Column(Boolean, nullable=False)
     delete_fare = Column(Boolean, nullable=False)
+    # Executive role management permission
+    create_ex_role = Column(Boolean, nullable=False)
+    update_ex_role = Column(Boolean, nullable=False)
+    delete_ex_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
