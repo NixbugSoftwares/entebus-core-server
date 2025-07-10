@@ -134,8 +134,10 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
         )
         if fParam.status == DutyStatus.STARTED:
             duty.started_on = datetime.now(timezone.utc)
-            service.status = ServiceStatus.STARTED
-            service.started_on = datetime.now(timezone.utc)
+            if service.status == ServiceStatus.CREATED:
+                service.status = ServiceStatus.STARTED
+            if service.started_on is None:
+                service.started_on = datetime.now(timezone.utc)
         if fParam.status in [DutyStatus.TERMINATED, DutyStatus.ENDED]:
             duty.finished_on = datetime.now(timezone.utc)
         duty.status = fParam.status
@@ -473,8 +475,10 @@ async def create_duty(
         if fParam.operator_id == token.operator_id and currentTime >= bufferTime:
             status = DutyStatus.STARTED
             started_on = currentTime
-            service.status = ServiceStatus.STARTED
-            service.started_on = started_on
+            if service.status == ServiceStatus.CREATED:
+                service.status = ServiceStatus.STARTED
+            if service.started_on is None:
+                service.started_on = started_on
         else:
             status = DutyStatus.ASSIGNED
             started_on = None
