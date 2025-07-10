@@ -337,9 +337,7 @@ async def delete_duty(
     """,
 )
 async def get_duties(
-    qParam: QueryParamsForEX = Depends(),
-    bearer=Depends(bearer_executive),
-    request_info=Depends(getters.requestInfo),
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -501,9 +499,7 @@ async def delete_duty(
     """,
 )
 async def get_duties(
-    qParam: QueryParamsForOP = Depends(),
-    bearer=Depends(bearer_operator),
-    request_info=Depends(getters.requestInfo),
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
