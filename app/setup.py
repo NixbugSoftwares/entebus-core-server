@@ -175,6 +175,9 @@ def initDB():
         create_fare=False,
         update_fare=False,
         delete_fare=False,
+        create_ex_role=False,
+        update_ex_role=False,
+        delete_ex_role=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
