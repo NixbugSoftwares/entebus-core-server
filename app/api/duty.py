@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
@@ -232,6 +232,38 @@ async def create_duty(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_duty)
 
+        company = session.query(Company).filter(Company.id == fParam.company_id).first()
+        if company is None:
+            raise exceptions.UnknownValue(Duty.company_id)
+        operator = (
+            session.query(Operator).filter(Operator.id == fParam.operator_id).first()
+        )
+        if operator is None:
+            raise exceptions.UnknownValue(Duty.operator_id)
+        service = session.query(Service).filter(Service.id == fParam.service_id).first()
+        if service is None:
+            raise exceptions.UnknownValue(Duty.service_id)
+
+        if operator.status != AccountStatus.ACTIVE:
+            raise exceptions.InactiveResource(Operator)
+        if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
+            raise exceptions.InactiveResource(Service)
+
+        if operator.company_id != company.id:
+            raise exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id)
+        if service.company_id != company.id:
+            raise exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id)
+
+        duty = Duty(
+            company_id=fParam.company_id,
+            operator_id=fParam.operator_id,
+            service_id=fParam.service_id,
+            starting_at=service.starting_at,
+        )
+        session.add(duty)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(duty))
+        return duty
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -387,6 +419,52 @@ async def create_duty(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_duty)
 
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == token.operator_id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
+        )
+        if operator is None:
+            raise exceptions.UnknownValue(Operator.id)
+        service = (
+            session.query(Service)
+            .filter(Service.id == fParam.service_id)
+            .filter(Service.company_id == token.company_id)
+            .first()
+        )
+        if service is None:
+            raise exceptions.UnknownValue(Duty.service_id)
+
+        if operator.status != AccountStatus.ACTIVE:
+            raise exceptions.InactiveResource(Operator)
+        if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
+            raise exceptions.InactiveResource(Service)
+
+        bufferTime = service.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
+        currentTime = datetime.now(timezone.utc)
+        print(currentTime, bufferTime)
+        if fParam.operator_id == token.operator_id and currentTime >= bufferTime:
+            status = DutyStatus.STARTED
+            started_on = currentTime
+            service.status = ServiceStatus.STARTED
+            service.started_on = started_on
+        else:
+            status = DutyStatus.ASSIGNED
+            started_on = None
+
+        duty = Duty(
+            company_id=token.company_id,
+            operator_id=fParam.operator_id,
+            service_id=fParam.service_id,
+            starting_at=service.starting_at,
+            status=status,
+            started_on=started_on,
+        )
+        session.add(duty)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(duty))
+        return duty
     except Exception as e:
         exceptions.handle(e)
     finally:
