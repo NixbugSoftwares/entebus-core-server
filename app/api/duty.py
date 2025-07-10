@@ -134,6 +134,7 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
         )
         if fParam.status == DutyStatus.STARTED:
             duty.started_on = datetime.now(timezone.utc)
+            service.status = ServiceStatus.STARTED
             service.started_on = datetime.now(timezone.utc)
         if fParam.status in [DutyStatus.TERMINATED, DutyStatus.ENDED]:
             duty.finished_on = datetime.now(timezone.utc)
@@ -217,7 +218,12 @@ def searchDuty(
         ]
     ),
     description="""
-    Create a new duty for a specified company.                  
+    Create a new duty for a specified company.      
+    Requires executive role with `create_duty` permission.      
+    Duty can not be created if the service is not in CREATED or STARTED status. 
+    In this operator and service must be associated with the company_id.    
+    The operator must be in active status.  
+    The duty is created in the Assigned status by default.      
     Log the duty creation activity with the associated token.
     """,
 )
@@ -280,20 +286,20 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
-            exceptions.UnknownValue(Duty.service_id),
-            exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
-            exceptions.InactiveResource(Service),
         ]
     ),
     description="""
     Update an existing duty by ID.      
-    Requires executive role with `update_duty` permission.       
-    The status=AUDITED and STARTED is not accepted by user input.   
+    Requires executive role with `update_duty` permission.   
+    When status is updated to STARTED, the started_on field is set to current time and service status is set to STARTED.    
+    When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
+        ASSIGNED → STARTED
+        ASSIGNED → TERMINATED
     """,
 )
 async def update_duty(
@@ -332,11 +338,17 @@ async def update_duty(
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.DataInUse(Duty),
+        ]
     ),
     description="""
     Delete an existing duty by ID.  
     Requires executive permissions with `delete_duty` role.  
+    Duty can not be deleted if there are tickets associated with it.    
+    Duty can not be deleted if there are not in ASSIGNED status.     
     Deletes the duty and logs the deletion event.
     """,
 )
@@ -371,7 +383,9 @@ async def delete_duty(
     response_model=list[DutySchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Get all duties for a duty.   
+    Fetch a list of all duties across companies.     
+    Only available to users with a valid executive token.       
+    Supports filtering, sorting, and pagination.
     """,
 )
 async def get_duties(
@@ -404,7 +418,20 @@ async def get_duties(
         ]
     ),
     description="""
-    Create a new duty for a specified company.                  
+    Create a new duty for the operator's own company.	      
+    Requires operator role with `create_duty` permission.    
+    The company ID is derived from the token, not user input.  
+    In this operator and service must be associated with the company_id.  
+    Duty can not be created if the service is not in CREATED or STARTED status.       
+    The operator must be in active status.     
+    The duty is created in the Assigned status by default.   
+    If the logged in operator_id is same as incoming operator_id and current time is after the buffer time then the duty is self assigned.    
+    Sets buffer time with SERVICE_START_BUFFER_TIME (in minutes).
+    For self assigned duty the status will be set to STARTED by default, not user input.    
+    For self assigned duty the started_on will be set to current time, not user input.  
+    For self assigned duty the service status will be set to STARTED by default.    
+    For self assigned duty the service started_on will be set to current time.      
+    For non self assigned duty the status will be set to ASSIGNED by default, not user input .   
     Log the duty creation activity with the associated token.
     """,
 )
@@ -443,7 +470,6 @@ async def create_duty(
 
         bufferTime = service.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
         currentTime = datetime.now(timezone.utc)
-        print(currentTime, bufferTime)
         if fParam.operator_id == token.operator_id and currentTime >= bufferTime:
             status = DutyStatus.STARTED
             started_on = currentTime
@@ -481,20 +507,20 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
-            exceptions.UnknownValue(Duty.service_id),
-            exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
-            exceptions.InactiveResource(Service),
         ]
     ),
     description="""
-    Update an existing duty by ID.      
+    Update an existing duty belonging to the operator's company.            
     Requires operator role with `update_duty` permission.       
-    The status=AUDITED and STARTED is not accepted by user input.   
+    When status is updated to STARTED, the duty started_on and service started_on field is set to current time and service status is set to STARTED.    
+    When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
+        ASSIGNED → STARTED
+        ASSIGNED → TERMINATED
     """,
 )
 async def update_duty(
@@ -538,11 +564,18 @@ async def update_duty(
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.DataInUse(Duty),
+        ]
     ),
     description="""
     Delete an existing duty by ID.  
     Requires operator permissions with `delete_duty` role.  
+    Ensures the service is owned by the operator's company.     
+    Duty can not be deleted if there are tickets associated with it.    
+    Duty can not be deleted if there are not in ASSIGNED status.    
     Deletes the duty and logs the deletion event.
     """,
 )
@@ -582,7 +615,9 @@ async def delete_duty(
     response_model=list[DutySchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Get all duties for a duty.   
+    Fetch a list of all duties across companies.     
+    Only available to users with a valid operator token.       
+    Supports filtering, sorting, and pagination.  
     """,
 )
 async def get_duties(
