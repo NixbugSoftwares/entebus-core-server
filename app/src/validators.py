@@ -1,3 +1,4 @@
+import random, string
 from datetime import datetime, timezone
 from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
@@ -16,6 +17,7 @@ from app.src.db import (
 )
 from app.src.constants import MIN_LANDMARK_IN_ROUTE
 from app.src import exceptions
+from app.src.dynamic_fare import v1
 
 
 # Validate token (raise exceptions.InvalidToken())
@@ -157,3 +159,23 @@ def landmarkInRoute(route: int, session: Session):
     for index, route in enumerate(landmarkInRoute[1:-1]):
         if route.arrival_delta < landmarkInRoute[index].departure_delta:
             raise exceptions.InvalidRoute()
+
+
+def fareFunction(function, attributes) -> str:
+    if not v1.DynamicFare.validate(function):
+        raise exceptions.InvalidFareFunction()
+
+    ticketTypes = attributes["ticket_types"]
+    ticketTypeNames = []
+    for ticketType in ticketTypes:
+        ticketTypeName = ticketType["name"]
+        totalFareFor0m = v1.DynamicFare.evaluate(ticketTypeName, 0)
+        totalFareFor1m = v1.DynamicFare.evaluate(ticketTypeName, 1)
+        if totalFareFor0m < 0 or totalFareFor1m < 0:
+            raise exceptions.UnknownTicketType(ticketTypeName)
+        ticketTypeNames.append(ticketTypeName)
+
+    newTicketTypeName = "".join(random.choices(string.ascii_letters, k=32))
+    totalFareFor0m = v1.DynamicFare.evaluate(newTicketTypeName, 0)
+    if totalFareFor0m != -1.0:
+        raise exceptions.InvalidFareFunction()

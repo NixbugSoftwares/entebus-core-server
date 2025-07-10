@@ -168,6 +168,15 @@ class ExecutiveRole(ORMbase):
         delete_service (Boolean):
             Whether this role permits deletion of a service.
 
+        create_fare (Boolean):
+            Whether this role permits the creation of a new fare.
+
+        update_fare (Boolean):
+            Whether this role permits editing the existing fare.
+
+        delete_fare (Boolean):
+            Whether this role permits deletion of a fare.
+
         create_duty (Boolean):
             Whether this role permits the creation of a new duty.
 
@@ -232,6 +241,10 @@ class ExecutiveRole(ORMbase):
     create_service = Column(Boolean, nullable=False)
     update_service = Column(Boolean, nullable=False)
     delete_service = Column(Boolean, nullable=False)
+    # Fare management permission
+    create_fare = Column(Boolean, nullable=False)
+    update_fare = Column(Boolean, nullable=False)
+    delete_fare = Column(Boolean, nullable=False)
     # Duty management permission
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
@@ -771,6 +784,15 @@ class OperatorRole(ORMbase):
         delete_service (Boolean):
             Whether this role permits deletion of a service.
 
+        create_fare (Boolean):
+            Whether this role permits the creation of a new fare.
+
+        update_fare (Boolean):
+            Whether this role permits editing the existing fare.
+
+        delete_fare (Boolean):
+            Whether this role permits deletion of a fare.
+
         create_duty (Boolean):
             Whether this role permits the creation of a new duty.
 
@@ -824,6 +846,10 @@ class OperatorRole(ORMbase):
     create_service = Column(Boolean, nullable=False)
     update_service = Column(Boolean, nullable=False)
     delete_service = Column(Boolean, nullable=False)
+    # Fare management permission
+    create_fare = Column(Boolean, nullable=False)
+    update_fare = Column(Boolean, nullable=False)
+    delete_fare = Column(Boolean, nullable=False)
     # Duty management permission
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
