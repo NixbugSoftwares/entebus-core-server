@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 from enum import IntEnum
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
@@ -9,16 +9,17 @@ from pydantic import BaseModel, Field
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import (
     Company,
+    Operator,
     ExecutiveRole,
     OperatorRole,
     Service,
     Duty,
     sessionMaker,
 )
-from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY, SERVICE_START_BUFFER_TIME
+from app.src.constants import SERVICE_START_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import DutyStatus, ServiceStatus
+from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
 from app.src.functions import enumStr, makeExceptionResponses
 
 route_executive = APIRouter()
@@ -52,7 +53,6 @@ class CreateFormForEX(CreateFormForOP):
 
 class UpdateForm(BaseModel):
     id: int = Field(Form())
-    service_id: int | None = Field(Form(default=None))
     status: DutyStatus | None = Field(
         Form(description=enumStr(DutyStatus), default=None)
     )
@@ -122,25 +122,22 @@ class QueryParamsForEX(QueryParamsForOP):
 # Functions
 def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     dutyStatusTransition = {
-        DutyStatus.ASSIGNED: [],
+        DutyStatus.ASSIGNED: [DutyStatus.STARTED, DutyStatus.TERMINATED],
         DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
         DutyStatus.TERMINATED: [DutyStatus.STARTED],
         DutyStatus.ENDED: [DutyStatus.STARTED],
     }
-    if fParam.service_id is not None and fParam.service_id != duty.service_id:
-        service = session.query(Service).filter(Service.id == fParam.service_id).first()
-        if service is None:
-            raise exceptions.UnknownValue(Duty.service_id)
-        if service.company_id != duty.company_id:
-            raise exceptions.InvalidAssociation(Duty.service_id, Duty.company_id)
-        if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
-            raise exceptions.InactiveResource(Service)
-        duty.service_id = fParam.service_id
+    service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
-        duty.status = fParam.status
         validators.stateTransition(
             dutyStatusTransition, duty.status, fParam.status, Duty.status
         )
+        if fParam.status == DutyStatus.STARTED:
+            duty.started_on = datetime.now(timezone.utc)
+            service.started_on = datetime.now(timezone.utc)
+        if fParam.status in [DutyStatus.TERMINATED, DutyStatus.ENDED]:
+            duty.finished_on = datetime.now(timezone.utc)
+        duty.status = fParam.status
 
 
 def searchDuty(
@@ -323,6 +320,8 @@ async def delete_duty(
         validators.executivePermission(role, ExecutiveRole.delete_duty)
 
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
+        if duty and duty.status != DutyStatus.ASSIGNED:
+            raise exceptions.DataInUse(Duty)
         if duty is not None:
             session.delete(duty)
             session.commit()
@@ -338,9 +337,7 @@ async def delete_duty(
     "/company/service/duty",
     tags=["Duty"],
     response_model=list[DutySchema],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken]
-    ),
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Get all duties for a duty.   
     """,
@@ -488,6 +485,8 @@ async def delete_duty(
             .filter(Duty.company_id == token.company_id)
             .first()
         )
+        if duty and duty.status != DutyStatus.ASSIGNED:
+            raise exceptions.DataInUse(Duty)
         if duty is not None:
             session.delete(duty)
             session.commit()
@@ -503,9 +502,7 @@ async def delete_duty(
     "/company/service/duty",
     tags=["Duty"],
     response_model=list[DutySchema],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken]
-    ),
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Get all duties for a duty.   
     """,
