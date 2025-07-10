@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
-from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
