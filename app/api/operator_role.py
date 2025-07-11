@@ -90,7 +90,6 @@ class UpdateForm(BaseModel):
     name: str | None = Field(Form(max_length=32, default=None))
     manage_token: bool | None = Field(Form(default=None))
     update_company: bool | None = Field(Form(default=None))
-    delete_company: bool | None = Field(Form(default=None))
     create_operator: bool | None = Field(Form(default=None))
     update_operator: bool | None = Field(Form(default=None))
     delete_operator: bool | None = Field(Form(default=None))
@@ -464,8 +463,10 @@ async def create_role(
         ]
     ),
     description="""
-    Updates an existing role.       
-    Only executives with `update_op_role` permission can perform this operation.            
+    Updates an existing operator role.       
+    Only executives with `update_op_role` permission can perform this operation.    
+    Support partial updates such as modifying the role name.       
+    Changes are saved only if the role data has been modified.        
     Logs the role updating activity with the associated token.
     """,
 )
@@ -508,7 +509,7 @@ async def update_role(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing role.       
+    Deletes an existing operator role.       
     Only executives with `delete_op_role` permission can perform this operation.    
     Validates the role ID before deletion.       
     If the role exists, it is permanently removed from the system.       
@@ -580,7 +581,7 @@ async def fetch_role(
     Creates a new operator role, associated with the current operator company.     
     Only operator with `create_role` permission can create role.        
     Logs the operator role creation activity with the associated token.             
-    Duplicate usernames are not allowed.
+    Duplicate names are not allowed.
     """,
 )
 async def create_role(
@@ -646,9 +647,11 @@ async def create_role(
         ]
     ),
     description="""
-    Updates an existing operator role associated with the current operator company.            
-    Operator with `update_role` permission can update other operators role.         
-    Logs the operator account update activity with the associated token.
+    Updates an existing operator role associated with the current operator company.             
+    Operator with `update_role` permission can update other operators role.     
+    Support partial updates such as modifying the role name.    
+    Changes are saved only if the role data has been modified.         
+    Logs the operator role update activity with the associated token.
     """,
 )
 async def update_role(
@@ -671,7 +674,7 @@ async def update_role(
         if role is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRole(session, role, fParam)
+        updateRole(role, fParam)
         haveUpdates = session.is_modified(role)
         if haveUpdates:
             session.commit()
@@ -699,7 +702,10 @@ async def update_role(
     ),
     description="""
     Deletes an existing operator role.       
-    Only users with the `delete_role` permission can delete operator accounts.        
+    Only users with the `delete_role` permission can delete operator accounts.       
+    Validates the role ID before deletion.       
+    If the role exists, it is permanently removed from the system.       
+    Logs the deletion activity using the operator's token and request metadata. 
     """,
 )
 async def delete_role(
