@@ -891,7 +891,6 @@ class OperatorRoleMap(ORMbase):
     enabling a many-to-many relationship between `operator` and `operator_role` scoped by `company`.
 
     This table allows:
-    - An operator to be assigned multiple roles within a company.
     - A role to be assigned to multiple operators.
     - Support for multi-tenant Role-Based Access Control (RBAC) systems through the `company_id` field.
 
@@ -914,6 +913,7 @@ class OperatorRoleMap(ORMbase):
             Foreign key referencing `operator.id`.
             Identifies the operator receiving the role.
             Cascades on delete — if the operator is removed, related mappings are deleted.
+            An operator can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -937,7 +937,10 @@ class OperatorRoleMap(ORMbase):
         Integer, ForeignKey("operator_role.id", ondelete="CASCADE"), nullable=False
     )
     operator_id = Column(
-        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("operator.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
