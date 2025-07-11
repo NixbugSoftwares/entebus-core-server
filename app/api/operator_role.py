@@ -414,7 +414,7 @@ async def create_role(
         role = OperatorRole(
             name=fParam.name,
             company_id=fParam.company_id,
-            manage_ex_token=fParam.manage_token,
+            manage_token=fParam.manage_token,
             update_company=fParam.update_company,
             create_operator=fParam.create_operator,
             update_operator=fParam.update_operator,
@@ -598,7 +598,7 @@ async def create_role(
         role = OperatorRole(
             name=fParam.name,
             company_id=token.company_id,
-            manage_ex_token=fParam.manage_token,
+            manage_token=fParam.manage_token,
             update_company=fParam.update_company,
             create_operator=fParam.create_operator,
             update_operator=fParam.update_operator,
