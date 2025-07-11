@@ -220,8 +220,11 @@ async def update_role_map(
         if haveUpdates:
             session.commit()
             session.refresh(roleMap)
-            logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+
+        roleMapData = jsonable_encoder(roleMap)
+        if haveUpdates:
+            logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:
