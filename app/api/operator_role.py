@@ -580,7 +580,7 @@ async def fetch_role(
     Duplicate usernames are not allowed.
     """,
 )
-async def create_operator(
+async def create_role(
     fParam: CreateFormForOP = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
@@ -648,7 +648,7 @@ async def create_operator(
     Logs the operator account update activity with the associated token.
     """,
 )
-async def update_operator(
+async def update_role(
     fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
@@ -659,22 +659,22 @@ async def update_operator(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.update_role)
 
-        operator = (
+        role = (
             session.query(OperatorRole)
             .filter(OperatorRole.id == fParam.id)
             .filter(OperatorRole.company_id == token.company_id)
             .first()
         )
-        if operator is None:
+        if role is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRole(session, operator, fParam)
-        haveUpdates = session.is_modified(operator)
+        updateRole(session, role, fParam)
+        haveUpdates = session.is_modified(role)
         if haveUpdates:
             session.commit()
-            session.refresh(operator)
+            session.refresh(role)
 
-        operatorData = jsonable_encoder(operator, exclude={"password"})
+        operatorData = jsonable_encoder(role)
         if haveUpdates:
             logEvent(token, request_info, operatorData)
         return operatorData
@@ -699,7 +699,7 @@ async def update_operator(
     Only users with the `delete_role` permission can delete operator accounts.        
     """,
 )
-async def delete_operator(
+async def delete_role(
     fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
@@ -739,7 +739,7 @@ async def delete_operator(
     Requires a valid operator token.
     """,
 )
-async def fetch_operator(
+async def fetch_role(
     qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
