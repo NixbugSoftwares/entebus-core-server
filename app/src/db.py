@@ -186,6 +186,15 @@ class ExecutiveRole(ORMbase):
         delete_duty (Boolean):
             Whether this role permits deletion of a duty.
 
+        create_op_role (Boolean):
+            Whether this role permits the creation of a new operator role.
+
+        update_op_role (Boolean):
+            Whether this role permits editing the existing operator role.
+
+        delete_op_role (Boolean):
+            Whether this role permits deletion of a operator role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -249,6 +258,10 @@ class ExecutiveRole(ORMbase):
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
     delete_duty = Column(Boolean, nullable=False)
+    # Operator role management permission
+    create_op_role = Column(Boolean, nullable=False)
+    update_op_role = Column(Boolean, nullable=False)
+    delete_op_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -802,6 +815,15 @@ class OperatorRole(ORMbase):
         delete_duty (Boolean):
             Whether this role permits deletion of a duty.
 
+        create_role (Boolean):
+            Whether this role permits the creation of a new role.
+
+        update_role (Boolean):
+            Whether this role permits editing the existing role.
+
+        delete_role (Boolean):
+            Whether this role permits deletion of a role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -854,6 +876,10 @@ class OperatorRole(ORMbase):
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
     delete_duty = Column(Boolean, nullable=False)
+    # Role management permission
+    create_role = Column(Boolean, nullable=False)
+    update_role = Column(Boolean, nullable=False)
+    delete_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
