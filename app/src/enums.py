@@ -111,3 +111,10 @@ class ServiceStatus(IntEnum):
     TERMINATED = 3
     ENDED = 4
     AUDITED = 5
+
+
+class DutyStatus(IntEnum):
+    ASSIGNED = 1
+    STARTED = 2
+    TERMINATED = 3
+    ENDED = 4

@@ -17,6 +17,7 @@ from app.api import (
     schedule,
     service,
     fare,
+    duty,
     executive_role,
     executive_role_map,
 )
@@ -89,6 +90,9 @@ app_vendor.include_router(service.route_vendor)
 app_executive.include_router(fare.route_executive)
 app_operator.include_router(fare.route_operator)
 app_vendor.include_router(fare.route_vendor)
+
+app_executive.include_router(duty.route_executive)
+app_operator.include_router(duty.route_operator)
 
 app_executive.include_router(executive_role.route_executive)
 app_executive.include_router(executive_role_map.route_executive)
