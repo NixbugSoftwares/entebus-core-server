@@ -18,6 +18,8 @@ from app.api import (
     service,
     fare,
     duty,
+    executive_role,
+    executive_role_map,
 )
 from app.src.enums import AppID
 
@@ -91,3 +93,6 @@ app_vendor.include_router(fare.route_vendor)
 
 app_executive.include_router(duty.route_executive)
 app_operator.include_router(duty.route_operator)
+
+app_executive.include_router(executive_role.route_executive)
+app_executive.include_router(executive_role_map.route_executive)

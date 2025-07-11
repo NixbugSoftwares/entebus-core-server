@@ -186,6 +186,15 @@ class ExecutiveRole(ORMbase):
         delete_duty (Boolean):
             Whether this role permits deletion of a duty.
 
+        create_ex_role (Boolean):
+            Whether this role permits the creation of a new executive role.
+
+        update_ex_role (Boolean):
+            Whether this role permits editing the existing executive role.
+
+        delete_ex_role (Boolean):
+            Whether this role permits deletion of a executive role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -249,6 +258,10 @@ class ExecutiveRole(ORMbase):
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
     delete_duty = Column(Boolean, nullable=False)
+    # Executive role management permission
+    create_ex_role = Column(Boolean, nullable=False)
+    update_ex_role = Column(Boolean, nullable=False)
+    delete_ex_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -358,6 +371,7 @@ class ExecutiveRoleMap(ORMbase):
             Foreign key referencing `executive.id`.
             Identifies the executive receiving the role.
             Cascades on delete — if the executive is removed, related mappings are deleted.
+            An executive can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -375,7 +389,10 @@ class ExecutiveRoleMap(ORMbase):
         Integer, ForeignKey("executive_role.id", ondelete="CASCADE"), nullable=False
     )
     executive_id = Column(
-        Integer, ForeignKey("executive.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("executive.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
