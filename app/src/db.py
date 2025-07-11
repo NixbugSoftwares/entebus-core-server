@@ -2177,7 +2177,6 @@ class Duty(ORMbase):
         operator_id (Integer):
             Foreign key referencing the `operator.id`.
             Identifies the operator assigned to this duty.
-            Required and cascades on delete.
 
         service_id (Integer):
             Foreign key referencing the `service.id`.
@@ -2218,9 +2217,7 @@ class Duty(ORMbase):
         nullable=False,
         index=True,
     )
-    operator_id = Column(
-        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
-    )
+    operator_id = Column(Integer, ForeignKey("operator.id"))
     service_id = Column(
         Integer, ForeignKey("service.id", ondelete="CASCADE"), nullable=False
     )
