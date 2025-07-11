@@ -490,10 +490,10 @@ async def update_role(
             session.commit()
             session.refresh(role)
 
-        operatorData = jsonable_encoder(role)
+        roleData = jsonable_encoder(role)
         if haveUpdates:
-            logEvent(token, request_info, operatorData)
-        return operatorData
+            logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -677,10 +677,10 @@ async def update_role(
             session.commit()
             session.refresh(role)
 
-        operatorData = jsonable_encoder(role)
+        roleData = jsonable_encoder(role)
         if haveUpdates:
-            logEvent(token, request_info, operatorData)
-        return operatorData
+            logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
