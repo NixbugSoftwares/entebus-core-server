@@ -60,6 +60,9 @@ class ExecutiveRoleSchema(BaseModel):
     create_ex_role: bool
     update_ex_role: bool
     delete_ex_role: bool
+    create_op_role: bool
+    update_op_role: bool
+    delete_op_role: bool
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -108,6 +111,9 @@ class CreateForm(BaseModel):
     create_ex_role: bool = Field(Form(default=False))
     update_ex_role: bool = Field(Form(default=False))
     delete_ex_role: bool = Field(Form(default=False))
+    create_op_role: bool = Field(Form(default=False))
+    update_op_role: bool = Field(Form(default=False))
+    delete_op_role: bool = Field(Form(default=False))
 
 
 class UpdateForm(BaseModel):
@@ -155,6 +161,9 @@ class UpdateForm(BaseModel):
     create_ex_role: bool | None = Field(Form(default=None))
     update_ex_role: bool | None = Field(Form(default=None))
     delete_ex_role: bool | None = Field(Form(default=None))
+    create_op_role: bool | None = Field(Form(default=None))
+    update_op_role: bool | None = Field(Form(default=None))
+    delete_op_role: bool | None = Field(Form(default=None))
 
 
 class DeleteForm(BaseModel):
@@ -237,6 +246,10 @@ class QueryParams(BaseModel):
     create_ex_role: bool | None = Field(Query(default=None))
     update_ex_role: bool | None = Field(Query(default=None))
     delete_ex_role: bool | None = Field(Query(default=None))
+    # Operator role management permissions based
+    create_op_role: bool | None = Field(Query(default=None))
+    update_op_role: bool | None = Field(Query(default=None))
+    delete_op_role: bool | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -322,6 +335,9 @@ async def create_role(
             create_ex_role=fParam.create_ex_role,
             update_ex_role=fParam.update_ex_role,
             delete_ex_role=fParam.delete_ex_role,
+            create_op_role=fParam.create_op_role,
+            update_op_role=fParam.update_op_role,
+            delete_op_role=fParam.delete_op_role,
         )
         session.add(role)
         session.commit()
@@ -543,6 +559,12 @@ async def update_role(
             and fParam.delete_ex_role != role.delete_ex_role
         ):
             role.delete_ex_role = fParam.delete_ex_role
+        if fParam.create_op_role is not None and fParam.create_op_role != role.create_op_role:
+            role.create_op_role = fParam.create_op_role
+        if fParam.update_op_role is not None and fParam.update_op_role != role.update_op_role:
+            role.update_op_role = fParam.update_op_role
+        if fParam.delete_op_role is not None and fParam.delete_op_role != role.delete_op_role:
+            role.delete_op_role = fParam.delete_op_role
 
         haveUpdates = session.is_modified(role)
         if haveUpdates:
@@ -764,6 +786,13 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(ExecutiveRole.update_ex_role == qParam.update_ex_role)
         if qParam.delete_ex_role is not None:
             query = query.filter(ExecutiveRole.delete_ex_role == qParam.delete_ex_role)
+        # Operator role permissions based
+        if qParam.create_op_role is not None:
+            query = query.filter(ExecutiveRole.create_op_role == qParam.create_op_role)
+        if qParam.update_op_role is not None:
+            query = query.filter(ExecutiveRole.update_op_role == qParam.update_op_role)
+        if qParam.delete_op_role is not None:
+            query = query.filter(ExecutiveRole.delete_op_role == qParam.delete_op_role)
         # updated_on based
         if qParam.updated_on_ge is not None:
             query = query.filter(ExecutiveRole.updated_on >= qParam.updated_on_ge)
