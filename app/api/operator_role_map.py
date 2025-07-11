@@ -11,7 +11,6 @@ from app.src.db import (
     OperatorRole,
     ExecutiveRole,
     OperatorRoleMap,
-    ExecutiveRoleMap,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
@@ -296,4 +295,170 @@ async def fetch_role_map(
     finally:
         session.close()
 
+
 ## API endpoints [Operator]
+@route_operator.post(
+    "/company/account/role",
+    tags=["Role Map"],
+    response_model=OperatorRoleMapSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Creates a new operator role, associated with the current operator company.     
+    Only operator with `create_role` permission can create role.        
+    Logs the operator role creation activity with the associated token.             
+    Duplicate usernames are not allowed.
+    """,
+)
+async def create_role_map(
+    fParam: CreateFormForOP = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_role)
+
+        roleMap = OperatorRole(
+            company_id=token.company_id,
+            role_id=fParam.role_id,
+            operator_id=fParam.operator_id,
+        )
+        session.add(roleMap)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(roleMap))
+        return roleMap
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.patch(
+    "/company/account/role",
+    tags=["Role Map"],
+    response_model=OperatorRoleMapSchema,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.InvalidIdentifier,
+        ]
+    ),
+    description="""
+    Updates an existing operator role associated with the current operator company.            
+    Operator with `update_role` permission can update other operators role.         
+    Logs the operator account update activity with the associated token.
+    """,
+)
+async def update_role_map(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_role)
+
+        roleMap = (
+            session.query(OperatorRoleMap)
+            .filter(OperatorRoleMap.id == fParam.id)
+            .filter(OperatorRoleMap.company_id == token.company_id)
+            .first()
+        )
+        if roleMap is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateRoleMap(roleMap, fParam)
+        haveUpdates = session.is_modified(roleMap)
+        if haveUpdates:
+            session.commit()
+            session.refresh(roleMap)
+
+        roleMapData = jsonable_encoder(roleMap)
+        if haveUpdates:
+            logEvent(token, request_info, roleMapData)
+        return roleMapData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.delete(
+    "/company/account/role",
+    tags=["Role Map"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+        ]
+    ),
+    description="""
+    Deletes an existing operator role.       
+    Only users with the `delete_role` permission can delete operator accounts.        
+    """,
+)
+async def delete_role_map(
+    fParam: DeleteForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+        role = getters.operatorRole(token, session)
+        validators.operatorPermission(role, OperatorRole.update_role)
+
+        roleMap = (
+            session.query(OperatorRoleMap)
+            .filter(OperatorRoleMap.id == fParam.id)
+            .filter(OperatorRoleMap.company_id == token.company_id)
+            .first()
+        )
+        if roleMap is not None:
+            session.delete(roleMap)
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(roleMap))
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.get(
+    "/company/account/role",
+    tags=["Role Map"],
+    response_model=List[OperatorRoleMapSchema],
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetches a list of all operator role across companies.       
+    Supports filtering by ID, name, permissions and metadata.   
+    Supports filtering, sorting, and pagination.     
+    Requires a valid operator token.
+    """,
+)
+async def fetch_role_map(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        return searchRoleMap(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
