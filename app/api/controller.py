@@ -18,6 +18,8 @@ from app.api import (
     service,
     fare,
     duty,
+    operator_role,
+    operator_role_map,
 )
 from app.src.enums import AppID
 
