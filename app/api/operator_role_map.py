@@ -11,6 +11,7 @@ from app.src.db import (
     OperatorRole,
     ExecutiveRole,
     OperatorRoleMap,
+    Operator,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
@@ -31,13 +32,9 @@ class OperatorRoleMapSchema(BaseModel):
     created_on: datetime
 
 
-class CreateFormForOP(BaseModel):
+class CreateForm(BaseModel):
     role_id: int = Field(Form())
     operator_id: int = Field(Form())
-
-
-class CreateFormForEX(CreateFormForOP):
-    company_id: int = Field(Form())
 
 
 class UpdateForm(BaseModel):
@@ -89,8 +86,29 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Functions
-def updateRoleMap(roleMap: OperatorRoleMap, fParam: UpdateForm):
+def createRoleMap(role: OperatorRole, operator: Operator):
+    if role.company_id != operator.company_id:
+        raise exceptions.InvalidAssociation(
+            OperatorRoleMap.role_id, OperatorRoleMap.company_id
+        )
+    return OperatorRoleMap(
+        role_id=role.id, operator_id=operator.id, company_id=operator.company_id
+    )
+
+
+def updateRoleMap(session: Session, roleMap: OperatorRoleMap, fParam: UpdateForm):
     if fParam.role_id is not None and roleMap.role_id != fParam.role_id:
+        role = (
+            session.query(OperatorRole)
+            .filter(OperatorRole.id == fParam.role_id)
+            .first()
+        )
+        if role is None:
+            raise exceptions.UnknownValue(OperatorRoleMap.role_id)
+        if role.company_id != roleMap.company_id:
+            raise exceptions.InvalidAssociation(
+                OperatorRoleMap.role_id, OperatorRoleMap.company_id
+            )
         roleMap.role_id = fParam.role_id
 
 
@@ -144,16 +162,23 @@ def searchRoleMap(
     response_model=OperatorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.UnknownValue(OperatorRoleMap.operator_id),
+            exceptions.InvalidAssociation(
+                OperatorRoleMap.role_id, OperatorRoleMap.company_id
+            ),
+        ]
     ),
     description="""
-    Assign a role to an executive account.    
+    Assign a role to an operator account.    
     Only authorized users with `update_op_role` permission can create a new role map.    
     Log the role map creation activity with the associated token.
     """,
 )
 async def create_role_map(
-    fParam: CreateFormForEX = Depends(),
+    fParam: CreateForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -163,11 +188,20 @@ async def create_role_map(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.update_op_role)
 
-        roleMap = OperatorRoleMap(
-            role_id=fParam.role_id,
-            operator_id=fParam.operator_id,
-            company_id=fParam.company_id,
+        operator = (
+            session.query(Operator).filter(Operator.id == fParam.operator_id).first()
         )
+        if operator is None:
+            raise exceptions.UnknownValue(OperatorRoleMap.operator_id)
+        role = (
+            session.query(OperatorRole)
+            .filter(OperatorRole.id == fParam.role_id)
+            .first()
+        )
+        if role is None:
+            raise exceptions.UnknownValue(OperatorRoleMap.role_id)
+        roleMap = createRoleMap(role, operator)
+
         session.add(roleMap)
         session.commit()
         logEvent(token, request_info, jsonable_encoder(roleMap))
@@ -187,6 +221,10 @@ async def create_role_map(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.UnknownValue(OperatorRoleMap.role_id),
+            exceptions.InvalidAssociation(
+                OperatorRoleMap.role_id, OperatorRoleMap.company_id
+            ),
         ]
     ),
     description="""
@@ -215,7 +253,7 @@ async def update_role_map(
         if roleMap is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRoleMap(roleMap, fParam)
+        updateRoleMap(session, roleMap, fParam)
         haveUpdates = session.is_modified(roleMap)
         if haveUpdates:
             session.commit()
@@ -239,8 +277,8 @@ async def update_role_map(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Deletes an existing role maps.       
-    Only executives with `update_ex_role` permission can perform this operation.    
+    Deletes an existing operator role maps.       
+    Only executives with `update_op_role` permission can perform this operation.    
     Validates the role map ID before deletion.       
     If the mapping exists, it is permanently removed from the system.       
     Logs the deletion activity using the executive's token and request metadata.
@@ -279,7 +317,7 @@ async def delete_role_map(
     response_model=List[OperatorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of all executive role maps.       
+    Fetches a list of all operator role maps across companies.       
     Supports filtering by ID and metadata.   
     Supports filtering, sorting, and pagination.     
     Requires a valid executive token.
@@ -309,17 +347,20 @@ async def fetch_role_map(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
+            exceptions.UnknownValue(OperatorRoleMap.operator_id),
+            exceptions.InvalidAssociation(
+                OperatorRoleMap.role_id, OperatorRoleMap.company_id
+            ),
         ]
     ),
     description="""
-    Creates a new operator role, associated with the current operator company.     
-    Only operator with `create_role` permission can create role.        
-    Logs the operator role creation activity with the associated token.             
-    Duplicate usernames are not allowed.
+    Assign a role to an operator account, associated with the current operator company.       
+    Only authorized users with `update_role` permission can create a new role map.    
+    Log the role map creation activity with the associated token.
     """,
 )
 async def create_role_map(
-    fParam: CreateFormForOP = Depends(),
+    fParam: CreateForm = Depends(),
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
@@ -329,11 +370,24 @@ async def create_role_map(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.update_role)
 
-        roleMap = OperatorRole(
-            company_id=token.company_id,
-            role_id=fParam.role_id,
-            operator_id=fParam.operator_id,
+        operator = (
+            session.query(Operator)
+            .filter(Operator.id == fParam.operator_id)
+            .filter(Operator.company_id == token.company_id)
+            .first()
         )
+        if operator is None:
+            raise exceptions.UnknownValue(OperatorRoleMap.operator_id)
+        role = (
+            session.query(OperatorRole)
+            .filter(OperatorRole.id == fParam.role_id)
+            .filter(OperatorRole.company_id == token.company_id)
+            .first()
+        )
+        if role is None:
+            raise exceptions.UnknownValue(OperatorRoleMap.role_id)
+        roleMap = createRoleMap(role, operator)
+
         session.add(roleMap)
         session.commit()
         logEvent(token, request_info, jsonable_encoder(roleMap))
@@ -353,12 +407,17 @@ async def create_role_map(
             exceptions.InvalidToken,
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
+            exceptions.UnknownValue(OperatorRoleMap.role_id),
+            exceptions.InvalidAssociation(
+                OperatorRoleMap.role_id, OperatorRoleMap.company_id
+            ),
         ]
     ),
     description="""
-    Updates an existing operator role associated with the current operator company.            
-    Operator with `update_role` permission can update other operators role.         
-    Logs the operator account update activity with the associated token.
+    Updates an existing role map, associated with the current operator company.            
+    Operator with `update_role` permission can update other operators role.  
+    Support partial updates such as modifying the role_id.       
+    Logs the role map update activity with the associated token.
     """,
 )
 async def update_role_map(
@@ -381,7 +440,7 @@ async def update_role_map(
         if roleMap is None:
             raise exceptions.InvalidIdentifier()
 
-        updateRoleMap(roleMap, fParam)
+        updateRoleMap(session, roleMap, fParam)
         haveUpdates = session.is_modified(roleMap)
         if haveUpdates:
             session.commit()
@@ -408,8 +467,11 @@ async def update_role_map(
         ]
     ),
     description="""
-    Deletes an existing operator role.       
-    Only users with the `delete_role` permission can delete operator accounts.        
+    Deletes an existing operator role map.       
+    Only users with the `update_role` permission can delete operator role maps.     
+    Validates the role map ID before deletion.       
+    If the role map exists, it is permanently removed from the system.       
+    Logs the deletion activity using the operator's token and request metadata.        
     """,
 )
 async def delete_role_map(
@@ -446,8 +508,8 @@ async def delete_role_map(
     response_model=List[OperatorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of all operator role across companies.       
-    Supports filtering by ID, name, permissions and metadata.   
+    Fetches a list of all operator role maps for the current operator company.       
+    Supports filtering by ID and metadata.   
     Supports filtering, sorting, and pagination.     
     Requires a valid operator token.
     """,
