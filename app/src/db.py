@@ -371,6 +371,7 @@ class ExecutiveRoleMap(ORMbase):
             Foreign key referencing `executive.id`.
             Identifies the executive receiving the role.
             Cascades on delete — if the executive is removed, related mappings are deleted.
+            An executive can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -388,7 +389,10 @@ class ExecutiveRoleMap(ORMbase):
         Integer, ForeignKey("executive_role.id", ondelete="CASCADE"), nullable=False
     )
     executive_id = Column(
-        Integer, ForeignKey("executive.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("executive.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
