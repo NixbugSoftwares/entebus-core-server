@@ -328,7 +328,7 @@ async def create_role(
         ]
     ),
     description="""
-    Updates an existing role belonging.       
+    Updates an existing role.       
     Only executives with `update_ex_role` permission can perform this operation.            
     Logs the role updating activity with the associated token.
     """,

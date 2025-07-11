@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
-from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
@@ -124,9 +123,10 @@ async def create_role_map(
         ]
     ),
     description="""
-    Update an existing role map.    
-    Only authorized users with `update_ex_role` permission can update a role map.    
-    Log the role map update activity with the associated token.
+    Updates an existing role maps.       
+    Only executives with `update_ex_role` permission can perform this operation.    
+    Support partial updates such as modifying the role_id.        
+    Logs the role map updating activity with the associated token.
     """,
 )
 async def update_role_map(
@@ -147,7 +147,6 @@ async def update_role_map(
         )
         if roleMap is None:
             raise exceptions.InvalidIdentifier()
-
         if fParam.role_id is not None and fParam.role_id != roleMap.role_id:
             roleMap.role_id = fParam.role_id
 
@@ -171,9 +170,11 @@ async def update_role_map(
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Unassign a role from an executive account.    
-    Only authorized users with `update_ex_role` permission can delete a role map.    
-    Log the role map deletion activity with the associated token.
+    Deletes an existing role maps.       
+    Only executives with `update_ex_role` permission can perform this operation.    
+    Validates the role map ID before deletion.       
+    If the mapping exists, it is permanently removed from the system.       
+    Logs the deletion activity using the executive's token and request metadata.
     """,
 )
 async def delete_role_map(
@@ -209,9 +210,10 @@ async def delete_role_map(
     response_model=List[ExecutiveRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Retrieve a role map by ID.    
-    Only authorized users can retrieve a role map.    
-    Log the role map retrieval activity with the associated token.
+    Fetches a list of all executive role maps.       
+    Supports filtering by ID and metadata.   
+    Supports filtering, sorting, and pagination.     
+    Requires a valid executive token.
     """,
 )
 async def fetch_role_map(
