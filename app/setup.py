@@ -9,6 +9,7 @@ from app.src.enums import (
     CompanyStatus,
     Day,
     FareScope,
+    DutyStatus,
 )
 from app.src.db import (
     Executive,
@@ -34,6 +35,7 @@ from app.src.db import (
     Wallet,
     CompanyWallet,
     BusinessWallet,
+    Duty,
     sessionMaker,
     engine,
     ORMbase,
@@ -136,6 +138,9 @@ def initDB():
         create_fare=True,
         update_fare=True,
         delete_fare=True,
+        create_duty=True,
+        update_duty=True,
+        delete_duty=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -175,6 +180,9 @@ def initDB():
         create_fare=False,
         update_fare=False,
         delete_fare=False,
+        create_duty=False,
+        update_duty=False,
+        delete_duty=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -253,6 +261,9 @@ def testDB():
         create_fare=True,
         update_fare=True,
         delete_fare=True,
+        create_duty=True,
+        update_duty=True,
+        delete_duty=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -277,6 +288,9 @@ def testDB():
         create_fare=False,
         update_fare=False,
         delete_fare=False,
+        create_duty=False,
+        update_duty=False,
+        delete_duty=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
@@ -501,6 +515,16 @@ def testDB():
         departure_time=service.ending_at,
     )
     session.add_all([landmark1InService, landmark2InService])
+    session.flush()
+
+    duty = Duty(
+        company_id=company.id,
+        operator_id=admin.id,
+        service_id=service.id,
+        started_on=nowUTC,
+        status=DutyStatus.STARTED,
+    )
+    session.add(duty)
     session.flush()
 
     businessWallet = Wallet(

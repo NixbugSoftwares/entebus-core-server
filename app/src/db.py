@@ -42,6 +42,7 @@ from app.src.enums import (
     TicketingMode,
     TriggeringMode,
     ServiceStatus,
+    DutyStatus,
 )
 
 
@@ -166,7 +167,7 @@ class ExecutiveRole(ORMbase):
 
         delete_service (Boolean):
             Whether this role permits deletion of a service.
-            
+
         create_fare (Boolean):
             Whether this role permits the creation of a new fare.
 
@@ -176,9 +177,17 @@ class ExecutiveRole(ORMbase):
         delete_fare (Boolean):
             Whether this role permits deletion of a fare.
 
+        create_duty (Boolean):
+            Whether this role permits the creation of a new duty.
+
+        update_duty (Boolean):
+            Whether this role permits editing the existing duty.
+
+        delete_duty (Boolean):
+            Whether this role permits deletion of a duty.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
-
 
         created_on (DateTime):
             Timestamp indicating when the role was initially created.
@@ -236,6 +245,10 @@ class ExecutiveRole(ORMbase):
     create_fare = Column(Boolean, nullable=False)
     update_fare = Column(Boolean, nullable=False)
     delete_fare = Column(Boolean, nullable=False)
+    # Duty management permission
+    create_duty = Column(Boolean, nullable=False)
+    update_duty = Column(Boolean, nullable=False)
+    delete_duty = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -780,6 +793,15 @@ class OperatorRole(ORMbase):
         delete_fare (Boolean):
             Whether this role permits deletion of a fare.
 
+        create_duty (Boolean):
+            Whether this role permits the creation of a new duty.
+
+        update_duty (Boolean):
+            Whether this role permits editing the existing duty.
+
+        delete_duty (Boolean):
+            Whether this role permits deletion of a duty.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -828,6 +850,10 @@ class OperatorRole(ORMbase):
     create_fare = Column(Boolean, nullable=False)
     update_fare = Column(Boolean, nullable=False)
     delete_fare = Column(Boolean, nullable=False)
+    # Duty management permission
+    create_duty = Column(Boolean, nullable=False)
+    update_duty = Column(Boolean, nullable=False)
+    delete_duty = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -2129,3 +2155,71 @@ class LandmarkInService(ORMbase):
     service_id = Column(Integer, ForeignKey("service.id"))
     arrival_time = Column(DateTime(timezone=True), nullable=False)
     departure_time = Column(DateTime(timezone=True), nullable=False)
+
+
+class Duty(ORMbase):
+    """
+    Represents a duty assignment where an operator is assigned to a service under a specific company.
+
+    This table tracks operator responsibilities and service execution over time, capturing key
+    lifecycle events like assignment, start, and completion. It is essential for scheduling,
+    monitoring, and auditing operator activities.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the duty record.
+
+        company_id (Integer):
+            Foreign key referencing the `company.id`.
+            Indicates the company under which this duty is assigned.
+            Required and cascades on delete.
+
+        operator_id (Integer):
+            Foreign key referencing the `operator.id`.
+            Identifies the operator assigned to this duty.
+
+        service_id (Integer):
+            Foreign key referencing the `service.id`.
+            Indicates the service the operator is assigned to perform.
+            Required and cascades on delete.
+
+        status (Integer):
+            Enum representing the current status of the duty.
+            Required. Defaults to `DutyStatus.ASSIGNED`.
+
+        started_on (DateTime):
+            Actual timestamp when the duty started.
+            Optional and timezone-aware. Set when the operator begins the duty after the buffer time.
+
+        finished_on (DateTime):
+            Timestamp marking when the duty was completed.
+            Optional and timezone-aware.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the duty record is modified.
+            Useful for change tracking and auditing.
+
+        created_on (DateTime):
+            Timestamp indicating when the duty was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "duty"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    operator_id = Column(Integer, ForeignKey("operator.id"))
+    service_id = Column(
+        Integer, ForeignKey("service.id", ondelete="CASCADE"), nullable=False
+    )
+    status = Column(Integer, nullable=False, default=DutyStatus.ASSIGNED)
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
