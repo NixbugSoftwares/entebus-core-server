@@ -54,6 +54,9 @@ class ExecutiveRoleSchema(BaseModel):
     create_fare: bool
     update_fare: bool
     delete_fare: bool
+    create_duty: bool
+    update_duty: bool
+    delete_duty: bool
     create_ex_role: bool
     update_ex_role: bool
     delete_ex_role: bool
@@ -99,6 +102,9 @@ class CreateForm(BaseModel):
     create_fare: bool = Field(Form(default=False))
     update_fare: bool = Field(Form(default=False))
     delete_fare: bool = Field(Form(default=False))
+    create_duty: bool = Field(Form(default=False))
+    update_duty: bool = Field(Form(default=False))
+    delete_duty: bool = Field(Form(default=False))
     create_ex_role: bool = Field(Form(default=False))
     update_ex_role: bool = Field(Form(default=False))
     delete_ex_role: bool = Field(Form(default=False))
@@ -143,6 +149,9 @@ class UpdateForm(BaseModel):
     create_fare: bool | None = Field(Form(default=None))
     update_fare: bool | None = Field(Form(default=None))
     delete_fare: bool | None = Field(Form(default=None))
+    create_duty: bool | None = Field(Form(default=None))
+    update_duty: bool | None = Field(Form(default=None))
+    delete_duty: bool | None = Field(Form(default=None))
     create_ex_role: bool | None = Field(Form(default=None))
     update_ex_role: bool | None = Field(Form(default=None))
     delete_ex_role: bool | None = Field(Form(default=None))
@@ -219,6 +228,10 @@ class QueryParams(BaseModel):
     create_fare: bool | None = Field(Query(default=None))
     update_fare: bool | None = Field(Query(default=None))
     delete_fare: bool | None = Field(Query(default=None))
+    # Duty management permissions based
+    create_duty: bool | None = Field(Query(default=None))
+    update_duty: bool | None = Field(Query(default=None))
+    delete_duty: bool | None = Field(Query(default=None))
     # Executive role management permissions based
     create_ex_role: bool | None = Field(Query(default=None))
     update_ex_role: bool | None = Field(Query(default=None))
@@ -302,6 +315,9 @@ async def create_role(
             create_fare=fParam.create_fare,
             update_fare=fParam.update_fare,
             delete_fare=fParam.delete_fare,
+            create_duty=fParam.create_duty,
+            update_duty=fParam.update_duty,
+            delete_duty=fParam.delete_duty,
             create_ex_role=fParam.create_ex_role,
             update_ex_role=fParam.update_ex_role,
             delete_ex_role=fParam.delete_ex_role,
@@ -505,6 +521,12 @@ async def update_role(
             role.update_fare = fParam.update_fare
         if fParam.delete_fare is not None and fParam.delete_fare != role.delete_fare:
             role.delete_fare = fParam.delete_fare
+        if fParam.create_duty is not None and fParam.create_duty != role.create_duty:
+            role.create_duty = fParam.create_duty
+        if fParam.update_duty is not None and fParam.update_duty != role.update_duty:
+            role.update_duty = fParam.update_duty
+        if fParam.delete_duty is not None and fParam.delete_duty != role.delete_duty:
+            role.delete_duty = fParam.delete_duty
         if (
             fParam.create_ex_role is not None
             and fParam.create_ex_role != role.create_ex_role
@@ -724,6 +746,13 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(ExecutiveRole.update_fare == qParam.update_fare)
         if qParam.delete_fare is not None:
             query = query.filter(ExecutiveRole.delete_fare == qParam.delete_fare)
+        # Duty permissions
+        if qParam.create_duty is not None:
+            query = query.filter(ExecutiveRole.create_duty == qParam.create_duty)
+        if qParam.update_duty is not None:
+            query = query.filter(ExecutiveRole.update_duty == qParam.update_duty)
+        if qParam.delete_duty is not None:
+            query = query.filter(ExecutiveRole.delete_duty == qParam.delete_duty)
         # Executive role permissions
         if qParam.create_ex_role is not None:
             query = query.filter(ExecutiveRole.create_ex_role == qParam.create_ex_role)
