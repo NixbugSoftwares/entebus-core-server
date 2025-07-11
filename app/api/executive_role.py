@@ -174,6 +174,7 @@ class OrderBy(IntEnum):
 
 
 class QueryParams(BaseModel):
+    # Filters
     name: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
@@ -547,8 +548,11 @@ async def update_role(
         if haveUpdates:
             session.commit()
             session.refresh(role)
-            logEvent(token, request_info, jsonable_encoder(role))
-        return role
+
+        roleData = jsonable_encoder(role)
+        if haveUpdates:
+            logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -614,10 +618,10 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
 
         query = session.query(ExecutiveRole)
 
-        # Name filter
+        # Filters
         if qParam.name is not None:
             query = query.filter(ExecutiveRole.name.ilike(f"%{qParam.name}%"))
-        # ID based filters
+        # ID based 
         if qParam.id is not None:
             query = query.filter(ExecutiveRole.id == qParam.id)
         if qParam.id_ge is not None:
@@ -626,7 +630,7 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(ExecutiveRole.id <= qParam.id_le)
         if qParam.id_list is not None:
             query = query.filter(ExecutiveRole.id.in_(qParam.id_list))
-        # Token management permissions
+        # Token management permissions based
         if qParam.manage_ex_token is not None:
             query = query.filter(
                 ExecutiveRole.manage_ex_token == qParam.manage_ex_token
@@ -639,7 +643,7 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.manage_ve_token == qParam.manage_ve_token
             )
-        # Executive management permissions
+        # Executive management permissions based
         if qParam.create_executive is not None:
             query = query.filter(
                 ExecutiveRole.create_executive == qParam.create_executive
@@ -652,7 +656,7 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.delete_executive == qParam.delete_executive
             )
-        # Landmark permissions
+        # Landmark permissions based
         if qParam.create_landmark is not None:
             query = query.filter(
                 ExecutiveRole.create_landmark == qParam.create_landmark
@@ -665,14 +669,14 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.delete_landmark == qParam.delete_landmark
             )
-        # Company permissions
+        # Company permissions based
         if qParam.create_company is not None:
             query = query.filter(ExecutiveRole.create_company == qParam.create_company)
         if qParam.update_company is not None:
             query = query.filter(ExecutiveRole.update_company == qParam.update_company)
         if qParam.delete_company is not None:
             query = query.filter(ExecutiveRole.delete_company == qParam.delete_company)
-        # Operator permissions
+        # Operator permissions based
         if qParam.create_operator is not None:
             query = query.filter(
                 ExecutiveRole.create_operator == qParam.create_operator
@@ -685,7 +689,7 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.delete_operator == qParam.delete_operator
             )
-        # Business permissions
+        # Business permissions based
         if qParam.create_business is not None:
             query = query.filter(
                 ExecutiveRole.create_business == qParam.create_business
@@ -698,28 +702,28 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.delete_business == qParam.delete_business
             )
-        # Route permissions
+        # Route permissions based
         if qParam.create_route is not None:
             query = query.filter(ExecutiveRole.create_route == qParam.create_route)
         if qParam.update_route is not None:
             query = query.filter(ExecutiveRole.update_route == qParam.update_route)
         if qParam.delete_route is not None:
             query = query.filter(ExecutiveRole.delete_route == qParam.delete_route)
-        # Bus permissions
+        # Bus permissions based
         if qParam.create_bus is not None:
             query = query.filter(ExecutiveRole.create_bus == qParam.create_bus)
         if qParam.update_bus is not None:
             query = query.filter(ExecutiveRole.update_bus == qParam.update_bus)
         if qParam.delete_bus is not None:
             query = query.filter(ExecutiveRole.delete_bus == qParam.delete_bus)
-        # Vendor permissions
+        # Vendor permissions based
         if qParam.create_vendor is not None:
             query = query.filter(ExecutiveRole.create_vendor == qParam.create_vendor)
         if qParam.update_vendor is not None:
             query = query.filter(ExecutiveRole.update_vendor == qParam.update_vendor)
         if qParam.delete_vendor is not None:
             query = query.filter(ExecutiveRole.delete_vendor == qParam.delete_vendor)
-        # Schedule permissions
+        # Schedule permissions based
         if qParam.create_schedule is not None:
             query = query.filter(
                 ExecutiveRole.create_schedule == qParam.create_schedule
@@ -732,39 +736,40 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(
                 ExecutiveRole.delete_schedule == qParam.delete_schedule
             )
-        # Service permissions
+        # Service permissions based
         if qParam.create_service is not None:
             query = query.filter(ExecutiveRole.create_service == qParam.create_service)
         if qParam.update_service is not None:
             query = query.filter(ExecutiveRole.update_service == qParam.update_service)
         if qParam.delete_service is not None:
             query = query.filter(ExecutiveRole.delete_service == qParam.delete_service)
-        # Fare permissions
+        # Fare permissions based
         if qParam.create_fare is not None:
             query = query.filter(ExecutiveRole.create_fare == qParam.create_fare)
         if qParam.update_fare is not None:
             query = query.filter(ExecutiveRole.update_fare == qParam.update_fare)
         if qParam.delete_fare is not None:
             query = query.filter(ExecutiveRole.delete_fare == qParam.delete_fare)
-        # Duty permissions
+        # Duty permissions based
         if qParam.create_duty is not None:
             query = query.filter(ExecutiveRole.create_duty == qParam.create_duty)
         if qParam.update_duty is not None:
             query = query.filter(ExecutiveRole.update_duty == qParam.update_duty)
         if qParam.delete_duty is not None:
             query = query.filter(ExecutiveRole.delete_duty == qParam.delete_duty)
-        # Executive role permissions
+        # Executive role permissions based
         if qParam.create_ex_role is not None:
             query = query.filter(ExecutiveRole.create_ex_role == qParam.create_ex_role)
         if qParam.update_ex_role is not None:
             query = query.filter(ExecutiveRole.update_ex_role == qParam.update_ex_role)
         if qParam.delete_ex_role is not None:
             query = query.filter(ExecutiveRole.delete_ex_role == qParam.delete_ex_role)
-        # Date range filters
+        # updated_on based
         if qParam.updated_on_ge is not None:
             query = query.filter(ExecutiveRole.updated_on >= qParam.updated_on_ge)
         if qParam.updated_on_le is not None:
             query = query.filter(ExecutiveRole.updated_on <= qParam.updated_on_le)
+        # created_on based
         if qParam.created_on_ge is not None:
             query = query.filter(ExecutiveRole.created_on >= qParam.created_on_ge)
         if qParam.created_on_le is not None:
