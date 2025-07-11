@@ -2187,10 +2187,6 @@ class Duty(ORMbase):
             Enum representing the current status of the duty.
             Required. Defaults to `DutyStatus.ASSIGNED`.
 
-        starting_at (DateTime):
-            Scheduled start time of the duty.
-            Required and timezone-aware.
-
         started_on (DateTime):
             Actual timestamp when the duty started.
             Optional and timezone-aware. Set when the operator begins the duty after the buffer time.
@@ -2222,7 +2218,6 @@ class Duty(ORMbase):
         Integer, ForeignKey("service.id", ondelete="CASCADE"), nullable=False
     )
     status = Column(Integer, nullable=False, default=DutyStatus.ASSIGNED)
-    starting_at = Column(DateTime(timezone=True), nullable=False)
     started_on = Column(DateTime(timezone=True))
     finished_on = Column(DateTime(timezone=True))
     # Metadata

@@ -521,7 +521,6 @@ def testDB():
         company_id=company.id,
         operator_id=admin.id,
         service_id=service.id,
-        starting_at=service.starting_at,
         started_on=nowUTC,
         status=DutyStatus.STARTED,
     )

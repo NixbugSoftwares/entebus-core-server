@@ -34,7 +34,6 @@ class DutySchema(BaseModel):
     operator_id: int
     service_id: int
     status: int
-    starting_at: datetime
     started_on: Optional[datetime]
     finished_on: Optional[datetime]
     updated_on: Optional[datetime]
@@ -265,7 +264,6 @@ async def create_duty(
             company_id=fParam.company_id,
             operator_id=fParam.operator_id,
             service_id=fParam.service_id,
-            starting_at=service.starting_at,
         )
         session.add(duty)
         session.commit()
@@ -485,7 +483,6 @@ async def create_duty(
             company_id=token.company_id,
             operator_id=fParam.operator_id,
             service_id=fParam.service_id,
-            starting_at=service.starting_at,
             status=status,
             started_on=started_on,
         )
