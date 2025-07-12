@@ -60,6 +60,9 @@ class ExecutiveRoleSchema(BaseModel):
     create_ex_role: bool
     update_ex_role: bool
     delete_ex_role: bool
+    create_op_role: bool
+    update_op_role: bool
+    delete_op_role: bool
     create_ve_role: bool
     update_ve_role: bool
     delete_ve_role: bool
@@ -111,6 +114,9 @@ class CreateForm(BaseModel):
     create_ex_role: bool = Field(Form(default=False))
     update_ex_role: bool = Field(Form(default=False))
     delete_ex_role: bool = Field(Form(default=False))
+    create_op_role: bool = Field(Form(default=False))
+    update_op_role: bool = Field(Form(default=False))
+    delete_op_role: bool = Field(Form(default=False))
     create_ve_role: bool = Field(Form(default=False))
     update_ve_role: bool = Field(Form(default=False))
     delete_ve_role: bool = Field(Form(default=False))
@@ -161,6 +167,9 @@ class UpdateForm(BaseModel):
     create_ex_role: bool | None = Field(Form(default=None))
     update_ex_role: bool | None = Field(Form(default=None))
     delete_ex_role: bool | None = Field(Form(default=None))
+    create_op_role: bool | None = Field(Form(default=None))
+    update_op_role: bool | None = Field(Form(default=None))
+    delete_op_role: bool | None = Field(Form(default=None))
     create_ve_role: bool | None = Field(Form(default=None))
     update_ve_role: bool | None = Field(Form(default=None))
     delete_ve_role: bool | None = Field(Form(default=None))
@@ -246,6 +255,10 @@ class QueryParams(BaseModel):
     create_ex_role: bool | None = Field(Query(default=None))
     update_ex_role: bool | None = Field(Query(default=None))
     delete_ex_role: bool | None = Field(Query(default=None))
+    # Operator role management permissions based
+    create_op_role: bool | None = Field(Query(default=None))
+    update_op_role: bool | None = Field(Query(default=None))
+    delete_op_role: bool | None = Field(Query(default=None))
     # Vendor role management permissions based
     create_ve_role: bool | None = Field(Query(default=None))
     update_ve_role: bool | None = Field(Query(default=None))
@@ -335,6 +348,9 @@ async def create_role(
             create_ex_role=fParam.create_ex_role,
             update_ex_role=fParam.update_ex_role,
             delete_ex_role=fParam.delete_ex_role,
+            create_op_role=fParam.create_op_role,
+            update_op_role=fParam.update_op_role,
+            delete_op_role=fParam.delete_op_role,
             create_ve_role=fParam.create_ve_role,
             update_ve_role=fParam.update_ve_role,
             delete_ve_role=fParam.delete_ve_role,
@@ -559,6 +575,12 @@ async def update_role(
             and fParam.delete_ex_role != role.delete_ex_role
         ):
             role.delete_ex_role = fParam.delete_ex_role
+        if fParam.create_op_role is not None and fParam.create_op_role != role.create_op_role:
+            role.create_op_role = fParam.create_op_role
+        if fParam.update_op_role is not None and fParam.update_op_role != role.update_op_role:
+            role.update_op_role = fParam.update_op_role
+        if fParam.delete_op_role is not None and fParam.delete_op_role != role.delete_op_role:
+            role.delete_op_role = fParam.delete_op_role
         if (
             fParam.create_ve_role is not None
             and fParam.create_ve_role != role.create_ve_role
@@ -795,6 +817,13 @@ async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_exec
             query = query.filter(ExecutiveRole.update_ex_role == qParam.update_ex_role)
         if qParam.delete_ex_role is not None:
             query = query.filter(ExecutiveRole.delete_ex_role == qParam.delete_ex_role)
+        # Operator role permissions based
+        if qParam.create_op_role is not None:
+            query = query.filter(ExecutiveRole.create_op_role == qParam.create_op_role)
+        if qParam.update_op_role is not None:
+            query = query.filter(ExecutiveRole.update_op_role == qParam.update_op_role)
+        if qParam.delete_op_role is not None:
+            query = query.filter(ExecutiveRole.delete_op_role == qParam.delete_op_role)
         # Vendor role permissions based
         if qParam.create_ve_role is not None:
             query = query.filter(ExecutiveRole.create_ve_role == qParam.create_ve_role)

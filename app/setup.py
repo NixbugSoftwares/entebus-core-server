@@ -144,6 +144,9 @@ def initDB():
         create_ex_role=True,
         update_ex_role=True,
         delete_ex_role=True,
+        create_op_role=True,
+        update_op_role=True,
+        delete_op_role=True,
         create_ve_role=True,
         update_ve_role=True,
         delete_ve_role=True,
@@ -192,6 +195,9 @@ def initDB():
         create_ex_role=False,
         update_ex_role=False,
         delete_ex_role=False,
+        create_op_role=False,
+        update_op_role=False,
+        delete_op_role=False,
         create_ve_role=False,
         update_ve_role=False,
         delete_ve_role=False,
@@ -276,6 +282,9 @@ def testDB():
         create_duty=True,
         update_duty=True,
         delete_duty=True,
+        create_role=True,
+        update_role=True,
+        delete_role=True,
     )
     guestRole = OperatorRole(
         company_id=company.id,
@@ -303,6 +312,9 @@ def testDB():
         create_duty=False,
         update_duty=False,
         delete_duty=False,
+        create_role=False,
+        update_role=False,
+        delete_role=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
