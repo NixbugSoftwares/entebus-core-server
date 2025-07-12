@@ -195,6 +195,15 @@ class ExecutiveRole(ORMbase):
         delete_ex_role (Boolean):
             Whether this role permits deletion of a executive role.
 
+        create_ve_role (Boolean):
+            Whether this role permits the creation of a new vendor role.
+
+        update_ve_role (Boolean):
+            Whether this role permits editing the existing vendor role.
+
+        delete_ve_role (Boolean):
+            Whether this role permits deletion of a vendor role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -262,6 +271,10 @@ class ExecutiveRole(ORMbase):
     create_ex_role = Column(Boolean, nullable=False)
     update_ex_role = Column(Boolean, nullable=False)
     delete_ex_role = Column(Boolean, nullable=False)
+    # Vendor role management permission
+    create_ve_role = Column(Boolean, nullable=False)
+    update_ve_role = Column(Boolean, nullable=False)
+    delete_ve_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
