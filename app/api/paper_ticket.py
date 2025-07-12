@@ -8,8 +8,7 @@ from sqlalchemy.orm.session import Session
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import (
-    OperatorRole,
-    ExecutiveRole,
+    LandmarkInRoute,
     PaperTicket,
     Service,
     Duty,
@@ -18,6 +17,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
+from app.src.dynamic_fare import v1
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -167,7 +167,7 @@ def searchPaperTickets(
     response_model=List[PaperTicketSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetches a list of all paper tickets across company.       
+    Fetches a list of all paper tickets across companies.       
     Supports filtering by company ID, Id and metadata.  
     Supports filtering, sorting, and pagination.     
     Requires a valid executive token.
@@ -189,6 +189,117 @@ async def fetch_paper_ticket(
 
 
 ## API endpoints [Operator]
+@route_operator.post(
+    "/company/service/ticket/paper",
+    tags=["Paper Ticket"],
+    response_model=PaperTicketSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Creates a new paper ticket for a specific service and duty.       
+    Requires a valid operator token.
+    """,
+)
+async def create_paper_ticket(
+    fParam: CreateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        service = (
+            session.query(Service)
+            .filter(Service.id == fParam.service_id)
+            .filter(Service.company_id == token.company_id)
+            .first()
+        )
+        if service is None:
+            raise exceptions.UnknownValue(PaperTicket.service_id)
+
+        duty = (
+            session.query(Duty)
+            .filter(Duty.id == fParam.duty_id)
+            .filter(Duty.service_id == fParam.service_id)
+            .filter(Duty.operator_id == token.operator_id)
+            .first()
+        )
+        if duty is None:
+            raise exceptions.UnknownValue(PaperTicket.duty_id)
+
+        pickupLandmark = (
+            session.query(LandmarkInRoute)
+            .filter(
+                LandmarkInRoute.route_id == service.route['id'],
+                LandmarkInRoute.landmark_id == fParam.pickup_point,
+            )
+            .first()
+        )
+        if pickupLandmark is None:
+            raise exceptions.UnknownValue(PaperTicket.pickup_point)
+
+        droppingLandmark = (
+            session.query(LandmarkInRoute)
+            .filter(
+                LandmarkInRoute.route_id == service.route['id'],
+                LandmarkInRoute.landmark_id == fParam.dropping_point,
+            )
+            .first()
+        )
+        if droppingLandmark is None:
+            raise exceptions.UnknownValue(PaperTicket.dropping_point)
+
+        distance = (
+            droppingLandmark.distance_from_start - pickupLandmark.distance_from_start
+        )
+        if distance < 0:
+            raise exceptions.UnknownValue(PaperTicket.dropping_point)
+
+        totalFare = 0
+        if v1.DynamicFare.validate(service.fare['function']):
+            for ticketType in fParam.ticket_types:
+                ticketTypeName = ticketType.name
+                ticketTypeCount = ticketType.count
+                if ticketTypeCount <= 0:
+                    raise exceptions.UnknownValue(PaperTicket.ticket_types)
+                attributeTicketTypes = None
+                fareTicketTypes = service.fare["attributes"]["ticket_types"]
+                for attributeTicketType in fareTicketTypes:
+                    if attributeTicketType["name"] == ticketTypeName:
+                        attributeTicketTypes = attributeTicketType
+                        break
+                if attributeTicketTypes is None:
+                    raise exceptions.UnknownTicketType(ticketTypeName)
+                ticketPrice = v1.DynamicFare.evaluate(ticketTypeName, distance)
+                totalFare += ticketPrice * ticketTypeCount
+
+        print(totalFare)
+        if totalFare != fParam.amount:
+            raise exceptions.UnknownValue(PaperTicket.amount)
+
+        paperTicket = PaperTicket(
+            service_id=fParam.service_id,
+            company_id=token.company_id,
+            duty_id=fParam.duty_id,
+            sequence_id=fParam.sequence_id,
+            ticket_types=jsonable_encoder(fParam.ticket_types),
+            pickup_point=fParam.pickup_point,
+            dropping_point=fParam.dropping_point,
+            extra=fParam.extra,
+            amount=fParam.amount,
+            distance=distance,
+        )
+        session.add(paperTicket)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(paperTicket))
+        return paperTicket
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 @route_operator.get(
     "/company/service/ticket/paper",
     tags=["Paper Ticket"],
