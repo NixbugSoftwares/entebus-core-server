@@ -2269,3 +2269,96 @@ class Duty(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class PaperTicket(ORMbase):
+    """
+    Represents a manually issued paper ticket for a particular service and duty.
+
+    This table stores the details of each paper ticket issued during service execution,
+    helping to track passenger journey, fare collection, and routing information.
+    It is essential for auditing, ticket validation, and historical record-keeping
+    for operations involving manual ticketing systems.
+
+    Table Constraints:
+        - Unique combination of `service_id`, `duty_id`, and `sequence_id` to
+          ensure ticket sequencing within a duty and service is maintained.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the paper ticket.
+
+        service_id (Integer):
+            Foreign key referencing `service.id`.
+            Identifies the service associated with this ticket.
+            Required and cascades on delete.
+
+        duty_id (Integer):
+            Foreign key referencing `duty.id`.
+            Indicates the specific duty under which the ticket was issued.
+
+        company_id (Integer):
+            Foreign key referencing `company.id`.
+            Indicates the company under which the ticket was issued.
+
+        sequence_id (Integer):
+            A sequential number unique within a duty-service pair.
+            Ensures ordering and traceability of tickets for a given duty.
+
+        ticket_types (JSONB):
+            Structured data capturing the types of tickets issued.
+            It is closely bound to `ticket_type` in fare attributes.
+            Must be not null.
+
+        pickup_point (Integer):
+            Foreign key referencing `landmark.id`.
+            Represents the boarding point.
+
+        dropping_point (Integer):
+            Foreign key referencing `landmark.id`.
+            Represents the alighting point.
+
+        extra (JSONB):
+            Additional metadata or ticket-specific information.
+            Must be not null.
+
+        distance (Integer):
+            Total distance traveled for the ticket, typically in meters.
+            Must be not null.
+
+        amount (Numeric(10, 2)):
+            Total fare amount collected for this ticket.
+            Must be not null and precise up to two decimal places.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the ticket record is modified.
+            Useful for auditing and tracking modifications.
+
+        created_on (DateTime):
+            Timestamp indicating when the ticket was created.
+            Automatically set to the current timestamp at insertion.
+    """
+
+    __tablename__ = "paper_ticket"
+    __table_args__ = (UniqueConstraint("service_id", "duty_id", "sequence_id"),)
+
+    id = Column(Integer, primary_key=True)
+    service_id = Column(
+        Integer,
+        ForeignKey("service.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    duty_id = Column(Integer, ForeignKey("duty.id"))
+    company_id = Column(Integer, ForeignKey("company.id"), index=True)
+    sequence_id = Column(Integer, nullable=False)
+    # Ticket content
+    ticket_types = Column(JSONB, nullable=False)
+    pickup_point = Column(Integer, ForeignKey("landmark.id"))
+    dropping_point = Column(Integer, ForeignKey("landmark.id"))
+    extra = Column(JSONB, nullable=False)
+    distance = Column(Integer, nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
