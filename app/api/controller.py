@@ -22,6 +22,7 @@ from app.api import (
     executive_role_map,
     operator_role,
     operator_role_map,
+    paper_ticket,
 )
 from app.src.enums import AppID
 
@@ -104,3 +105,6 @@ app_operator.include_router(operator_role.route_operator)
 
 app_executive.include_router(operator_role_map.route_executive)
 app_operator.include_router(operator_role_map.route_operator)
+
+app_executive.include_router(paper_ticket.route_executive)
+app_operator.include_router(paper_ticket.route_operator)
