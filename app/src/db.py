@@ -204,6 +204,15 @@ class ExecutiveRole(ORMbase):
         delete_op_role (Boolean):
             Whether this role permits deletion of a operator role.
 
+        create_ve_role (Boolean):
+            Whether this role permits the creation of a new vendor role.
+
+        update_ve_role (Boolean):
+            Whether this role permits editing the existing vendor role.
+
+        delete_ve_role (Boolean):
+            Whether this role permits deletion of a vendor role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -275,6 +284,10 @@ class ExecutiveRole(ORMbase):
     create_op_role = Column(Boolean, nullable=False)
     update_op_role = Column(Boolean, nullable=False)
     delete_op_role = Column(Boolean, nullable=False)
+    # Vendor role management permission
+    create_ve_role = Column(Boolean, nullable=False)
+    update_ve_role = Column(Boolean, nullable=False)
+    delete_ve_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -1496,9 +1509,9 @@ class VendorRoleMap(ORMbase):
     Represents the mapping between vendors and their assigned roles,
     enabling a many-to-one relationship between `vendor` and `vendor_role`.
 
-    This table allows an vendor to be assigned multiple roles and a role
-    to be assigned to multiple vendor. Useful for implementing a flexible
-    Role-Based Access Control (RBAC) system.
+    This table allows:
+    - A role to be assigned to multiple operators.
+    - Support for multi-tenant Role-Based Access Control (RBAC) systems through the `business_id` field.
 
     Columns:
         id (Integer):
@@ -1518,6 +1531,7 @@ class VendorRoleMap(ORMbase):
             Foreign key referencing `vendor.id`.
             Identifies the vendor receiving the role.
             Cascades on delete — if the vendor is removed, the mapping is deleted.
+            An vendor can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -1546,6 +1560,7 @@ class VendorRoleMap(ORMbase):
         Integer,
         ForeignKey("vendor.id", ondelete="CASCADE"),
         nullable=False,
+        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())

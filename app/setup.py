@@ -147,6 +147,9 @@ def initDB():
         create_op_role=True,
         update_op_role=True,
         delete_op_role=True,
+        create_ve_role=True,
+        update_ve_role=True,
+        delete_ve_role=True,
     )
     guestRole = ExecutiveRole(
         name="Guest",
@@ -195,6 +198,9 @@ def initDB():
         create_op_role=False,
         update_op_role=False,
         delete_op_role=False,
+        create_ve_role=False,
+        update_ve_role=False,
+        delete_ve_role=False,
     )
     session.add_all([admin, guest, adminRole, guestRole])
     session.flush()
