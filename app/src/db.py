@@ -195,6 +195,15 @@ class ExecutiveRole(ORMbase):
         delete_ex_role (Boolean):
             Whether this role permits deletion of a executive role.
 
+        create_op_role (Boolean):
+            Whether this role permits the creation of a new operator role.
+
+        update_op_role (Boolean):
+            Whether this role permits editing the existing operator role.
+
+        delete_op_role (Boolean):
+            Whether this role permits deletion of a operator role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
 
@@ -262,6 +271,10 @@ class ExecutiveRole(ORMbase):
     create_ex_role = Column(Boolean, nullable=False)
     update_ex_role = Column(Boolean, nullable=False)
     delete_ex_role = Column(Boolean, nullable=False)
+    # Operator role management permission
+    create_op_role = Column(Boolean, nullable=False)
+    update_op_role = Column(Boolean, nullable=False)
+    delete_op_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -819,6 +832,15 @@ class OperatorRole(ORMbase):
         delete_duty (Boolean):
             Whether this role permits deletion of a duty.
 
+        create_role (Boolean):
+            Whether this role permits the creation of a new role.
+
+        update_role (Boolean):
+            Whether this role permits editing the existing role.
+
+        delete_role (Boolean):
+            Whether this role permits deletion of a role.
+
         updated_on (DateTime):
             Timestamp automatically updated whenever the role record is modified.
             Useful for audit logging and synchronization.
@@ -832,7 +854,7 @@ class OperatorRole(ORMbase):
     __table_args__ = (UniqueConstraint("name", "company_id"),)
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False, unique=True)
+    name = Column(String(32), nullable=False)
     company_id = Column(
         Integer,
         ForeignKey("company.id", ondelete="CASCADE"),
@@ -871,6 +893,10 @@ class OperatorRole(ORMbase):
     create_duty = Column(Boolean, nullable=False)
     update_duty = Column(Boolean, nullable=False)
     delete_duty = Column(Boolean, nullable=False)
+    # Role management permission
+    create_role = Column(Boolean, nullable=False)
+    update_role = Column(Boolean, nullable=False)
+    delete_role = Column(Boolean, nullable=False)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
@@ -882,7 +908,6 @@ class OperatorRoleMap(ORMbase):
     enabling a many-to-many relationship between `operator` and `operator_role` scoped by `company`.
 
     This table allows:
-    - An operator to be assigned multiple roles within a company.
     - A role to be assigned to multiple operators.
     - Support for multi-tenant Role-Based Access Control (RBAC) systems through the `company_id` field.
 
@@ -905,6 +930,7 @@ class OperatorRoleMap(ORMbase):
             Foreign key referencing `operator.id`.
             Identifies the operator receiving the role.
             Cascades on delete — if the operator is removed, related mappings are deleted.
+            An operator can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -928,7 +954,10 @@ class OperatorRoleMap(ORMbase):
         Integer, ForeignKey("operator_role.id", ondelete="CASCADE"), nullable=False
     )
     operator_id = Column(
-        Integer, ForeignKey("operator.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("operator.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
