@@ -353,7 +353,7 @@ async def create_role_map(
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
-        role = getters.VendorRole(token, session)
+        role = getters.vendorRole(token, session)
         validators.vendorPermission(role, VendorRole.update_role)
 
         vendor = (
@@ -414,7 +414,7 @@ async def update_role_map(
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
-        role = getters.VendorRole(token, session)
+        role = getters.vendorRole(token, session)
         validators.vendorPermission(role, VendorRole.update_role)
 
         roleMap = (
@@ -465,7 +465,7 @@ async def delete_role_map(
     try:
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
-        role = getters.VendorRole(token, session)
+        role = getters.vendorRole(token, session)
         validators.vendorPermission(role, VendorRole.update_role)
 
         roleMap = (
