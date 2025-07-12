@@ -854,7 +854,7 @@ class OperatorRole(ORMbase):
     __table_args__ = (UniqueConstraint("name", "company_id"),)
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False, unique=True)
+    name = Column(String(32), nullable=False)
     company_id = Column(
         Integer,
         ForeignKey("company.id", ondelete="CASCADE"),
