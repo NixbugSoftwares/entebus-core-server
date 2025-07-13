@@ -288,7 +288,6 @@ async def create_paper_ticket(
                 ticketPrice = v1.DynamicFare.evaluate(ticketTypeName, distance)
                 totalFare += ticketPrice * ticketTypeCount
 
-        print(totalFare)
         if totalFare != fParam.amount:
             raise exceptions.UnknownValue(PaperTicket.amount)
 
