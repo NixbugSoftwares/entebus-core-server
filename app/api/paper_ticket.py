@@ -104,12 +104,14 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
-def searchPaperTickets(
+def searchPaperTicket(
     session: Session, qParam: QueryParamsForOP | QueryParamsForEX
 ) -> List[PaperTicket]:
     query = session.query(PaperTicket)
 
     # Filters
+    if qParam.company_id is not None:
+        query = query.filter(PaperTicket.company_id == qParam.company_id)
     if qParam.service_id is not None:
         query = query.filter(PaperTicket.service_id == qParam.service_id)
     if qParam.duty_id is not None:
@@ -168,7 +170,7 @@ def searchPaperTickets(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of all paper tickets across companies.       
-    Supports filtering by company ID, Id and metadata.  
+    Supports filtering like ID, amount range, ID range, sequence range and metadata.    
     Supports filtering, sorting, and pagination.     
     Requires a valid executive token.
     """,
@@ -181,7 +183,7 @@ async def fetch_paper_ticket(
         session = sessionMaker()
         validators.executiveToken(bearer.credentials, session)
 
-        return searchPaperTickets(session, qParam)
+        return searchPaperTicket(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -194,9 +196,20 @@ async def fetch_paper_ticket(
     tags=["Paper Ticket"],
     response_model=PaperTicketSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.UnknownValue(PaperTicket.service_id),
+            exceptions.UnknownTicketType("ticket_type"),
+        ]
+    ),
     description="""
-    Creates a new paper ticket for a specific service and duty.       
+    Creates a new paper ticket for the operator duty and company.       
+    The service and duty must be owned by the operator company.     
+    The duty and service must be belong to the logged in operator.  
+    The ticket_type -> name are closely bounded to the fare -> attributes -> ticket_type.  
+    The distance will be calculated from the pickup point to the dropping point, not the user input.
+    The amount will be calculated using the fare function and it will be cross-checked with the amount provided.    
     Requires a valid operator token.
     """,
 )
@@ -231,7 +244,7 @@ async def create_paper_ticket(
         pickupLandmark = (
             session.query(LandmarkInRoute)
             .filter(
-                LandmarkInRoute.route_id == service.route['id'],
+                LandmarkInRoute.route_id == service.route["id"],
                 LandmarkInRoute.landmark_id == fParam.pickup_point,
             )
             .first()
@@ -242,7 +255,7 @@ async def create_paper_ticket(
         droppingLandmark = (
             session.query(LandmarkInRoute)
             .filter(
-                LandmarkInRoute.route_id == service.route['id'],
+                LandmarkInRoute.route_id == service.route["id"],
                 LandmarkInRoute.landmark_id == fParam.dropping_point,
             )
             .first()
@@ -253,14 +266,15 @@ async def create_paper_ticket(
         distance = (
             droppingLandmark.distance_from_start - pickupLandmark.distance_from_start
         )
-        if distance < 0:
+        if droppingLandmark.distance_from_start < pickupLandmark.distance_from_start:
             raise exceptions.UnknownValue(PaperTicket.dropping_point)
 
+        fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
         totalFare = 0
-        if v1.DynamicFare.validate(service.fare['function']):
+        if v1.DynamicFare.validate(service.fare["function"]):
             for ticketType in fParam.ticket_types:
-                ticketTypeName = ticketType.name
-                ticketTypeCount = ticketType.count
+                ticketTypeName = ticketType["name"]
+                ticketTypeCount = ticketType["count"]
                 if ticketTypeCount <= 0:
                     raise exceptions.UnknownValue(PaperTicket.ticket_types)
                 attributeTicketTypes = None
@@ -283,7 +297,7 @@ async def create_paper_ticket(
             company_id=token.company_id,
             duty_id=fParam.duty_id,
             sequence_id=fParam.sequence_id,
-            ticket_types=jsonable_encoder(fParam.ticket_types),
+            ticket_types=fParam.ticket_types,
             pickup_point=fParam.pickup_point,
             dropping_point=fParam.dropping_point,
             extra=fParam.extra,
@@ -307,7 +321,7 @@ async def create_paper_ticket(
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
     Fetches a list of all paper tickets for operator company.       
-    Supports filtering by ID, name, permissions and metadata.   
+    Supports filtering like ID, amount range, ID range, sequence range and metadata.   
     Supports filtering, sorting, and pagination.     
     Requires a valid operator token.
     """,
@@ -320,7 +334,7 @@ async def fetch_paper_ticket(
         token = validators.operatorToken(bearer.credentials, session)
 
         qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
-        return searchPaperTickets(session, qParam)
+        return searchPaperTicket(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
