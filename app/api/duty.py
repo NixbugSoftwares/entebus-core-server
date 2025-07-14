@@ -340,14 +340,12 @@ async def update_duty(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.DataInUse(Duty),
         ]
     ),
     description="""
-    Delete an existing duty by ID.  
-    Requires executive permissions with `delete_duty` role.  
-    Duty can not be deleted if there are tickets associated with it.    
-    Duty can not be deleted if there are not in ASSIGNED status.     
+    Delete an existing duty by ID.
+    Requires executive permissions with `delete_duty` role.
+    Duty can only be deleted if there are no tickets associated with it.
     Deletes the duty and logs the deletion event.
     """,
 )
@@ -363,8 +361,6 @@ async def delete_duty(
         validators.executivePermission(role, ExecutiveRole.delete_duty)
 
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
-        if duty and duty.status != DutyStatus.ASSIGNED:
-            raise exceptions.DataInUse(Duty)
         if duty is not None:
             session.delete(duty)
             session.commit()
@@ -566,15 +562,13 @@ async def update_duty(
         [
             exceptions.InvalidToken,
             exceptions.NoPermission,
-            exceptions.DataInUse(Duty),
         ]
     ),
     description="""
-    Delete an existing duty by ID.  
-    Requires operator permissions with `delete_duty` role.  
-    Ensures the service is owned by the operator's company.     
-    Duty can not be deleted if there are tickets associated with it.    
-    Duty can not be deleted if there are not in ASSIGNED status.    
+    Delete an existing duty by ID.
+    Requires operator permissions with `delete_duty` role.
+    Ensures the service is owned by the operator's company.
+    Duty can only be deleted if there are no tickets associated with it.
     Deletes the duty and logs the deletion event.
     """,
 )
@@ -595,8 +589,6 @@ async def delete_duty(
             .filter(Duty.company_id == token.company_id)
             .first()
         )
-        if duty and duty.status != DutyStatus.ASSIGNED:
-            raise exceptions.DataInUse(Duty)
         if duty is not None:
             session.delete(duty)
             session.commit()
