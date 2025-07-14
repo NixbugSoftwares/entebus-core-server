@@ -167,7 +167,9 @@ def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
             raise exceptions.UnknownValue(Schedule.fare_id)
         if fare.scope != FareScope.GLOBAL:
             if fare.company_id != schedule.company_id:
-                raise exceptions.InvalidAssociation(Schedule.fare_id, Schedule.company_id)
+                raise exceptions.InvalidAssociation(
+                    Schedule.fare_id, Schedule.company_id
+                )
         schedule.fare_id = fParam.fare_id
     if fParam.bus_id is not None and schedule.bus_id != fParam.bus_id:
         bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
@@ -495,14 +497,14 @@ async def create_schedule(
         )
         if route is None:
             raise exceptions.UnknownValue(Schedule.route_id)
-        fare = (
-            session.query(Fare)
-            .filter(Fare.id == fParam.fare_id)
-            .filter(Fare.company_id == token.company_id)
-            .first()
-        )
+        fare = session.query(Fare).filter(Fare.id == fParam.fare_id).first()
         if fare is None:
             raise exceptions.UnknownValue(Schedule.fare_id)
+        if fare.scope != FareScope.GLOBAL:
+            if fare.company_id != token.company_id:
+                raise exceptions.InvalidAssociation(
+                    Schedule.fare_id, Schedule.company_id
+                )
 
         schedule = Schedule(
             company_id=token.company_id,
@@ -554,7 +556,7 @@ async def update_schedule(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, ExecutiveRole.update_schedule)
+        validators.operatorPermission(role, OperatorRole.update_schedule)
 
         schedule = (
             session.query(Schedule)
