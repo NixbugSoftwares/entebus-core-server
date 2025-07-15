@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -212,8 +205,10 @@ async def create_bus_stop(
         )
         session.add(busStop)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(busStop))
-        return busStop
+        busStopData = jsonable_encoder(busStop)
+        busStopData["updated_on"] = None
+        logEvent(token, request_info, busStopData)
+        return busStopData
     except Exception as e:
         exceptions.handle(e)
     finally:
