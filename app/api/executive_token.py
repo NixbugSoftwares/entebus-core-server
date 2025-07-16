@@ -2,27 +2,13 @@ from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 from secrets import token_hex
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive
-from app.src.constants import (
-    MAX_EXECUTIVE_TOKENS,
-    MAX_TOKEN_VALIDITY,
-)
-from app.src.db import (
-    Executive,
-    ExecutiveToken,
-    sessionMaker,
-)
+from app.src.constants import MAX_EXECUTIVE_TOKENS, MAX_TOKEN_VALIDITY
+from app.src.db import Executive, ExecutiveToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
@@ -161,7 +147,8 @@ async def create_token(
         )
         session.add(token)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(token, exclude={"access_token"}))
+        tokenData = jsonable_encoder(token, exclude={"access_token"})
+        logEvent(token, request_info, tokenData)
         return token
     except Exception as e:
         exceptions.handle(e)
@@ -213,11 +200,8 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(token, exclude={"access_token"}),
-        )
+        tokenData = jsonable_encoder(tokenToUpdate, exclude={"access_token"})
+        logEvent(token, request_info, tokenData)
         return tokenToUpdate
     except Exception as e:
         exceptions.handle(e)

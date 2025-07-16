@@ -169,11 +169,7 @@ async def create_executive(
     tags=["Account"],
     response_model=ExecutiveSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Update an existing executive account.   
