@@ -1,27 +1,14 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive
 from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
-from app.src.db import (
-    Executive,
-    ExecutiveRole,
-    ExecutiveToken,
-    sessionMaker,
-)
+from app.src.db import Executive, ExecutiveRole, ExecutiveToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
@@ -135,10 +122,7 @@ class QueryParams(BaseModel):
     response_model=ExecutiveSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new executive account.     
@@ -170,8 +154,10 @@ async def create_executive(
         )
         session.add(executive)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(executive, exclude={"password"}))
-        return executive
+        session.refresh(executive)
+        executiveData = jsonable_encoder(executive, exclude={"password"})
+        logEvent(token, request_info, executiveData)
+        return executiveData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -266,10 +252,7 @@ async def update_executive(
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Delete an executive account.    
