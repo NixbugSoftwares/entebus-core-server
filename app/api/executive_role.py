@@ -357,8 +357,10 @@ async def create_role(
         )
         session.add(role)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(role))
-        return role
+        session.refresh(role)
+        roleData = jsonable_encoder(role)
+        logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -370,11 +372,7 @@ async def create_role(
     tags=["Role"],
     response_model=ExecutiveRoleSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing role.       
@@ -575,11 +573,20 @@ async def update_role(
             and fParam.delete_ex_role != role.delete_ex_role
         ):
             role.delete_ex_role = fParam.delete_ex_role
-        if fParam.create_op_role is not None and fParam.create_op_role != role.create_op_role:
+        if (
+            fParam.create_op_role is not None
+            and fParam.create_op_role != role.create_op_role
+        ):
             role.create_op_role = fParam.create_op_role
-        if fParam.update_op_role is not None and fParam.update_op_role != role.update_op_role:
+        if (
+            fParam.update_op_role is not None
+            and fParam.update_op_role != role.update_op_role
+        ):
             role.update_op_role = fParam.update_op_role
-        if fParam.delete_op_role is not None and fParam.delete_op_role != role.delete_op_role:
+        if (
+            fParam.delete_op_role is not None
+            and fParam.delete_op_role != role.delete_op_role
+        ):
             role.delete_op_role = fParam.delete_op_role
         if (
             fParam.create_ve_role is not None
