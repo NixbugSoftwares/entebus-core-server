@@ -1,25 +1,13 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import (
-    Landmark,
-    LandmarkInRoute,
-    sessionMaker,
-    Route,
-)
+from app.src.db import Landmark, LandmarkInRoute, Route, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
@@ -263,8 +251,11 @@ async def create_landmark_in_route(
 
         session.add(landmarkInRoute)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
-        return landmarkInRoute
+        session.refresh(landmarkInRoute)
+
+        landmarkInRouteData = jsonable_encoder(landmarkInRoute)
+        logEvent(token, request_info, landmarkInRouteData)
+        return landmarkInRouteData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -464,8 +455,11 @@ async def create_landmark_in_route(
 
         session.add(landmarkInRoute)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
-        return landmarkInRoute
+        session.refresh(landmarkInRoute)
+
+        landmarkInRouteData = jsonable_encoder(landmarkInRoute)
+        logEvent(token, request_info, landmarkInRouteData)
+        return landmarkInRouteData
     except Exception as e:
         exceptions.handle(e)
     finally:
