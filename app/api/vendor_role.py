@@ -242,8 +242,11 @@ async def create_role(
         )
         session.add(role)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(role))
-        return role
+        session.refresh(role)
+
+        roleData = jsonable_encoder(role)
+        logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -255,11 +258,7 @@ async def create_role(
     tags=["Vendor Role"],
     response_model=VendorRoleSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing vendor role.       
@@ -405,8 +404,11 @@ async def create_role(
         )
         session.add(role)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(role))
-        return role
+        session.refresh(role)
+
+        roleData = jsonable_encoder(role)
+        logEvent(token, request_info, roleData)
+        return roleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -418,11 +420,7 @@ async def create_role(
     tags=["Role"],
     response_model=VendorRoleSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing vendor role associated with the current vendor business.             
