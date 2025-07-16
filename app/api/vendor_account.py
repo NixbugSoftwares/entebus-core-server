@@ -1,29 +1,15 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive, bearer_vendor
 from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
-from app.src.db import (
-    ExecutiveRole,
-    Vendor,
-    VendorRole,
-    VendorToken,
-    sessionMaker,
-)
+from app.src.db import ExecutiveRole, Vendor, VendorRole, VendorToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
@@ -222,10 +208,7 @@ def searchVendor(
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new vendor account with an active status.       
@@ -258,12 +241,11 @@ async def create_vendor(
         )
         session.add(vendor)
         session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(vendor, exclude={"password"}),
-        )
-        return vendor
+        session.refresh(vendor)
+
+        vendorData = jsonable_encoder(vendor, exclude={"password"})
+        logEvent(token, request_info, vendorData)
+        return vendorData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -275,11 +257,7 @@ async def create_vendor(
     tags=["Vendor Account"],
     response_model=VendorSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing vendor account.       
@@ -326,10 +304,7 @@ async def update_vendor(
     tags=["Vendor Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Delete an existing vendor by ID.  
@@ -398,10 +373,7 @@ async def fetch_vendor(
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new vendor account with an active status, associated with the current vendor business.     
@@ -435,12 +407,11 @@ async def create_vendor(
         )
         session.add(vendor)
         session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(vendor, exclude={"password"}),
-        )
-        return vendor
+        session.refresh(vendor)
+
+        vendorData = jsonable_encoder(vendor, exclude={"password"})
+        logEvent(token, request_info, vendorData)
+        return vendorData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -452,11 +423,7 @@ async def create_vendor(
     tags=["Account"],
     response_model=VendorSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing vendor account associated with the current vendor business.      
@@ -517,10 +484,7 @@ async def update_vendor(
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Delete an vendor account associated with the current vendor business.        
