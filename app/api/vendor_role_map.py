@@ -194,8 +194,11 @@ async def create_role_map(
 
         session.add(roleMap)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+        session.refresh(roleMap)
+
+        roleMapData = jsonable_encoder(roleMap)
+        logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -376,8 +379,11 @@ async def create_role_map(
 
         session.add(roleMap)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+        session.refresh(roleMap)
+
+        roleMapData = jsonable_encoder(roleMap)
+        logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:

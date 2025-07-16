@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -212,8 +205,12 @@ async def create_bus_stop(
         )
         session.add(busStop)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(busStop))
-        return busStop
+        session.refresh(busStop)
+
+        busStopData = jsonable_encoder(busStop, exclude={"location"})
+        busStopData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
+        logEvent(token, request_info, busStopData)
+        return busStopData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -321,6 +318,7 @@ async def delete_bus_stop(
         if busStop is not None:
             session.delete(busStop)
             session.commit()
+
             busStopData = jsonable_encoder(busStop, exclude={"location"})
             busStopData["location"] = (wkb.loads(bytes(busStop.location.data))).wkt
             logEvent(token, request_info, busStopData)

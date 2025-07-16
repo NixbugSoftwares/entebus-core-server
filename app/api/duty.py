@@ -268,8 +268,11 @@ async def create_duty(
         )
         session.add(duty)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(duty))
-        return duty
+        session.refresh(duty)
+
+        dutyData = jsonable_encoder(duty)
+        logEvent(token, request_info, dutyData)
+        return dutyData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -326,7 +329,7 @@ async def update_duty(
         dutyData = jsonable_encoder(duty)
         if haveUpdates:
             logEvent(token, request_info, dutyData)
-        return duty
+        return dutyData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -338,11 +341,7 @@ async def update_duty(
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.DataInUse(Duty),
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.DataInUse(Duty)]
     ),
     description="""
     Delete an existing duty by ID.   
@@ -492,8 +491,11 @@ async def create_duty(
         )
         session.add(duty)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(duty))
-        return duty
+        session.refresh(duty)
+
+        dutyData = jsonable_encoder(duty)
+        logEvent(token, request_info, dutyData)
+        return dutyData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -555,7 +557,7 @@ async def update_duty(
         dutyData = jsonable_encoder(duty)
         if haveUpdates:
             logEvent(token, request_info, dutyData)
-        return duty
+        return dutyData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -567,11 +569,7 @@ async def update_duty(
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.DataInUse(Duty),
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.DataInUse(Duty)]
     ),
     description="""
     Delete an existing duty by ID.    

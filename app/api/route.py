@@ -1,14 +1,7 @@
 from datetime import datetime, time
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -157,10 +150,7 @@ def searchRoute(
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new route for a specified company.  
@@ -184,8 +174,11 @@ async def create_route(
         )
         session.add(route)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(route))
-        return route
+        session.refresh(route)
+
+        routeData = jsonable_encoder(route)
+        logEvent(token, request_info, routeData)
+        return routeData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -197,11 +190,7 @@ async def create_route(
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Update an existing route by ID.  
@@ -332,10 +321,7 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new route for the operator's own company.  
@@ -359,8 +345,11 @@ async def create_route(
         )
         session.add(route)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(route))
-        return route
+        session.refresh(route)
+
+        routeData = jsonable_encoder(route)
+        logEvent(token, request_info, routeData)
+        return routeData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -372,11 +361,7 @@ async def create_route(
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Update an existing route belonging to the operator's company.  

@@ -1,14 +1,7 @@
 from datetime import datetime, date, timedelta
 from enum import IntEnum
 from typing import List, Optional, Dict, Any
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -29,12 +22,7 @@ from app.src.db import (
 from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import (
-    TicketingMode,
-    ServiceStatus,
-    FareScope,
-    BusStatus,
-)
+from app.src.enums import TicketingMode, ServiceStatus, FareScope, BusStatus
 from app.src.functions import enumStr, makeExceptionResponses
 from app.src.digital_ticket import v1
 
@@ -378,10 +366,13 @@ async def create_service(
         )
         session.add(service)
         session.commit()
+        session.refresh(service)
 
-        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
-        logEvent(token, request_info, serviceData)
-        return service
+        serviceData = jsonable_encoder(service, exclude={"private_key"})
+        serviceLogData = serviceData.copy()
+        serviceLogData.pop("public_key")
+        logEvent(token, request_info, serviceLogData)
+        return serviceData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -432,10 +423,12 @@ async def update_service(
             session.commit()
             session.refresh(service)
 
-        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
+        serviceData = jsonable_encoder(service, exclude={"private_key"})
+        serviceLogData = serviceData.copy()
+        serviceLogData.pop("public_key")
         if haveUpdates:
-            logEvent(token, request_info, serviceData)
-        return service
+            logEvent(token, request_info, serviceLogData)
+        return serviceData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -539,7 +532,6 @@ async def fetch_route(
             status_list=[ServiceStatus.CREATED, ServiceStatus.STARTED],
             status=None,
         )
-
         return searchService(session, qParam)
     except Exception as e:
         exceptions.handle(e)
@@ -655,11 +647,13 @@ async def create_service(
         )
         session.add(service)
         session.commit()
+        session.refresh(service)
 
-        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
-        logEvent(token, request_info, serviceData)
-        return service
-
+        serviceData = jsonable_encoder(service, exclude={"private_key"})
+        serviceLogData = serviceData.copy()
+        serviceLogData.pop("public_key")
+        logEvent(token, request_info, serviceLogData)
+        return serviceData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -715,10 +709,12 @@ async def update_service(
             session.commit()
             session.refresh(service)
 
-        serviceData = jsonable_encoder(service, exclude={"private_key", "public_key"})
+        serviceData = jsonable_encoder(service, exclude={"private_key"})
+        serviceLogData = serviceData.copy()
+        serviceLogData.pop("public_key")
         if haveUpdates:
-            logEvent(token, request_info, serviceData)
-        return service
+            logEvent(token, request_info, serviceLogData)
+        return serviceData
     except Exception as e:
         exceptions.handle(e)
     finally:

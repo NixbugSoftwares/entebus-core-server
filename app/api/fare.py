@@ -8,12 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import or_
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import (
-    ExecutiveRole,
-    Fare,
-    OperatorRole,
-    sessionMaker,
-)
+from app.src.db import ExecutiveRole, Fare, OperatorRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import FareScope
@@ -240,8 +235,11 @@ async def create_fare(
         )
         session.add(fare)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(fare))
-        return fare
+        session.refresh(fare)
+
+        fareData = jsonable_encoder(fare)
+        logEvent(token, request_info, fareData)
+        return fareData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -290,13 +288,16 @@ async def update_fare(
             raise exceptions.InvalidIdentifier()
 
         updateFare(fare, fParam)
-        haveUpdate = session.is_modified(fare)
-        if haveUpdate:
+        haveUpdates = session.is_modified(fare)
+        if haveUpdates:
             fare.version += 1
             session.commit()
             session.refresh(fare)
-            logEvent(token, request_info, jsonable_encoder(fare))
-        return fare
+
+        fareData = jsonable_encoder(fare)
+        if haveUpdates:
+            logEvent(token, request_info, fareData)
+        return fareData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -443,8 +444,11 @@ async def create_fare(
         )
         session.add(fare)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(fare))
-        return fare
+        session.refresh(fare)
+
+        fareData = jsonable_encoder(fare)
+        logEvent(token, request_info, fareData)
+        return fareData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -498,13 +502,16 @@ async def update_fare(
             raise exceptions.InvalidIdentifier()
 
         updateFare(fare, fParam)
-        haveUpdated = session.is_modified(fare)
-        if haveUpdated:
+        haveUpdates = session.is_modified(fare)
+        if haveUpdates:
             fare.version += 1
             session.commit()
             session.refresh(fare)
-            logEvent(token, request_info, jsonable_encoder(fare))
-        return fare
+
+        fareData = jsonable_encoder(fare)
+        if haveUpdates:
+            logEvent(token, request_info, fareData)
+        return fareData
     except Exception as e:
         exceptions.handle(e)
     finally:

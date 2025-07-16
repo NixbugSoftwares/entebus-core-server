@@ -7,13 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm.session import Session
 
 from app.api.bearer import bearer_executive, bearer_operator
-from app.src.db import (
-    LandmarkInRoute,
-    PaperTicket,
-    Service,
-    Duty,
-    sessionMaker,
-)
+from app.src.db import LandmarkInRoute, PaperTicket, Service, Duty, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
@@ -305,8 +299,11 @@ async def create_paper_ticket(
         )
         session.add(paperTicket)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(paperTicket))
-        return paperTicket
+        session.refresh(paperTicket)
+
+        paperTicketData = jsonable_encoder(paperTicket)
+        logEvent(token, request_info, paperTicketData)
+        return paperTicketData
     except Exception as e:
         exceptions.handle(e)
     finally:

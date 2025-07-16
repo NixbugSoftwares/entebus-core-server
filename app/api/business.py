@@ -1,19 +1,11 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 from shapely.geometry import Point
 from shapely import wkt, wkb
 from sqlalchemy import func
@@ -342,10 +334,13 @@ async def create_business(
             business_id=business.id,
         )
         session.add(businessWallet)
-
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(business))
-        return business
+        session.refresh(business)
+
+        businessData = jsonable_encoder(business, exclude={"location"})
+        businessData["location"] = (wkb.loads(bytes(business.location.data))).wkt
+        logEvent(token, request_info, businessData)
+        return businessData
     except Exception as e:
         exceptions.handle(e)
     finally:

@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -342,10 +335,13 @@ async def create_company(
             company_id=company.id,
         )
         session.add(companyWallet)
-
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(company))
-        return company
+        session.refresh(company)
+
+        companyData = jsonable_encoder(company, exclude={"location"})
+        companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+        logEvent(token, request_info, companyData)
+        return companyData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -363,7 +359,7 @@ async def create_company(
             exceptions.InvalidIdentifier,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.InvalidStateTransition,
+            exceptions.InvalidStateTransition("status"),
         ]
     ),
     description="""
@@ -577,6 +573,13 @@ async def update_company(
     "/company",
     tags=["Company"],
     response_model=List[CompanySchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
     description="""
     Fetch the company information associated with the current operator.  
     Returns a list with a single item.  
@@ -604,10 +607,7 @@ async def fetch_company(bearer=Depends(bearer_operator)):
     tags=["Company"],
     response_model=List[CompanySchemaForVE],
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-        ]
+        [exceptions.InvalidWKTStringOrType, exceptions.InvalidSRID4326]
     ),
     description="""
     Fetch the company information with optional filters like name, type, location, etc.  

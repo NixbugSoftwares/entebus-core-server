@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -293,8 +286,11 @@ async def create_bus(
         )
         session.add(bus)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(bus))
-        return bus
+        session.refresh(bus)
+
+        busData = jsonable_encoder(bus)
+        logEvent(token, request_info, busData)
+        return busData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -306,11 +302,7 @@ async def create_bus(
     tags=["Bus"],
     response_model=BusSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing bus belonging to any company.       
@@ -333,7 +325,7 @@ async def update_bus(
 
         bus = session.query(Bus).filter(Bus.id == fParam.id).first()
         if bus is None:
-            raise exceptions.InvalidIdentifier
+            raise exceptions.InvalidIdentifier()
 
         updateBus(bus, fParam)
         haveUpdates = session.is_modified(bus)
@@ -496,8 +488,11 @@ async def create_bus(
         )
         session.add(bus)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(bus))
-        return bus
+        session.refresh(bus)
+
+        busData = jsonable_encoder(bus)
+        logEvent(token, request_info, busData)
+        return busData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -509,11 +504,7 @@ async def create_bus(
     tags=["Bus"],
     response_model=BusSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing bus belonging to the operator's associated company.     
@@ -542,7 +533,7 @@ async def update_bus(
             .first()
         )
         if bus is None:
-            raise exceptions.InvalidIdentifier
+            raise exceptions.InvalidIdentifier()
 
         updateBus(bus, fParam)
         haveUpdates = session.is_modified(bus)
