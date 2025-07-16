@@ -1,19 +1,11 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from pydantic import EmailStr
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
@@ -222,10 +214,7 @@ def searchOperator(
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new operator account with an active status.       
@@ -258,12 +247,11 @@ async def create_operator(
         )
         session.add(operator)
         session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(operator, exclude={"password"}),
-        )
-        return operator
+        session.refresh(operator)
+
+        operatorData = jsonable_encoder(operator, exclude={"password"})
+        logEvent(token, request_info, operatorData)
+        return operatorData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -275,11 +263,7 @@ async def create_operator(
     tags=["Operator Account"],
     response_model=OperatorSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing operator account.       
@@ -326,10 +310,7 @@ async def update_operator(
     tags=["Operator Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Delete an existing operator by ID.  
@@ -398,10 +379,7 @@ async def fetch_operator(
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Creates a new operator account with an active status, associated with the current operator company.     
@@ -435,12 +413,12 @@ async def create_operator(
         )
         session.add(operator)
         session.commit()
-        logEvent(
-            token,
-            request_info,
-            jsonable_encoder(operator, exclude={"password"}),
-        )
-        return operator
+
+        session.refresh(operator)
+
+        operatorData = jsonable_encoder(operator, exclude={"password"})
+        logEvent(token, request_info, operatorData)
+        return operatorData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -452,11 +430,7 @@ async def create_operator(
     tags=["Account"],
     response_model=OperatorSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing operator account associated with the current operator company.      
@@ -517,10 +491,7 @@ async def update_operator(
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Delete an operator account associated with the current operator company.        
