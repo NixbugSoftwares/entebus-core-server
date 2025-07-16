@@ -205,11 +205,8 @@ async def create_bus_stop(
         )
         session.add(busStop)
         session.commit()
-        busStopData = jsonable_encoder(busStop, exclude={"location"})
-        busStopData["location"] = busStop.location
+        busStopData = jsonable_encoder(busStop)
         busStopData["updated_on"] = None
-        # busStopData = jsonable_encoder(busStop)
-        # busStopData["updated_on"] = None
         logEvent(token, request_info, busStopData)
         return busStopData
     except Exception as e:
