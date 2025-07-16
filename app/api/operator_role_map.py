@@ -204,8 +204,11 @@ async def create_role_map(
 
         session.add(roleMap)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+        session.refresh(roleMap)
+
+        roleMapData = jsonable_encoder(roleMap)
+        logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -390,8 +393,11 @@ async def create_role_map(
 
         session.add(roleMap)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+        session.refresh(roleMap)
+
+        roleMapData = jsonable_encoder(roleMap)
+        logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -461,10 +467,7 @@ async def update_role_map(
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-        ]
+        [exceptions.InvalidToken,exceptions.NoPermission]
     ),
     description="""
     Deletes an existing operator role map.       
