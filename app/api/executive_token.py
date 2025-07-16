@@ -147,9 +147,12 @@ async def create_token(
         )
         session.add(token)
         session.commit()
-        tokenData = jsonable_encoder(token, exclude={"access_token"})
-        logEvent(token, request_info, tokenData)
-        return token
+        session.refresh(token)
+        tokenData = jsonable_encoder(token)
+        tokenLogData = tokenData.copy()
+        tokenLogData.pop("access_token")
+        logEvent(token, request_info, tokenLogData)
+        return tokenData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -200,9 +203,11 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
-        tokenData = jsonable_encoder(tokenToUpdate, exclude={"access_token"})
-        logEvent(token, request_info, tokenData)
-        return tokenToUpdate
+        tokenData = jsonable_encoder(tokenToUpdate)
+        tokenLogData = tokenData.copy()
+        tokenLogData.pop("access_token")
+        logEvent(token, request_info, tokenLogData)
+        return tokenData
     except Exception as e:
         exceptions.handle(e)
     finally:
