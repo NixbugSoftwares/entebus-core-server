@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Form,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -226,8 +219,12 @@ async def create_landmark(
         )
         session.add(landmark)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(landmark))
-        return landmark
+        session.refresh(landmark)
+
+        landmarkData = jsonable_encoder(landmark, exclude={"boundary"})
+        landmarkData["boundary"] = (wkb.loads(bytes(landmark.boundary.data))).wkt
+        logEvent(token, request_info, landmarkData)
+        return landmarkData
     except Exception as e:
         exceptions.handle(e)
     finally:
