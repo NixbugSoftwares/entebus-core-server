@@ -372,20 +372,9 @@ async def delete_duty(
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         if duty.status == DutyStatus.STARTED:
             raise exceptions.DataInUse(Duty)
-        if duty.status in [DutyStatus.ENDED, DutyStatus.TERMINATED]:
-            hasTicket = (
-                session.query(PaperTicket)
-                .filter(PaperTicket.duty_id == duty.id)
-                .first()
-                is not None
-            )
-            if hasTicket:
-                raise exceptions.DataInUse(Duty)
-
         session.delete(duty)
         session.commit()
         logEvent(token, request_info, jsonable_encoder(duty))
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -619,20 +608,9 @@ async def delete_duty(
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         if duty.status == DutyStatus.STARTED:
             raise exceptions.DataInUse(Duty)
-        if duty.status in [DutyStatus.ENDED, DutyStatus.TERMINATED]:
-            hasTicket = (
-                session.query(PaperTicket)
-                .filter(PaperTicket.duty_id == duty.id)
-                .first()
-                is not None
-            )
-            if hasTicket:
-                raise exceptions.DataInUse(Duty)
-
         session.delete(duty)
         session.commit()
         logEvent(token, request_info, jsonable_encoder(duty))
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
