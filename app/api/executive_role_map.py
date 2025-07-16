@@ -103,8 +103,10 @@ async def create_role_map(
         )
         session.add(roleMap)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(roleMap))
-        return roleMap
+        session.refresh(roleMap)
+        roleMapData = jsonable_encoder(roleMap)
+        logEvent(token, request_info, roleMapData)
+        return roleMapData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -116,11 +118,7 @@ async def create_role_map(
     tags=["Role Map"],
     response_model=ExecutiveRoleMapSchema,
     responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-        ]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Updates an existing role maps.       
@@ -155,7 +153,7 @@ async def update_role_map(
             session.commit()
             session.refresh(roleMap)
 
-        roleMapData = jsonable_encoder(role)
+        roleMapData = jsonable_encoder(roleMap)
         if haveUpdates:
             logEvent(token, request_info, roleMapData)
         return roleMapData
