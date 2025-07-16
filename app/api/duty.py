@@ -345,15 +345,14 @@ async def update_duty(
         ]
     ),
     description="""
-    Delete an existing duty by ID.
-    Requires executive permissions with role.
-
-    **Deletion Rules:**
-    - `STARTED`: Deletion is not allowed.
-    - `ASSIGNED`: Deletion is permitted.
-    - `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record.
+    Delete an existing duty by ID.   
+    Only executive with `delete_duty` permission can perform this operation.   
+    Deletes the duty and logs the deletion event.   
     
-    Deletes the duty and logs the deletion event.
+    Deletion Rules:*    
+        STARTED: Deletion is not allowed.    
+        ASSIGNED: Deletion is permitted.    
+        `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record. 
     """,
 )
 async def delete_duty(
@@ -575,16 +574,15 @@ async def update_duty(
         ]
     ),
     description="""
-    Delete an existing duty by ID.
-    Requires operator permissions with `delete_duty` role.
+    Delete an existing duty by ID.    
+    Only operator with `delete_duty` permission can perform this operation.   
+    Ensures the service is owned by the operator's company. 
+    Deletes the duty and logs the deletion event.   
 
-    **Deletion Rules:**
-    - `STARTED`: Deletion is not allowed.
-    - `ASSIGNED`: Deletion is permitted.
-    - `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record.
-
-    Ensures the service is owned by the operator's company.
-    Deletes the duty and logs the deletion event.
+    Deletion Rules: 
+        STARTED: Deletion is not allowed.   
+        ASSIGNED: Deletion is permitted.    
+        `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record. 
     """,
 )
 async def delete_duty(
