@@ -14,6 +14,7 @@ from app.src.db import (
     OperatorRole,
     Service,
     Duty,
+    PaperTicket,
     sessionMaker,
 )
 from app.src.constants import SERVICE_START_BUFFER_TIME
@@ -344,11 +345,14 @@ async def update_duty(
         ]
     ),
     description="""
-    Delete an existing duty by ID.  
-    Requires executive permissions with `delete_duty` role.  
-    Duty can not be deleted if there are tickets associated with it.    
-    Duty can not be deleted if there are not in ASSIGNED status.     
-    Deletes the duty and logs the deletion event.
+    Delete an existing duty by ID.   
+    Only executive with `delete_duty` permission can perform this operation.   
+    Deletes the duty and logs the deletion event.   
+    
+    Deletion Rules:*    
+        STARTED: Deletion is not allowed.    
+        ASSIGNED: Deletion is permitted.    
+        `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record. 
     """,
 )
 async def delete_duty(
@@ -363,13 +367,13 @@ async def delete_duty(
         validators.executivePermission(role, ExecutiveRole.delete_duty)
 
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
-        if duty and duty.status != DutyStatus.ASSIGNED:
+        if duty is None:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        if duty.status == DutyStatus.STARTED:
             raise exceptions.DataInUse(Duty)
-        if duty is not None:
-            session.delete(duty)
-            session.commit()
-            logEvent(token, request_info, jsonable_encoder(duty))
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        session.delete(duty)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(duty))
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -570,12 +574,15 @@ async def update_duty(
         ]
     ),
     description="""
-    Delete an existing duty by ID.  
-    Requires operator permissions with `delete_duty` role.  
-    Ensures the service is owned by the operator's company.     
-    Duty can not be deleted if there are tickets associated with it.    
-    Duty can not be deleted if there are not in ASSIGNED status.    
-    Deletes the duty and logs the deletion event.
+    Delete an existing duty by ID.    
+    Only operator with `delete_duty` permission can perform this operation.   
+    Ensures the service is owned by the operator's company. 
+    Deletes the duty and logs the deletion event.   
+
+    Deletion Rules: 
+        STARTED: Deletion is not allowed.   
+        ASSIGNED: Deletion is permitted.    
+        `ENDED` or `TERMINATED`: Deletion is allowed only if no paper ticket is associated with the record. 
     """,
 )
 async def delete_duty(
@@ -595,13 +602,13 @@ async def delete_duty(
             .filter(Duty.company_id == token.company_id)
             .first()
         )
-        if duty and duty.status != DutyStatus.ASSIGNED:
+        if duty is None:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        if duty.status == DutyStatus.STARTED:
             raise exceptions.DataInUse(Duty)
-        if duty is not None:
-            session.delete(duty)
-            session.commit()
-            logEvent(token, request_info, jsonable_encoder(duty))
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        session.delete(duty)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(duty))
     except Exception as e:
         exceptions.handle(e)
     finally:
