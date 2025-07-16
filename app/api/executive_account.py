@@ -155,6 +155,7 @@ async def create_executive(
         session.add(executive)
         session.commit()
         session.refresh(executive)
+
         executiveData = jsonable_encoder(executive, exclude={"password"})
         logEvent(token, request_info, executiveData)
         return executiveData

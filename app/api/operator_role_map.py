@@ -467,7 +467,7 @@ async def update_role_map(
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken,exceptions.NoPermission]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Deletes an existing operator role map.       

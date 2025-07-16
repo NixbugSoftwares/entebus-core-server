@@ -148,6 +148,7 @@ async def create_token(
         session.add(token)
         session.commit()
         session.refresh(token)
+
         tokenData = jsonable_encoder(token)
         tokenLogData = tokenData.copy()
         tokenLogData.pop("access_token")
@@ -203,6 +204,7 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
+
         tokenData = jsonable_encoder(tokenToUpdate)
         tokenLogData = tokenData.copy()
         tokenLogData.pop("access_token")

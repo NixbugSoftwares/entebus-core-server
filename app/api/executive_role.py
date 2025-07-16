@@ -358,6 +358,7 @@ async def create_role(
         session.add(role)
         session.commit()
         session.refresh(role)
+
         roleData = jsonable_encoder(role)
         logEvent(token, request_info, roleData)
         return roleData

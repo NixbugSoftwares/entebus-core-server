@@ -150,7 +150,7 @@ def searchRoute(
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken,exceptions.NoPermission]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new route for a specified company.  
@@ -190,7 +190,7 @@ async def create_route(
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken,exceptions.NoPermission,exceptions.InvalidIdentifier]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Update an existing route by ID.  
@@ -321,7 +321,7 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken,exceptions.NoPermission]
+        [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
     Create a new route for the operator's own company.  
@@ -361,7 +361,7 @@ async def create_route(
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken,exceptions.NoPermission,exceptions.InvalidIdentifier]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
     ),
     description="""
     Update an existing route belonging to the operator's company.  

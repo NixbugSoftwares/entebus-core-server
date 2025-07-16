@@ -104,6 +104,7 @@ async def create_role_map(
         session.add(roleMap)
         session.commit()
         session.refresh(roleMap)
+
         roleMapData = jsonable_encoder(roleMap)
         logEvent(token, request_info, roleMapData)
         return roleMapData

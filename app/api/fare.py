@@ -293,7 +293,7 @@ async def update_fare(
             fare.version += 1
             session.commit()
             session.refresh(fare)
-        
+
         fareData = jsonable_encoder(fare)
         if haveUpdates:
             logEvent(token, request_info, fareData)
@@ -507,7 +507,7 @@ async def update_fare(
             fare.version += 1
             session.commit()
             session.refresh(fare)
-            
+
         fareData = jsonable_encoder(fare)
         if haveUpdates:
             logEvent(token, request_info, fareData)

@@ -344,7 +344,7 @@ async def refresh_token(
         tokenToUpdate.access_token = token_hex(32)
         session.commit()
         session.refresh(tokenToUpdate)
-        
+
         tokenData = jsonable_encoder(tokenToUpdate)
         tokenLogData = tokenData.copy()
         tokenLogData.pop("access_token")
