@@ -1,14 +1,7 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import (
-    APIRouter,
-    Depends,
-    Query,
-    Response,
-    status,
-    Body,
-)
+from fastapi import APIRouter, Depends, Query, Response, status, Body
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -327,8 +320,11 @@ async def create_schedule(
         )
         session.add(schedule)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(schedule))
-        return schedule
+        session.refresh(schedule)
+
+        scheduleData = jsonable_encoder(schedule)
+        logEvent(token, request_info, scheduleData)
+        return scheduleData
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -519,8 +515,11 @@ async def create_schedule(
         )
         session.add(schedule)
         session.commit()
-        logEvent(token, request_info, jsonable_encoder(schedule))
-        return schedule
+        session.refresh(schedule)
+
+        scheduleData = jsonable_encoder(schedule)
+        logEvent(token, request_info, scheduleData)
+        return scheduleData
     except Exception as e:
         exceptions.handle(e)
     finally:
