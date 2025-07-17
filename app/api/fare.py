@@ -12,7 +12,7 @@ from app.src.db import ExecutiveRole, Fare, OperatorRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import FareScope
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -119,12 +119,9 @@ class QueryParamsForVE(QueryParamsForEX):
 
 ## Function
 def updateFare(fare: Fare, fParam: UpdateForm):
-    if fParam.name is not None and fParam.name != fare.name:
-        fare.name = fParam.name
+    updateIfChanged(fare, fParam, [Fare.name.key, Fare.function.key])
     if fParam.attributes is not None and fParam.attributes != fare.attributes:
         fare.attributes = fParam.attributes.model_dump()
-    if fParam.function is not None and fParam.function != fare.function:
-        fare.function = fParam.function
     validators.fareFunction(fare.function, fare.attributes)
 
 

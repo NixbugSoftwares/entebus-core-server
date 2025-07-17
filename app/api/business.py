@@ -23,7 +23,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.enums import BusinessStatus, BusinessType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -165,6 +165,7 @@ def updateBusiness(
     fParam: UpdateFormForVE | UpdateFormForEX,
 ):
     if isinstance(fParam, UpdateFormForEX):
+        updateIfChanged(business, fParam, [Business.status.key, Business.type.key])
         if fParam.name is not None and business.name != fParam.name:
             wallet = (
                 session.query(Wallet)
@@ -175,22 +176,17 @@ def updateBusiness(
             walletName = fParam.name + " wallet"
             wallet.name = walletName
             business.name = fParam.name
-        if fParam.status is not None and business.status != fParam.status:
-            business.status = fParam.status
-        if fParam.type is not None and business.type != fParam.type:
-            business.type = fParam.type
 
-    if fParam.address is not None and business.address != fParam.address:
-        business.address = fParam.address
-    if (
-        fParam.contact_person is not None
-        and business.contact_person != fParam.contact_person
-    ):
-        business.contact_person = fParam.contact_person
-    if fParam.phone_number is not None and business.phone_number != fParam.phone_number:
-        business.phone_number = fParam.phone_number
-    if fParam.email_id is not None and business.email_id != fParam.email_id:
-        business.email_id = fParam.email_id
+    updateIfChanged(
+        business,
+        fParam,
+        [
+            Business.address.key,
+            Business.contact_person.key,
+            Business.phone_number.key,
+            Business.email_id.key,
+        ],
+    )
     if fParam.location is not None:
         geometry = validators.WKTstring(fParam.location, Point)
         validators.SRID4326(geometry)

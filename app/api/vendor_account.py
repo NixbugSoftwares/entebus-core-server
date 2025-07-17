@@ -13,7 +13,7 @@ from app.src.db import ExecutiveRole, Vendor, VendorRole, VendorToken, sessionMa
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
@@ -131,16 +131,18 @@ class QueryParamsForEX(QueryParamForVE):
 def updateVendor(
     session: Session, vendor: Vendor, fParam: UpdateFormForVE | UpdateFormForEX
 ):
+    updateIfChanged(
+        vendor,
+        fParam,
+        [
+            Vendor.gender.key,
+            Vendor.full_name.key,
+            Vendor.phone_number.key,
+            Vendor.email_id.key,
+        ],
+    )
     if fParam.password is not None:
         vendor.password = argon2.makePassword(fParam.password)
-    if fParam.gender is not None and vendor.gender != fParam.gender:
-        vendor.gender = fParam.gender
-    if fParam.full_name is not None and vendor.full_name != fParam.full_name:
-        vendor.full_name = fParam.full_name
-    if fParam.phone_number is not None and vendor.phone_number != fParam.phone_number:
-        vendor.phone_number = fParam.phone_number
-    if fParam.email_id is not None and vendor.email_id != fParam.email_id:
-        vendor.email_id = fParam.email_id
     if fParam.status is not None and vendor.status != fParam.status:
         if fParam.status == AccountStatus.SUSPENDED:
             session.query(VendorToken).filter(
