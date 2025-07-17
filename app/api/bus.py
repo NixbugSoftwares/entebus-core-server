@@ -427,19 +427,10 @@ async def fetch_tokens(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(
-            **qParam.model_dump(),
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
             status=BusStatus.ACTIVE,
-            manufactured_on_ge=None,
-            manufactured_on_le=None,
-            insurance_upto_ge=None,
-            insurance_upto_le=None,
-            pollution_upto_ge=None,
-            pollution_upto_le=None,
-            fitness_upto_ge=None,
-            fitness_upto_le=None,
-            road_tax_upto_ge=None,
-            road_tax_upto_le=None,
         )
         return searchBus(session, qParam)
     except Exception as e:

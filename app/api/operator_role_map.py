@@ -17,6 +17,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -524,7 +525,7 @@ async def fetch_role_map(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchRoleMap(session, qParam)
     except Exception as e:
         exceptions.handle(e)

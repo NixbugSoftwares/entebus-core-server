@@ -20,6 +20,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import promoteToParent
 
 route_operator = APIRouter()
 route_executive = APIRouter()
@@ -557,7 +558,7 @@ async def fetch_operator(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchOperator(session, qParam)
     except Exception as e:
         exceptions.handle(e)

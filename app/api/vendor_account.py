@@ -14,6 +14,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import promoteToParent
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
@@ -550,7 +551,9 @@ async def fetch_vendor(
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), business_id=token.business_id)
+        qParam = promoteToParent(
+            qParam, QueryParamsForEX, business_id=token.business_id
+        )
         return searchVendor(session, qParam)
     except Exception as e:
         exceptions.handle(e)
