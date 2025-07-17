@@ -24,7 +24,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -166,6 +166,7 @@ def updateCompany(
     }
 
     if isinstance(fParam, UpdateFormForEX):
+        updateIfChanged(company, fParam, ["type"])
         if fParam.name is not None and company.name != fParam.name:
             wallet = (
                 session.query(Wallet)
@@ -181,20 +182,10 @@ def updateCompany(
                 companyStatusTransition, company.status, fParam.status, Company.status
             )
             company.status = fParam.status
-        if fParam.type is not None and company.type != fParam.type:
-            company.type = fParam.type
 
-    if fParam.address is not None and company.address != fParam.address:
-        company.address = fParam.address
-    if (
-        fParam.contact_person is not None
-        and company.contact_person != fParam.contact_person
-    ):
-        company.contact_person = fParam.contact_person
-    if fParam.phone_number is not None and company.phone_number != fParam.phone_number:
-        company.phone_number = fParam.phone_number
-    if fParam.email_id is not None and company.email_id != fParam.email_id:
-        company.email_id = fParam.email_id
+    updateIfChanged(
+        company, fParam, ["address", "contact_person", "phone_number", "email_id"]
+    )
     if fParam.location is not None:
         locationGeom = validators.WKTstring(fParam.location, Point)
         validators.SRID4326(locationGeom)
