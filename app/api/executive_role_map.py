@@ -9,7 +9,7 @@ from app.api.bearer import bearer_executive
 from app.src.db import ExecutiveRole, ExecutiveRoleMap, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 
@@ -146,8 +146,8 @@ async def update_role_map(
         )
         if roleMap is None:
             raise exceptions.InvalidIdentifier()
-        if fParam.role_id is not None and fParam.role_id != roleMap.role_id:
-            roleMap.role_id = fParam.role_id
+
+        updateIfChanged(roleMap, fParam, ["role_id"])
 
         haveUpdates = session.is_modified(roleMap)
         if haveUpdates:
