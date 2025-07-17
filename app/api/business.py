@@ -18,6 +18,7 @@ from app.src.db import (
     VendorRole,
     Wallet,
     BusinessWallet,
+    VendorToken,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
@@ -165,7 +166,7 @@ def updateBusiness(
     fParam: UpdateFormForVE | UpdateFormForEX,
 ):
     if isinstance(fParam, UpdateFormForEX):
-        updateIfChanged(business, fParam, [Business.status.key, Business.type.key])
+        updateIfChanged(business, fParam, [Business.type.key])
         if fParam.name is not None and business.name != fParam.name:
             wallet = (
                 session.query(Wallet)
@@ -176,6 +177,12 @@ def updateBusiness(
             walletName = fParam.name + " wallet"
             wallet.name = walletName
             business.name = fParam.name
+        if fParam.status is not None and business.status != fParam.status:
+            if fParam.status in [BusinessStatus.SUSPENDED, BusinessStatus.BLOCKED]:
+                session.query(VendorToken).filter(
+                    VendorToken.business_id == fParam.id
+                ).delete()
+            business.status = fParam.status
 
     updateIfChanged(
         business,
@@ -284,6 +291,7 @@ def searchBusiness(
     description="""
     Create a new business.  
     Requires executive permissions with `create_business` role.  
+    A wallet is automatically created with the business name when a business is created.     
     Validates location format and ensures all required fields are provided.
     """,
 )
@@ -359,6 +367,7 @@ async def create_business(
     description="""
     Update an existing business record.  
     Requires executive permissions with `update_business` role.  
+    If the status is set to SUSPENDED or BLOCKED, all tokens associated with that business vendors are revoked.      
     Updates only the provided fields and validates the location if present.
     """,
 )
