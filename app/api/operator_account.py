@@ -19,7 +19,7 @@ from app.src.db import (
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_operator = APIRouter()
 route_executive = APIRouter()
@@ -137,16 +137,11 @@ class QueryParamsForEX(QueryParamsForOP):
 def updateOperator(
     session: Session, operator: Operator, fParam: UpdateFormForOP | UpdateFormForEX
 ):
+    updateIfChanged(
+        operator, fParam, ["gender", "full_name", "phone_number", "email_id"]
+    )
     if fParam.password is not None:
         operator.password = argon2.makePassword(fParam.password)
-    if fParam.gender is not None and operator.gender != fParam.gender:
-        operator.gender = fParam.gender
-    if fParam.full_name is not None and operator.full_name != fParam.full_name:
-        operator.full_name = fParam.full_name
-    if fParam.phone_number is not None and operator.phone_number != fParam.phone_number:
-        operator.phone_number = fParam.phone_number
-    if fParam.email_id is not None and operator.email_id != fParam.email_id:
-        operator.email_id = fParam.email_id
     if fParam.status is not None and operator.status != fParam.status:
         if fParam.status == AccountStatus.SUSPENDED:
             session.query(OperatorToken).filter(
