@@ -131,7 +131,16 @@ class QueryParamsForEX(QueryParamForVE):
 def updateVendor(
     session: Session, vendor: Vendor, fParam: UpdateFormForVE | UpdateFormForEX
 ):
-    updateIfChanged(vendor, fParam, ["gender", "full_name", "phone_number", "email_id"])
+    updateIfChanged(
+        vendor,
+        fParam,
+        [
+            Vendor.gender.key,
+            Vendor.full_name.key,
+            Vendor.phone_number.key,
+            Vendor.email_id.key,
+        ],
+    )
     if fParam.password is not None:
         vendor.password = argon2.makePassword(fParam.password)
     if fParam.status is not None and vendor.status != fParam.status:

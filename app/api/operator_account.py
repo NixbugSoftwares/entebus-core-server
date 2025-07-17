@@ -138,7 +138,14 @@ def updateOperator(
     session: Session, operator: Operator, fParam: UpdateFormForOP | UpdateFormForEX
 ):
     updateIfChanged(
-        operator, fParam, ["gender", "full_name", "phone_number", "email_id"]
+        operator,
+        fParam,
+        [
+            Operator.gender.key,
+            Operator.full_name.key,
+            Operator.phone_number.key,
+            Operator.email_id.key,
+        ],
     )
     if fParam.password is not None:
         operator.password = argon2.makePassword(fParam.password)

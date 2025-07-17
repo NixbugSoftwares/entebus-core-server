@@ -147,7 +147,7 @@ async def update_role_map(
         if roleMap is None:
             raise exceptions.InvalidIdentifier()
 
-        updateIfChanged(roleMap, fParam, ["role_id"])
+        updateIfChanged(roleMap, fParam, [ExecutiveRoleMap.role_id.key])
 
         haveUpdates = session.is_modified(roleMap)
         if haveUpdates:
