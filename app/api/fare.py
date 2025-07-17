@@ -119,7 +119,7 @@ class QueryParamsForVE(QueryParamsForEX):
 
 ## Function
 def updateFare(fare: Fare, fParam: UpdateForm):
-    updateIfChanged(fare, fParam, ["name", "function"])
+    updateIfChanged(fare, fParam, [Fare.name.key, Fare.function.key])
     if fParam.attributes is not None and fParam.attributes != fare.attributes:
         fare.attributes = fParam.attributes.model_dump()
     validators.fareFunction(fare.function, fare.attributes)

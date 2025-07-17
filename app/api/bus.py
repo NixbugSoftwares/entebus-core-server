@@ -150,14 +150,14 @@ def updateBus(bus: Bus, fParam: UpdateForm):
         bus,
         fParam,
         [
-            "name",
-            "capacity",
-            "manufactured_on",
-            "insurance_upto",
-            "pollution_upto",
-            "fitness_upto",
-            "road_tax_upto",
-            "status",
+            Bus.name.key,
+            Bus.capacity.key,
+            Bus.manufactured_on.key,
+            Bus.insurance_upto.key,
+            Bus.pollution_upto.key,
+            Bus.fitness_upto.key,
+            Bus.road_tax_upto.key,
+            Bus.status.key,
         ],
     )
 

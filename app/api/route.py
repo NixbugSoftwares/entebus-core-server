@@ -90,7 +90,7 @@ class QueryParams(QueryParamsForOP):
 
 ## Function
 def updateRoute(route: Route, fParam: UpdateForm):
-    updateIfChanged(route, fParam, ["name", "start_time"])
+    updateIfChanged(route, fParam, [Route.name.key, Route.start_time.key])
 
 
 def searchRoute(

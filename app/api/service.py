@@ -191,7 +191,7 @@ def updateService(service: Service, fParam: UpdateForm):
         ServiceStatus.ENDED: [ServiceStatus.STARTED],
         ServiceStatus.AUDITED: [],
     }
-    updateIfChanged(service, fParam, ["ticket_mode", "remark"])
+    updateIfChanged(service, fParam, [Service.ticket_mode.key, Service.remark.key])
     if fParam.status is not None and service.status != fParam.status:
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status

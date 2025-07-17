@@ -125,7 +125,11 @@ def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
     updateIfChanged(
         landmarkInRoute,
         fParam,
-        ["distance_from_start", "arrival_delta", "departure_delta"],
+        [
+            LandmarkInRoute.distance_from_start.key,
+            LandmarkInRoute.arrival_delta.key,
+            LandmarkInRoute.departure_delta.key,
+        ],
     )
     if landmarkInRoute.arrival_delta > landmarkInRoute.departure_delta:
         raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)

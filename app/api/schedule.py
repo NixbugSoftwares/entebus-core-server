@@ -146,7 +146,13 @@ def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
     updateIfChanged(
         schedule,
         fParam,
-        ["name", "description", "frequency", "ticketing_mode", "triggering_mode"],
+        [
+            Schedule.name.key,
+            Schedule.description.key,
+            Schedule.frequency.key,
+            Schedule.ticketing_mode.key,
+            Schedule.triggering_mode.key,
+        ],
     )
     if fParam.route_id is not None and schedule.route_id != fParam.route_id:
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
