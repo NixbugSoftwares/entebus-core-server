@@ -102,3 +102,13 @@ def getArea(geom: BaseGeometry) -> float:
     castedGeom = Polygon(geom) if isinstance(geom, Polygon) else geom
     projectedGeom = transform(projection, castedGeom)
     return projectedGeom.area
+
+
+def updateIfChanged(targetObj, sourceObj, fields: list[str]):
+    # Update fields from source_obj only if the field is not None and its value differs from the current value
+    for field in fields:
+        updatedValue = getattr(sourceObj, field, None)
+        if updatedValue is not None:
+            existingValue = getattr(targetObj, field)
+            if existingValue != updatedValue:
+                setattr(targetObj, field, updatedValue)
