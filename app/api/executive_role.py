@@ -9,7 +9,7 @@ from app.api.bearer import bearer_executive
 from app.src.db import ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 
@@ -398,212 +398,61 @@ async def update_role(
         if role is None:
             raise exceptions.InvalidIdentifier()
 
-        if fParam.name is not None:
-            role.name = fParam.name
-        if (
-            fParam.manage_ex_token is not None
-            and fParam.manage_ex_token != role.manage_ex_token
-        ):
-            role.manage_ex_token = fParam.manage_ex_token
-        if (
-            fParam.manage_op_token is not None
-            and fParam.manage_op_token != role.manage_op_token
-        ):
-            role.manage_op_token = fParam.manage_op_token
-        if (
-            fParam.manage_ve_token is not None
-            and fParam.manage_ve_token != role.manage_ve_token
-        ):
-            role.manage_ve_token = fParam.manage_ve_token
-        if (
-            fParam.create_executive is not None
-            and fParam.create_executive != role.create_executive
-        ):
-            role.create_executive = fParam.create_executive
-        if (
-            fParam.update_executive is not None
-            and fParam.update_executive != role.update_executive
-        ):
-            role.update_executive = fParam.update_executive
-        if (
-            fParam.delete_executive is not None
-            and fParam.delete_executive != role.delete_executive
-        ):
-            role.delete_executive = fParam.delete_executive
-        if (
-            fParam.create_landmark is not None
-            and fParam.create_landmark != role.create_landmark
-        ):
-            role.create_landmark = fParam.create_landmark
-        if (
-            fParam.update_landmark is not None
-            and fParam.update_landmark != role.update_landmark
-        ):
-            role.update_landmark = fParam.update_landmark
-        if (
-            fParam.delete_landmark is not None
-            and fParam.delete_landmark != role.delete_landmark
-        ):
-            role.delete_landmark = fParam.delete_landmark
-        if (
-            fParam.create_company is not None
-            and fParam.create_company != role.create_company
-        ):
-            role.create_company = fParam.create_company
-        if (
-            fParam.update_company is not None
-            and fParam.update_company != role.update_company
-        ):
-            role.update_company = fParam.update_company
-        if (
-            fParam.delete_company is not None
-            and fParam.delete_company != role.delete_company
-        ):
-            role.delete_company = fParam.delete_company
-        if (
-            fParam.create_operator is not None
-            and fParam.create_operator != role.create_operator
-        ):
-            role.create_operator = fParam.create_operator
-        if (
-            fParam.update_operator is not None
-            and fParam.update_operator != role.update_operator
-        ):
-            role.update_operator = fParam.update_operator
-        if (
-            fParam.delete_operator is not None
-            and fParam.delete_operator != role.delete_operator
-        ):
-            role.delete_operator = fParam.delete_operator
-        if (
-            fParam.create_business is not None
-            and fParam.create_business != role.create_business
-        ):
-            role.create_business = fParam.create_business
-        if (
-            fParam.update_business is not None
-            and fParam.update_business != role.update_business
-        ):
-            role.update_business = fParam.update_business
-        if (
-            fParam.delete_business is not None
-            and fParam.delete_business != role.delete_business
-        ):
-            role.delete_business = fParam.delete_business
-        if fParam.create_route is not None and fParam.create_route != role.create_route:
-            role.create_route = fParam.create_route
-        if fParam.update_route is not None and fParam.update_route != role.update_route:
-            role.update_route = fParam.update_route
-        if fParam.delete_route is not None and fParam.delete_route != role.delete_route:
-            role.delete_route = fParam.delete_route
-        if fParam.create_bus is not None and fParam.create_bus != role.create_bus:
-            role.create_bus = fParam.create_bus
-        if fParam.update_bus is not None and fParam.update_bus != role.update_bus:
-            role.update_bus = fParam.update_bus
-        if fParam.delete_bus is not None and fParam.delete_bus != role.delete_bus:
-            role.delete_bus = fParam.delete_bus
-        if (
-            fParam.create_vendor is not None
-            and fParam.create_vendor != role.create_vendor
-        ):
-            role.create_vendor = fParam.create_vendor
-        if (
-            fParam.update_vendor is not None
-            and fParam.update_vendor != role.update_vendor
-        ):
-            role.update_vendor = fParam.update_vendor
-        if (
-            fParam.delete_vendor is not None
-            and fParam.delete_vendor != role.delete_vendor
-        ):
-            role.delete_vendor = fParam.delete_vendor
-        if (
-            fParam.create_schedule is not None
-            and fParam.create_schedule != role.create_schedule
-        ):
-            role.create_schedule = fParam.create_schedule
-        if (
-            fParam.update_schedule is not None
-            and fParam.update_schedule != role.update_schedule
-        ):
-            role.update_schedule = fParam.update_schedule
-        if (
-            fParam.delete_schedule is not None
-            and fParam.create_service != role.create_service
-        ):
-            role.delete_schedule = fParam.delete_schedule
-        if (
-            fParam.create_service is not None
-            and fParam.create_service != role.create_service
-        ):
-            role.create_service = fParam.create_service
-        if (
-            fParam.update_service is not None
-            and fParam.update_service != role.update_service
-        ):
-            role.update_service = fParam.update_service
-        if (
-            fParam.delete_service is not None
-            and fParam.delete_service != role.delete_service
-        ):
-            role.delete_service = fParam.delete_service
-        if fParam.create_fare is not None and fParam.create_fare != role.create_fare:
-            role.create_fare = fParam.create_fare
-        if fParam.update_fare is not None and fParam.update_fare != role.update_fare:
-            role.update_fare = fParam.update_fare
-        if fParam.delete_fare is not None and fParam.delete_fare != role.delete_fare:
-            role.delete_fare = fParam.delete_fare
-        if fParam.create_duty is not None and fParam.create_duty != role.create_duty:
-            role.create_duty = fParam.create_duty
-        if fParam.update_duty is not None and fParam.update_duty != role.update_duty:
-            role.update_duty = fParam.update_duty
-        if fParam.delete_duty is not None and fParam.delete_duty != role.delete_duty:
-            role.delete_duty = fParam.delete_duty
-        if (
-            fParam.create_ex_role is not None
-            and fParam.create_ex_role != role.create_ex_role
-        ):
-            role.create_ex_role = fParam.create_ex_role
-        if (
-            fParam.update_ex_role is not None
-            and fParam.update_ex_role != role.update_ex_role
-        ):
-            role.update_ex_role = fParam.update_ex_role
-        if (
-            fParam.delete_ex_role is not None
-            and fParam.delete_ex_role != role.delete_ex_role
-        ):
-            role.delete_ex_role = fParam.delete_ex_role
-        if (
-            fParam.create_op_role is not None
-            and fParam.create_op_role != role.create_op_role
-        ):
-            role.create_op_role = fParam.create_op_role
-        if (
-            fParam.update_op_role is not None
-            and fParam.update_op_role != role.update_op_role
-        ):
-            role.update_op_role = fParam.update_op_role
-        if (
-            fParam.delete_op_role is not None
-            and fParam.delete_op_role != role.delete_op_role
-        ):
-            role.delete_op_role = fParam.delete_op_role
-        if (
-            fParam.create_ve_role is not None
-            and fParam.create_ve_role != role.create_ve_role
-        ):
-            role.create_ve_role = fParam.create_ve_role
-        if (
-            fParam.update_ve_role is not None
-            and fParam.update_ve_role != role.update_ve_role
-        ):
-            role.update_ve_role = fParam.update_ve_role
-        if (
-            fParam.delete_ve_role is not None
-            and fParam.delete_ve_role != role.delete_ve_role
-        ):
-            role.delete_ve_role = fParam.delete_ve_role
+        updateIfChanged(
+            role,
+            fParam,
+            [
+                "name",
+                "manage_ex_token",
+                "manage_op_token",
+                "manage_ve_token",
+                "create_executive",
+                "update_executive",
+                "delete_executive",
+                "create_landmark",
+                "update_landmark",
+                "delete_landmark",
+                "create_company",
+                "update_company",
+                "delete_company",
+                "create_operator",
+                "update_operator",
+                "delete_operator",
+                "create_business",
+                "update_business",
+                "delete_business",
+                "create_route",
+                "update_route",
+                "delete_route",
+                "create_bus",
+                "update_bus",
+                "delete_bus",
+                "create_vendor",
+                "update_vendor",
+                "delete_vendor",
+                "create_schedule",
+                "update_schedule",
+                "delete_schedule",
+                "create_service",
+                "update_service",
+                "delete_service",
+                "create_fare",
+                "update_fare",
+                "delete_fare",
+                "create_duty",
+                "update_duty",
+                "delete_duty",
+                "create_ex_role",
+                "update_ex_role",
+                "delete_ex_role",
+                "create_op_role",
+                "update_op_role",
+                "delete_op_role",
+                "create_ve_role",
+                "update_ve_role",
+                "delete_ve_role",
+            ],
+        )
 
         haveUpdates = session.is_modified(role)
         if haveUpdates:
