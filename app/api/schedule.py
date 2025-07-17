@@ -20,7 +20,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import Day, FareScope, TicketingMode, TriggeringMode
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -143,10 +143,11 @@ class QueryParamsForEX(QueryParamsForOP):
 
 ## Function
 def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
-    if fParam.name is not None and schedule.name != fParam.name:
-        schedule.name = fParam.name
-    if fParam.description is not None and schedule.description != fParam.description:
-        schedule.description = fParam.description
+    updateIfChanged(
+        schedule,
+        fParam,
+        ["name", "description", "frequency", "ticketing_mode", "triggering_mode"],
+    )
     if fParam.route_id is not None and schedule.route_id != fParam.route_id:
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
@@ -171,18 +172,6 @@ def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
         if bus.company_id != schedule.company_id:
             raise exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id)
         schedule.bus_id = fParam.bus_id
-    if fParam.frequency is not None and schedule.frequency != fParam.frequency:
-        schedule.frequency = fParam.frequency
-    if (
-        fParam.ticketing_mode is not None
-        and schedule.ticketing_mode != fParam.ticketing_mode
-    ):
-        schedule.ticketing_mode = fParam.ticketing_mode
-    if (
-        fParam.triggering_mode is not None
-        and schedule.triggering_mode != fParam.triggering_mode
-    ):
-        schedule.triggering_mode = fParam.triggering_mode
 
 
 def searchSchedule(
