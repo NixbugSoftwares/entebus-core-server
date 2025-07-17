@@ -10,7 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import OperatorRole, ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -195,90 +195,39 @@ class QueryParamsForEX(QueryParamsForOP):
 
 ## Functions
 def updateRole(role: OperatorRole, fParam: UpdateForm):
-    if fParam.name is not None and role.name != fParam.name:
-        role.name = fParam.name
-    if fParam.manage_token is not None and role.manage_token != fParam.manage_token:
-        role.manage_token = fParam.manage_token
-    if (
-        fParam.update_company is not None
-        and role.update_company != fParam.update_company
-    ):
-        role.update_company = fParam.update_company
-    if (
-        fParam.create_operator is not None
-        and role.create_operator != fParam.create_operator
-    ):
-        role.create_operator = fParam.create_operator
-    if (
-        fParam.update_operator is not None
-        and role.update_operator != fParam.update_operator
-    ):
-        role.update_operator = fParam.update_operator
-    if (
-        fParam.delete_operator is not None
-        and role.delete_operator != fParam.delete_operator
-    ):
-        role.delete_operator = fParam.delete_operator
-    if fParam.create_route is not None and role.create_route != fParam.create_route:
-        role.create_route = fParam.create_route
-    if fParam.update_route is not None and role.update_route != fParam.update_route:
-        role.update_route = fParam.update_route
-    if fParam.delete_route is not None and role.delete_route != fParam.delete_route:
-        role.delete_route = fParam.delete_route
-    if fParam.create_bus is not None and role.create_bus != fParam.create_bus:
-        role.create_bus = fParam.create_bus
-    if fParam.update_bus is not None and role.update_bus != fParam.update_bus:
-        role.update_bus = fParam.update_bus
-    if fParam.delete_bus is not None and role.delete_bus != fParam.delete_bus:
-        role.delete_bus = fParam.delete_bus
-    if (
-        fParam.create_schedule is not None
-        and role.create_schedule != fParam.create_schedule
-    ):
-        role.create_schedule = fParam.create_schedule
-    if (
-        fParam.update_schedule is not None
-        and role.update_schedule != fParam.update_schedule
-    ):
-        role.update_schedule = fParam.update_schedule
-    if (
-        fParam.delete_schedule is not None
-        and role.delete_schedule != fParam.delete_schedule
-    ):
-        role.delete_schedule = fParam.delete_schedule
-    if (
-        fParam.create_service is not None
-        and role.create_service != fParam.create_service
-    ):
-        role.create_service = fParam.create_service
-    if (
-        fParam.update_service is not None
-        and role.update_service != fParam.update_service
-    ):
-        role.update_service = fParam.update_service
-    if (
-        fParam.delete_service is not None
-        and role.delete_service != fParam.delete_service
-    ):
-        role.delete_service = fParam.delete_service
-    if fParam.create_fare is not None and role.create_fare != fParam.create_fare:
-        role.create_fare = fParam.create_fare
-    if fParam.update_fare is not None and role.update_fare != fParam.update_fare:
-        role.update_fare = fParam.update_fare
-    if fParam.delete_fare is not None and role.delete_fare != fParam.delete_fare:
-        role.delete_fare = fParam.delete_fare
-    if fParam.create_duty is not None and role.create_duty != fParam.create_duty:
-        role.create_duty = fParam.create_duty
-    if fParam.update_duty is not None and role.update_duty != fParam.update_duty:
-        role.update_duty = fParam.update_duty
-    if fParam.delete_duty is not None and role.delete_duty != fParam.delete_duty:
-        role.delete_duty = fParam.delete_duty
-    if fParam.create_role is not None and role.create_role != fParam.create_role:
-        role.create_role = fParam.create_role
-    if fParam.update_role is not None and role.update_role != fParam.update_role:
-        role.update_role = fParam.update_role
-    if fParam.delete_role is not None and role.delete_role != fParam.delete_role:
-        role.delete_role = fParam.delete_role
+    updateIfChanged(
+        role,
+        fParam,
+        [
+            "name",
+            "manage_token",
+            "update_company",
+            "create_operator",
+            "update_operator",
+            "delete_operator",
+            "create_route",
+            "update_route",
+            "delete_route",
+            "create_bus",
+            "update_bus",
+            "delete_bus",
+            "create_schedule",
+            "update_schedule",
+            "delete_schedule",
+            "create_service",
+            "update_service",
+            "delete_service",
+            "create_fare",
+            "update_fare",
+            "delete_fare",
+            "create_duty",
+            "update_duty",
+            "delete_duty",
+            "create_role",
+            "update_role",
+            "delete_role",
+        ],
+    )
 
 
 def searchRole(
