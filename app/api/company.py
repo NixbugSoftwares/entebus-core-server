@@ -19,6 +19,7 @@ from app.src.db import (
     OperatorRole,
     Wallet,
     CompanyWallet,
+    OperatorToken,
     sessionMaker,
 )
 from app.src import exceptions, validators, getters
@@ -181,6 +182,10 @@ def updateCompany(
             validators.stateTransition(
                 companyStatusTransition, company.status, fParam.status, Company.status
             )
+            if fParam.status == CompanyStatus.SUSPENDED:
+                session.query(OperatorToken).filter(
+                    OperatorToken.company_id == fParam.id
+                ).delete()
             company.status = fParam.status
 
     updateIfChanged(
@@ -288,6 +293,7 @@ def searchCompany(
     description="""
     Create a new company.  
     Requires executive permissions with `create_company` role.  
+    A wallet is automatically created with the company name when a company is created.         
     Validates location format and ensures all required fields are provided.
     """,
 )
@@ -363,6 +369,7 @@ async def create_company(
     description="""
     Update an existing company record.  
     Requires executive permissions with `update_company` role.  
+    If the status is set to SUSPENDED, all tokens associated with that company operators are revoked.      
     Updates only the provided fields and validates the location if present.
     
     Allowed status transitions:
