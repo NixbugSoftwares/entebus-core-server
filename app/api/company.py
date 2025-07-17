@@ -166,7 +166,7 @@ def updateCompany(
     }
 
     if isinstance(fParam, UpdateFormForEX):
-        updateIfChanged(company, fParam, ["type"])
+        updateIfChanged(company, fParam, [Company.type.key])
         if fParam.name is not None and company.name != fParam.name:
             wallet = (
                 session.query(Wallet)
@@ -184,7 +184,14 @@ def updateCompany(
             company.status = fParam.status
 
     updateIfChanged(
-        company, fParam, ["address", "contact_person", "phone_number", "email_id"]
+        company,
+        fParam,
+        [
+            Company.address.key,
+            Company.contact_person.key,
+            Company.phone_number.key,
+            Company.email_id.key,
+        ],
     )
     if fParam.location is not None:
         locationGeom = validators.WKTstring(fParam.location, Point)

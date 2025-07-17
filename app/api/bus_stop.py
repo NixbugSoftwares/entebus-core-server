@@ -253,7 +253,7 @@ async def update_bus_stop(
         if busStop is None:
             raise exceptions.InvalidIdentifier()
 
-        updateIfChanged(busStop, fParam, ["name"])
+        updateIfChanged(busStop, fParam, [BusStop.name.key])
         if fParam.location is not None:
             locationGeom = validators.WKTstring(fParam.location, Point)
             validators.SRID4326(locationGeom)

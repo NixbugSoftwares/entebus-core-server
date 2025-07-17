@@ -268,7 +268,7 @@ async def update_landmark(
         if landmark is None:
             raise exceptions.InvalidIdentifier()
 
-        updateIfChanged(landmark, fParam, ["name", "type"])
+        updateIfChanged(landmark, fParam, [Landmark.name.key, Landmark.type.key])
         if fParam.boundary is not None:
             boundaryGeom = validateBoundary(fParam)
             currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt

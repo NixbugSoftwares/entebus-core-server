@@ -165,7 +165,7 @@ def updateBusiness(
     fParam: UpdateFormForVE | UpdateFormForEX,
 ):
     if isinstance(fParam, UpdateFormForEX):
-        updateIfChanged(business, fParam, ["status", "type"])
+        updateIfChanged(business, fParam, [Business.status.key, Business.type.key])
         if fParam.name is not None and business.name != fParam.name:
             wallet = (
                 session.query(Wallet)
@@ -178,7 +178,14 @@ def updateBusiness(
             business.name = fParam.name
 
     updateIfChanged(
-        business, fParam, ["address", "contact_person", "phone_number", "email_id"]
+        business,
+        fParam,
+        [
+            Business.address.key,
+            Business.contact_person.key,
+            Business.phone_number.key,
+            Business.email_id.key,
+        ],
     )
     if fParam.location is not None:
         geometry = validators.WKTstring(fParam.location, Point)
