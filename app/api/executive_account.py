@@ -12,7 +12,7 @@ from app.src.db import Executive, ExecutiveRole, ExecutiveToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 
@@ -201,24 +201,19 @@ async def update_executive(
         if executive is None:
             raise exceptions.InvalidIdentifier()
 
+        updateIfChanged(
+            executive,
+            fParam,
+            [
+                "gender",
+                "full_name",
+                "designation",
+                "phone_number",
+                "email_id",
+            ],
+        )
         if fParam.password is not None:
             executive.password = argon2.makePassword(fParam.password)
-        if fParam.gender is not None and executive.gender != fParam.gender:
-            executive.gender = fParam.gender
-        if fParam.full_name is not None and executive.full_name != fParam.full_name:
-            executive.full_name = fParam.full_name
-        if (
-            fParam.designation is not None
-            and executive.designation != fParam.designation
-        ):
-            executive.designation = fParam.designation
-        if (
-            fParam.phone_number is not None
-            and executive.phone_number != fParam.phone_number
-        ):
-            executive.phone_number = fParam.phone_number
-        if fParam.email_id is not None and executive.email_id != fParam.email_id:
-            executive.email_id = fParam.email_id
         if fParam.status is not None and executive.status != fParam.status:
             if isSelfUpdate or not hasUpdatePermission:
                 raise exceptions.NoPermission()
