@@ -14,7 +14,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import BusStop, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -253,8 +253,7 @@ async def update_bus_stop(
         if busStop is None:
             raise exceptions.InvalidIdentifier()
 
-        if fParam.name is not None and busStop.name != fParam.name:
-            busStop.name = fParam.name
+        updateIfChanged(busStop, fParam, ["name"])
         if fParam.location is not None:
             locationGeom = validators.WKTstring(fParam.location, Point)
             validators.SRID4326(locationGeom)
