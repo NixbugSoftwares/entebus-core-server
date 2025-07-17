@@ -107,8 +107,8 @@ def getArea(geom: BaseGeometry) -> float:
 def updateIfChanged(targetObj, sourceObj, fields: list[str]):
     # Update fields from source_obj only if the field is not None and its value differs from the current value
     for field in fields:
-        updatedValue = getattr(sourceObj, field, None)
-        if updatedValue is not None:
-            existingValue = getattr(targetObj, field)
-            if existingValue != updatedValue:
-                setattr(targetObj, field, updatedValue)
+        updatedData = getattr(sourceObj, field, None)
+        if updatedData is not None:
+            existingData = getattr(targetObj, field)
+            if existingData != updatedData:
+                setattr(targetObj, field, updatedData)
