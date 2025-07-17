@@ -204,7 +204,13 @@ async def update_executive(
         updateIfChanged(
             executive,
             fParam,
-            ["gender", "full_name", "designation", "phone_number", "email_id"],
+            [
+                Executive.gender.key,
+                Executive.full_name.key,
+                Executive.designation.key,
+                Executive.phone_number.key,
+                Executive.email_id.key,
+            ],
         )
         if fParam.password is not None:
             executive.password = argon2.makePassword(fParam.password)
