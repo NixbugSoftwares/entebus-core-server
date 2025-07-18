@@ -178,7 +178,7 @@ def updateBusiness(
             wallet.name = walletName
             business.name = fParam.name
         if fParam.status is not None and business.status != fParam.status:
-            if fParam.status in [BusinessStatus.SUSPENDED, BusinessStatus.BLOCKED]:
+            if fParam.status == BusinessStatus.SUSPENDED:
                 session.query(VendorToken).filter(
                     VendorToken.business_id == fParam.id
                 ).delete()

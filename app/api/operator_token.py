@@ -266,7 +266,7 @@ async def create_token(
             raise exceptions.InactiveAccount()
 
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
-        if company.status != CompanyStatus.VERIFIED:
+        if company.status == CompanyStatus.SUSPENDED:
             raise exceptions.InactiveAccount()
 
         # Remove excess tokens from DB
