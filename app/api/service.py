@@ -22,7 +22,13 @@ from app.src.db import (
 from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import TicketingMode, ServiceStatus, FareScope, BusStatus
+from app.src.enums import (
+    TicketingMode,
+    ServiceStatus,
+    FareScope,
+    BusStatus,
+    CompanyStatus,
+)
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -283,14 +289,16 @@ def searchService(
     Requires executive role with `create_service` permission.   
     In this bus_id, route_id must be associated with the company_id.       
     If fare_id is in Local scope, it must be associated with the company_id.
-    The bus must be in active status.    
+    The bus must be in ACTIVE status. 
+    The company must be in VERIFIED status.    
     The route must have at least two landmarks associated with it.        
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The route name is derived from the names of the first and last landmarks + the route start_time, not from user input.      
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
     The starting_at is derived from the route start_time, not user input.           
     The ending_at is derived from the route last landmarks arrival_delta, not user input.     
+    The service can be generated only for today and tomorrow.    
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -330,6 +338,8 @@ async def create_service(
 
         if bus.status != BusStatus.ACTIVE:
             raise exceptions.InactiveResource(Bus)
+        if company.status != CompanyStatus.VERIFIED:
+            raise exceptions.InactiveResource(Company)
         validateStartingDate(fParam.starting_at)
 
         landmarksInRoute = (
@@ -564,14 +574,16 @@ async def fetch_route(
     The company ID is derived from the token, not user input.    
     In this bus_id, route_id must be associated with the operator's own company.        
     If fare_id is in Local scope, it must be associated with the operator's own company.       
-    The bus must be in active status.   
+    The bus must be in ACTIVE status. 
+    The company must be in VERIFIED status.  
     The route must have at least two landmarks associated with it.        
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The route name is derived from the names of the first and last landmarks + the route start_time, not from user input.         
-    The starting_at is derived from the route start_time, not user input.       
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
+    The starting_at is derived from the date provided + route start_time.       
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
+    The service can be generated only for today and tomorrow.    
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -611,6 +623,9 @@ async def create_service(
 
         if bus.status != BusStatus.ACTIVE:
             raise exceptions.InactiveResource(Bus)
+        company = session.query(Company).filter(Company.id == token.company_id).first()
+        if company.status != CompanyStatus.VERIFIED:
+            raise exceptions.InactiveResource(Company)
         validateStartingDate(fParam.starting_at)
 
         landmarksInRoute = (

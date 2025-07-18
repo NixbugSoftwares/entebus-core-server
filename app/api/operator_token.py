@@ -232,7 +232,10 @@ async def delete_token(
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InactiveAccount, exceptions.InvalidCredentials]
+        [
+            exceptions.InactiveAccount,
+            exceptions.InvalidCredentials,
+        ]
     ),
     description="""
     Issues a new access token for an operator after validating credentials.     

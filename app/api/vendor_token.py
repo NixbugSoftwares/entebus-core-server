@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_vendor
 from app.src.constants import MAX_VENDOR_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.db import ExecutiveRole, Vendor, VendorToken, sessionMaker
+from app.src.db import ExecutiveRole, Vendor, VendorToken, Business, sessionMaker
 from app.src import argon2, exceptions, validators, getters
-from app.src.enums import AccountStatus, PlatformType
+from app.src.enums import AccountStatus, PlatformType, BusinessStatus
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 
@@ -232,7 +232,11 @@ async def delete_token(
     response_model=VendorTokenSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InactiveAccount, exceptions.InvalidCredentials]
+        [
+            exceptions.InactiveAccount,
+            exceptions.InvalidCredentials,
+            exceptions.InactiveResource(Business),
+        ]
     ),
     description="""
     Issues a new access token for an vendor after validating credentials.       
@@ -240,7 +244,8 @@ async def delete_token(
     If the credentials are valid and the vendor account is active, a new token is generated and returned.       
     Limits active tokens using MAX_VENDOR_TOKENS (token rotation).      
     Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).        
-    Token will be generated for ACTIVE vendors only.    
+    Token will be generated for ACTIVE vendors only.  
+    Token will not be generated for SUSPENDED businesses.           
     Logs the authentication event for audit tracking.
     """,
 )
@@ -263,6 +268,12 @@ async def create_token(
             raise exceptions.InvalidCredentials()
         if vendor.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveAccount()
+
+        business = (
+            session.query(Business).filter(Business.id == fParam.business_id).first()
+        )
+        if business.status == BusinessStatus.SUSPENDED:
+            raise exceptions.InactiveResource(Business)
 
         # Remove excess tokens from DB
         tokens = (
