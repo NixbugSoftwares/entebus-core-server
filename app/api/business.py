@@ -367,7 +367,7 @@ async def create_business(
     description="""
     Update an existing business record.  
     Requires executive permissions with `update_business` role.  
-    If the status is set to SUSPENDED or BLOCKED, all tokens associated with that business vendors are revoked.      
+    If the status is set to SUSPENDED, all tokens associated with that business vendors are revoked.      
     Updates only the provided fields and validates the location if present.
     """,
 )

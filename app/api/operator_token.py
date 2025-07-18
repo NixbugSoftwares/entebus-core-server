@@ -232,7 +232,11 @@ async def delete_token(
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InactiveAccount, exceptions.InvalidCredentials]
+        [
+            exceptions.InactiveAccount,
+            exceptions.InvalidCredentials,
+            exceptions.InactiveResource(Company),
+        ]
     ),
     description="""
     Issues a new access token for an operator after validating credentials.     
@@ -241,7 +245,7 @@ async def delete_token(
     Limits active tokens using MAX_OPERATOR_TOKENS (token rotation).    
     Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).    
     Token will be generated for ACTIVE operators only.   
-    Token will be generated for VERIFIED companies only.       
+    Token will not be generated for SUSPENDED companies.       
     Logs the authentication event for audit tracking.
     """,
 )
@@ -267,7 +271,7 @@ async def create_token(
 
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company.status == CompanyStatus.SUSPENDED:
-            raise exceptions.InactiveAccount()
+            raise exceptions.InactiveResource(Company)
 
         # Remove excess tokens from DB
         tokens = (
