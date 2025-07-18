@@ -105,6 +105,7 @@ class QueryParams(BaseModel):
     ticket_mode: TicketingMode | None = Field(
         Query(default=None, description=enumStr(TicketingMode))
     )
+    name: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -179,7 +180,7 @@ def getServiceName(
         raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
     UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
     ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
-    startingAt = ISTtime.strftime("%Y-%m-%d %H:%M %p")
+    startingAt = ISTtime.strftime("%Y-%m-%d %-I:%M %p")
     return f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
 
 
@@ -200,7 +201,7 @@ def updateService(service: Service, fParam: UpdateForm):
 
 
 def searchService(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
 ) -> List[Service]:
     query = session.query(Service)
 
@@ -209,6 +210,10 @@ def searchService(
         query = query.filter(Service.bus_id == qParam.bus_id)
     if qParam.ticket_mode is not None:
         query = query.filter(Service.ticket_mode == qParam.ticket_mode)
+    if qParam.company_id is not None:
+        query = query.filter(Service.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Service.name.ilike(f"%{qParam.name}%"))
     # id-based filters
     if qParam.id is not None:
         query = query.filter(Service.id == qParam.id)
@@ -337,13 +342,14 @@ async def create_service(
             raise exceptions.InvalidRoute()
         lastLandmark = landmarksInRoute[0]
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+        ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
         name = getServiceName(session, route, bus, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
+        routeData["landmark"] = []
         for landmark in landmarksInRoute:
-            routeData["landmark"] = [jsonable_encoder(landmark)]
+            routeData["landmark"].append(jsonable_encoder(landmark))
 
         fareData = jsonable_encoder(fare)
         ticketCreator = v1.TicketCreator()
@@ -358,6 +364,7 @@ async def create_service(
             fare=fareData,
             starting_at=fParam.starting_at,
             ending_at=ending_at,
+            ticket_mode =fParam.ticket_mode,
             private_key=privateKey,
             public_key=publicKey,
         )
@@ -618,13 +625,14 @@ async def create_service(
             raise exceptions.InvalidRoute()
         lastLandmark = landmarksInRoute[0]
         fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
+        ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
         name = getServiceName(session, route, bus, fParam.starting_at)
 
         routeData = jsonable_encoder(route)
+        routeData["landmark"] = []
         for landmark in landmarksInRoute:
-            routeData["landmark"] = [jsonable_encoder(landmark)]
+            routeData["landmark"].append(jsonable_encoder(landmark))
 
         fareData = jsonable_encoder(fare)
         ticketCreator = v1.TicketCreator()
@@ -639,6 +647,7 @@ async def create_service(
             fare=fareData,
             starting_at=fParam.starting_at,
             ending_at=ending_at,
+            ticket_mode =fParam.ticket_mode,
             private_key=privateKey,
             public_key=publicKey,
         )
