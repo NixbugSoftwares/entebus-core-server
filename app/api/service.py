@@ -166,8 +166,15 @@ def createService(
     route: Route,
     bus: Bus,
     fare: Fare,
+    company: Company,
     fParam: CreateFormForOP | CreateFormForEX,
 ):
+    # Verify status
+    if bus.status != BusStatus.ACTIVE:
+        raise exceptions.InactiveResource(Bus)
+    if company.status != CompanyStatus.VERIFIED:
+        raise exceptions.InactiveResource(Company)
+
     # Validate starting date
     if fParam.starting_at < date.today():
         raise exceptions.InvalidValue(Service.starting_at)
@@ -384,12 +391,7 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveResource(Bus)
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveResource(Company)
-
-        serviceData = createService(session, route, bus, fare, fParam)
+        serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
             company_id=fParam.company_id,
@@ -650,13 +652,9 @@ async def create_service(
             if fare.company_id != token.company_id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveResource(Bus)
         company = session.query(Company).filter(Company.id == token.company_id).first()
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveResource(Company)
 
-        serviceData = createService(session, route, bus, fare, fParam)
+        serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
             company_id=token.company_id,
