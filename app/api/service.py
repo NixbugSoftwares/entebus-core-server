@@ -156,18 +156,35 @@ class QueryParamsForVE(QueryParams):
 
 
 # Functions
-def validateStartingDate(starting_at: date):
-    if starting_at < date.today():
+def createService(
+    session: Session,
+    route: Route,
+    bus: Bus,
+    fare: Fare,
+    fParam: CreateFormForOP | CreateFormForEX,
+):
+    # Validate starting date
+    if fParam.starting_at < date.today():
         raise exceptions.InvalidValue(Service.starting_at)
-    if starting_at != date.today() and starting_at != (
+    if fParam.starting_at != date.today() and fParam.starting_at != (
         date.today() + timedelta(days=1)
     ):
         raise exceptions.InvalidValue(Service.starting_at)
 
+    # Get starting_at and ending_at
+    landmarksInRoute = (
+        session.query(LandmarkInRoute)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.desc())
+        .all()
+    )
+    if not landmarksInRoute:
+        raise exceptions.InvalidRoute()
+    lastLandmark = landmarksInRoute[0]
+    starting_at = datetime.combine(fParam.starting_at, route.start_time)
+    ending_at = starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
-def getServiceName(
-    session: Session, route: Route, bus: Bus, starting_at: datetime
-) -> str:
+    # Create service name
     firstLandmark = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
@@ -187,7 +204,31 @@ def getServiceName(
     UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
     ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
     startingAt = ISTtime.strftime("%Y-%m-%d %-I:%M %p")
-    return f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
+    name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
+
+    # Generate route data
+    routeData = jsonable_encoder(route)
+    routeData["landmark"] = []
+    for landmark in landmarksInRoute:
+        routeData["landmark"].append(jsonable_encoder(landmark))
+
+    # Generate fare data
+    fareData = jsonable_encoder(fare)
+
+    # Generate keys
+    ticketCreator = v1.TicketCreator()
+    privateKey = ticketCreator.getPEMprivateKeyString()
+    publicKey = ticketCreator.getPEMpublicKeyString()
+
+    return Service(
+        name=name,
+        starting_at=starting_at,
+        ending_at=ending_at,
+        route=routeData,
+        fare=fareData,
+        private_key=privateKey,
+        public_key=publicKey,
+    )
 
 
 def updateService(service: Service, fParam: UpdateForm):
@@ -342,43 +383,20 @@ async def create_service(
             raise exceptions.InactiveResource(Bus)
         if company.status != CompanyStatus.VERIFIED:
             raise exceptions.InactiveResource(Company)
-        validateStartingDate(fParam.starting_at)
 
-        landmarksInRoute = (
-            session.query(LandmarkInRoute)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.desc())
-            .all()
-        )
-        if landmarksInRoute is None:
-            raise exceptions.InvalidRoute()
-        lastLandmark = landmarksInRoute[0]
-        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
-
-        name = getServiceName(session, route, bus, fParam.starting_at)
-
-        routeData = jsonable_encoder(route)
-        routeData["landmark"] = []
-        for landmark in landmarksInRoute:
-            routeData["landmark"].append(jsonable_encoder(landmark))
-
-        fareData = jsonable_encoder(fare)
-        ticketCreator = v1.TicketCreator()
-        privateKey = ticketCreator.getPEMprivateKeyString()
-        publicKey = ticketCreator.getPEMpublicKeyString()
+        serviceData = createService(session, route, bus, fare, fParam)
 
         service = Service(
             company_id=fParam.company_id,
-            name=name,
-            bus_id=fParam.bus_id,
-            route=routeData,
-            fare=fareData,
-            starting_at=fParam.starting_at,
-            ending_at=ending_at,
             ticket_mode=fParam.ticket_mode,
-            private_key=privateKey,
-            public_key=publicKey,
+            bus_id=fParam.bus_id,
+            name=serviceData.name,
+            route=serviceData.route,
+            fare=serviceData.fare,
+            starting_at=serviceData.starting_at,
+            ending_at=serviceData.ending_at,
+            private_key=serviceData.private_key,
+            public_key=serviceData.public_key,
         )
         session.add(service)
         session.commit()
@@ -632,43 +650,20 @@ async def create_service(
         company = session.query(Company).filter(Company.id == token.company_id).first()
         if company.status != CompanyStatus.VERIFIED:
             raise exceptions.InactiveResource(Company)
-        validateStartingDate(fParam.starting_at)
 
-        landmarksInRoute = (
-            session.query(LandmarkInRoute)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.desc())
-            .all()
-        )
-        if landmarksInRoute is None:
-            raise exceptions.InvalidRoute()
-        lastLandmark = landmarksInRoute[0]
-        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
-
-        name = getServiceName(session, route, bus, fParam.starting_at)
-
-        routeData = jsonable_encoder(route)
-        routeData["landmark"] = []
-        for landmark in landmarksInRoute:
-            routeData["landmark"].append(jsonable_encoder(landmark))
-
-        fareData = jsonable_encoder(fare)
-        ticketCreator = v1.TicketCreator()
-        privateKey = ticketCreator.getPEMprivateKeyString()
-        publicKey = ticketCreator.getPEMpublicKeyString()
+        serviceData = createService(session, route, bus, fare, fParam)
 
         service = Service(
             company_id=token.company_id,
-            name=name,
             bus_id=fParam.bus_id,
-            route=routeData,
-            fare=fareData,
-            starting_at=fParam.starting_at,
-            ending_at=ending_at,
             ticket_mode=fParam.ticket_mode,
-            private_key=privateKey,
-            public_key=publicKey,
+            name=serviceData.name,
+            route=serviceData.route,
+            fare=serviceData.fare,
+            starting_at=serviceData.starting_at,
+            ending_at=serviceData.ending_at,
+            private_key=serviceData.private_key,
+            public_key=serviceData.public_key,
         )
         session.add(service)
         session.commit()
