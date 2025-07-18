@@ -298,7 +298,9 @@ def searchService(
     The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
     The starting_at is derived from the route start_time, not user input.           
     The ending_at is derived from the route last landmarks arrival_delta, not user input.     
-    The service can be generated only for today and tomorrow.    
+    The service can be generated only for today and tomorrow.   
+    The started_on will be set to current time when the operator start the duty, not user input.    
+    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -374,7 +376,7 @@ async def create_service(
             fare=fareData,
             starting_at=fParam.starting_at,
             ending_at=ending_at,
-            ticket_mode =fParam.ticket_mode,
+            ticket_mode=fParam.ticket_mode,
             private_key=privateKey,
             public_key=publicKey,
         )
@@ -586,6 +588,8 @@ async def fetch_route(
     The starting_at is derived from the date provided + route start_time.       
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
     The service can be generated only for today and tomorrow.    
+    The started_on will be set to current time when the operator start the duty, not user input.    
+    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -662,7 +666,7 @@ async def create_service(
             fare=fareData,
             starting_at=fParam.starting_at,
             ending_at=ending_at,
-            ticket_mode =fParam.ticket_mode,
+            ticket_mode=fParam.ticket_mode,
             private_key=privateKey,
             public_key=publicKey,
         )
