@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.constants import MAX_OPERATOR_TOKENS, MAX_TOKEN_VALIDITY
-from app.src.db import ExecutiveRole, Operator, OperatorToken, Company, sessionMaker
+from app.src.db import ExecutiveRole, Operator, OperatorToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
-from app.src.enums import AccountStatus, PlatformType, CompanyStatus
+from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 
@@ -235,7 +235,6 @@ async def delete_token(
         [
             exceptions.InactiveAccount,
             exceptions.InvalidCredentials,
-            exceptions.InactiveResource(Company),
         ]
     ),
     description="""
@@ -244,8 +243,7 @@ async def delete_token(
     If the credentials are valid and the operator account is active, a new token is generated and returned.     
     Limits active tokens using MAX_OPERATOR_TOKENS (token rotation).    
     Sets expiration with expires_in=MAX_TOKEN_VALIDITY (in seconds).    
-    Token will be generated for ACTIVE operators only.   
-    Token will not be generated for SUSPENDED companies.       
+    Token will be generated for ACTIVE operators only.      
     Logs the authentication event for audit tracking.
     """,
 )
@@ -268,10 +266,6 @@ async def create_token(
             raise exceptions.InvalidCredentials()
         if operator.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveAccount()
-
-        company = session.query(Company).filter(Company.id == fParam.company_id).first()
-        if company.status == CompanyStatus.SUSPENDED:
-            raise exceptions.InactiveResource(Company)
 
         # Remove excess tokens from DB
         tokens = (
