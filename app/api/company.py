@@ -24,7 +24,12 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -496,14 +501,10 @@ async def fetch_company(
     try:
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
-
-        qParam = QueryParamsForEX(
-            **qParam.model_dump(),
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
             status=CompanyStatus.VERIFIED,
-            address=None,
-            contact_person=None,
-            phone_number=None,
-            email_id=None,
         )
         return searchCompany(session, qParam)
     except Exception as e:

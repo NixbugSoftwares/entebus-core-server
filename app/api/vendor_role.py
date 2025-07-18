@@ -10,7 +10,12 @@ from app.api.bearer import bearer_executive, bearer_vendor
 from app.src.db import VendorRole, ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -522,7 +527,9 @@ async def fetch_role(
         session = sessionMaker()
         token = validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), business_id=token.business_id)
+        qParam = promoteToParent(
+            qParam, QueryParamsForEX, business_id=token.business_id
+        )
         return searchRole(session, qParam)
     except Exception as e:
         exceptions.handle(e)

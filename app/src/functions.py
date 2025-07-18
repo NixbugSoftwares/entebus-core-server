@@ -10,6 +10,7 @@ import pyproj
 
 from app.src import schemas
 from app.src.exceptions import APIException
+from pydantic import BaseModel
 
 
 def getRequestInfo(request: Request) -> schemas.RequestInfo:
@@ -112,3 +113,19 @@ def updateIfChanged(targetObj, sourceObj, fields: list[str]):
             existingData = getattr(targetObj, field)
             if existingData != updatedData:
                 setattr(targetObj, field, updatedData)
+
+
+def promoteToParent(
+    childObj: BaseModel, targetCls: Type[BaseModel], **overrides
+) -> BaseModel:
+    """
+    Promote `childObj` to `targetCls`, applying `overrides` and
+    setting any missing fields to None by default.
+    """
+
+    baseData = childObj.model_dump()
+    targetFields = targetCls.model_fields.keys()
+    finalData = {
+        field: overrides.get(field, baseData.get(field, None)) for field in targetFields
+    }
+    return targetCls(**finalData)

@@ -10,7 +10,12 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import Landmark, LandmarkInRoute, Route, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -576,7 +581,7 @@ async def fetch_landmarks_in_route(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchLandmarkInRoute(session, qParam)
     except Exception as e:
         exceptions.handle(e)

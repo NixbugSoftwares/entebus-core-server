@@ -13,7 +13,7 @@ from app.src.db import ExecutiveRole, Vendor, VendorToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
@@ -436,7 +436,9 @@ async def fetch_tokens(
         role = getters.vendorRole(token, session)
         canManageToken = bool(role and role.manage_token)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), business_id=token.business_id)
+        qParam = promoteToParent(
+            qParam, QueryParamsForEX, business_id=token.business_id
+        )
         if not canManageToken:
             qParam.vendor_id = token.vendor_id
         return searchVendorToken(session, qParam)
