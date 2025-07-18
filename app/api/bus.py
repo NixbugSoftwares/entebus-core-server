@@ -12,7 +12,12 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import BusStatus
 from app.src.constants import REGEX_REGISTRATION_NUMBER
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -415,19 +420,10 @@ async def fetch_tokens(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(
-            **qParam.model_dump(),
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
             status=BusStatus.ACTIVE,
-            manufactured_on_ge=None,
-            manufactured_on_le=None,
-            insurance_upto_ge=None,
-            insurance_upto_le=None,
-            pollution_upto_ge=None,
-            pollution_upto_le=None,
-            fitness_upto_ge=None,
-            fitness_upto_le=None,
-            road_tax_upto_ge=None,
-            road_tax_upto_le=None,
         )
         return searchBus(session, qParam)
     except Exception as e:
@@ -601,7 +597,7 @@ async def fetch_buses(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)

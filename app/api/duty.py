@@ -21,7 +21,12 @@ from app.src.constants import SERVICE_START_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -631,7 +636,7 @@ async def get_duties(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchDuty(session, qParam)
     except Exception as e:
         exceptions.handle(e)
