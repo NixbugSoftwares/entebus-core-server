@@ -178,7 +178,7 @@ def createService(
         .order_by(LandmarkInRoute.distance_from_start.desc())
         .all()
     )
-    if not landmarksInRoute:
+    if landmarksInRoute is None:
         raise exceptions.InvalidRoute()
     lastLandmark = landmarksInRoute[0]
     starting_at = datetime.combine(fParam.starting_at, route.start_time)
