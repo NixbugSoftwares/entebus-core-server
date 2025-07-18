@@ -13,8 +13,7 @@ from app.src.db import ExecutiveRole, Operator, OperatorToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
-from app.src.functions import promoteToParent
+from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 
 route_operator = APIRouter()
 route_executive = APIRouter()

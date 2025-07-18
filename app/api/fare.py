@@ -12,8 +12,12 @@ from app.src.db import ExecutiveRole, Fare, OperatorRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import FareScope
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
-from app.src.functions import promoteToParent
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_operator = APIRouter()

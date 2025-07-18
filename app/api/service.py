@@ -23,9 +23,13 @@ from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import TicketingMode, ServiceStatus, FareScope, BusStatus
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 from app.src.digital_ticket import v1
-from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
 route_vendor = APIRouter()

@@ -19,8 +19,12 @@ from app.src.db import (
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
-from app.src.functions import promoteToParent
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_operator = APIRouter()
 route_executive = APIRouter()

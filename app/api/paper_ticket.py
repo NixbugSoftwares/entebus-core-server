@@ -10,9 +10,8 @@ from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import LandmarkInRoute, PaperTicket, Service, Duty, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
-from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
 route_operator = APIRouter()

@@ -13,8 +13,12 @@ from app.src.db import ExecutiveRole, Vendor, VendorRole, VendorToken, sessionMa
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
-from app.src.functions import promoteToParent
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_vendor = APIRouter()
 route_executive = APIRouter()

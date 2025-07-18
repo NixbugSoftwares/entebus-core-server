@@ -12,8 +12,12 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import BusStatus
 from app.src.constants import REGEX_REGISTRATION_NUMBER
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
-from app.src.functions import promoteToParent
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()

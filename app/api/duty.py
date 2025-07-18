@@ -21,8 +21,12 @@ from app.src.constants import SERVICE_START_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
-from app.src.functions import enumStr, makeExceptionResponses
-from app.src.functions import promoteToParent
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
