@@ -116,17 +116,16 @@ def updateIfChanged(targetObj, sourceObj, fields: list[str]):
 
 
 def promoteToParent(
-    child_obj: BaseModel, target_cls: Type[BaseModel], **overrides
+    childObj: BaseModel, targetCls: Type[BaseModel], **overrides
 ) -> BaseModel:
     """
-    Promote `child_obj` to `target_cls`, applying `overrides` and
+    Promote `childObj` to `targetCls`, applying `overrides` and
     setting any missing fields to None by default.
     """
 
-    base_data = child_obj.model_dump()
-    target_fields = target_cls.model_fields.keys()
-    final_data = {
-        field: overrides.get(field, base_data.get(field, None))
-        for field in target_fields
+    baseData = childObj.model_dump()
+    targetFields = targetCls.model_fields.keys()
+    finalData = {
+        field: overrides.get(field, baseData.get(field, None)) for field in targetFields
     }
-    return target_cls(**final_data)
+    return targetCls(**finalData)
