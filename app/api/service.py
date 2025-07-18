@@ -29,7 +29,12 @@ from app.src.enums import (
     BusStatus,
     CompanyStatus,
 )
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    promoteToParent,
+)
 from app.src.digital_ticket import v1
 
 route_executive = APIRouter()
@@ -561,10 +566,10 @@ async def fetch_route(
         session = sessionMaker()
         validators.vendorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(
-            **qParam.model_dump(),
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
             status_list=[ServiceStatus.CREATED, ServiceStatus.STARTED],
-            status=None,
         )
         return searchService(session, qParam)
     except Exception as e:
@@ -813,7 +818,7 @@ async def fetch_service(
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
-        qParam = QueryParamsForEX(**qParam.model_dump(), company_id=token.company_id)
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchService(session, qParam)
     except Exception as e:
         exceptions.handle(e)
