@@ -116,6 +116,7 @@ class QueryParams(BaseModel):
     ticket_mode: TicketingMode | None = Field(
         Query(default=None, description=enumStr(TicketingMode))
     )
+    name: str | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -160,18 +161,42 @@ class QueryParamsForVE(QueryParams):
 
 
 # Functions
-def validateStartingDate(starting_at: date):
-    if starting_at < date.today():
+def createService(
+    session: Session,
+    route: Route,
+    bus: Bus,
+    fare: Fare,
+    company: Company,
+    fParam: CreateFormForOP | CreateFormForEX,
+):
+    # Verify status
+    if bus.status != BusStatus.ACTIVE:
+        raise exceptions.InactiveResource(Bus)
+    if company.status != CompanyStatus.VERIFIED:
+        raise exceptions.InactiveResource(Company)
+
+    # Validate starting date
+    if fParam.starting_at < date.today():
         raise exceptions.InvalidValue(Service.starting_at)
-    if starting_at != date.today() and starting_at != (
+    if fParam.starting_at != date.today() and fParam.starting_at != (
         date.today() + timedelta(days=1)
     ):
         raise exceptions.InvalidValue(Service.starting_at)
 
+    # Get starting_at and ending_at
+    landmarksInRoute = (
+        session.query(LandmarkInRoute)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.desc())
+        .all()
+    )
+    if landmarksInRoute is None:
+        raise exceptions.InvalidRoute()
+    lastLandmark = landmarksInRoute[0]
+    starting_at = datetime.combine(fParam.starting_at, route.start_time)
+    ending_at = starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
-def getServiceName(
-    session: Session, route: Route, bus: Bus, starting_at: datetime
-) -> str:
+    # Create service name
     firstLandmark = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
@@ -190,8 +215,32 @@ def getServiceName(
         raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
     UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
     ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
-    startingAt = ISTtime.strftime("%Y-%m-%d %H:%M %p")
-    return f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
+    startingAt = ISTtime.strftime("%Y-%m-%d %-I:%M %p")
+    name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
+
+    # Generate route data
+    routeData = jsonable_encoder(route)
+    routeData["landmark"] = []
+    for landmark in landmarksInRoute:
+        routeData["landmark"].append(jsonable_encoder(landmark))
+
+    # Generate fare data
+    fareData = jsonable_encoder(fare)
+
+    # Generate keys
+    ticketCreator = v1.TicketCreator()
+    privateKey = ticketCreator.getPEMprivateKeyString()
+    publicKey = ticketCreator.getPEMpublicKeyString()
+
+    return Service(
+        name=name,
+        starting_at=starting_at,
+        ending_at=ending_at,
+        route=routeData,
+        fare=fareData,
+        private_key=privateKey,
+        public_key=publicKey,
+    )
 
 
 def updateService(service: Service, fParam: UpdateForm):
@@ -211,7 +260,7 @@ def updateService(service: Service, fParam: UpdateForm):
 
 
 def searchService(
-    session: Session, qParam: QueryParamsForOP | QueryParamsForEX
+    session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
 ) -> List[Service]:
     query = session.query(Service)
 
@@ -220,6 +269,10 @@ def searchService(
         query = query.filter(Service.bus_id == qParam.bus_id)
     if qParam.ticket_mode is not None:
         query = query.filter(Service.ticket_mode == qParam.ticket_mode)
+    if qParam.company_id is not None:
+        query = query.filter(Service.company_id == qParam.company_id)
+    if qParam.name is not None:
+        query = query.filter(Service.name.ilike(f"%{qParam.name}%"))
     # id-based filters
     if qParam.id is not None:
         query = query.filter(Service.id == qParam.id)
@@ -298,7 +351,9 @@ def searchService(
     The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
     The starting_at is derived from the route start_time, not user input.           
     The ending_at is derived from the route last landmarks arrival_delta, not user input.     
-    The service can be generated only for today and tomorrow.    
+    The service can be generated only for today and tomorrow.   
+    The started_on will be set to current time when the operator start the duty, not user input.    
+    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -336,45 +391,19 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveResource(Bus)
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveResource(Company)
-        validateStartingDate(fParam.starting_at)
-
-        landmarksInRoute = (
-            session.query(LandmarkInRoute)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.desc())
-            .all()
-        )
-        if landmarksInRoute is None:
-            raise exceptions.InvalidRoute()
-        lastLandmark = landmarksInRoute[0]
-        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
-
-        name = getServiceName(session, route, bus, fParam.starting_at)
-
-        routeData = jsonable_encoder(route)
-        for landmark in landmarksInRoute:
-            routeData["landmark"] = [jsonable_encoder(landmark)]
-
-        fareData = jsonable_encoder(fare)
-        ticketCreator = v1.TicketCreator()
-        privateKey = ticketCreator.getPEMprivateKeyString()
-        publicKey = ticketCreator.getPEMpublicKeyString()
+        serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
             company_id=fParam.company_id,
-            name=name,
+            ticket_mode=fParam.ticket_mode,
             bus_id=fParam.bus_id,
-            route=routeData,
-            fare=fareData,
-            starting_at=fParam.starting_at,
-            ending_at=ending_at,
-            private_key=privateKey,
-            public_key=publicKey,
+            name=serviceData.name,
+            route=serviceData.route,
+            fare=serviceData.fare,
+            starting_at=serviceData.starting_at,
+            ending_at=serviceData.ending_at,
+            private_key=serviceData.private_key,
+            public_key=serviceData.public_key,
         )
         session.add(service)
         session.commit()
@@ -584,6 +613,8 @@ async def fetch_route(
     The starting_at is derived from the date provided + route start_time.       
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
     The service can be generated only for today and tomorrow.    
+    The started_on will be set to current time when the operator start the duty, not user input.    
+    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
     The service is created in the CREATED status by default.        
     Log the service creation activity with the associated token.
     """,
@@ -621,46 +652,21 @@ async def create_service(
             if fare.company_id != token.company_id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        if bus.status != BusStatus.ACTIVE:
-            raise exceptions.InactiveResource(Bus)
         company = session.query(Company).filter(Company.id == token.company_id).first()
-        if company.status != CompanyStatus.VERIFIED:
-            raise exceptions.InactiveResource(Company)
-        validateStartingDate(fParam.starting_at)
 
-        landmarksInRoute = (
-            session.query(LandmarkInRoute)
-            .filter(LandmarkInRoute.route_id == route.id)
-            .order_by(LandmarkInRoute.distance_from_start.desc())
-            .all()
-        )
-        if landmarksInRoute is None:
-            raise exceptions.InvalidRoute()
-        lastLandmark = landmarksInRoute[0]
-        fParam.starting_at = datetime.combine(fParam.starting_at, route.start_time)
-        ending_at = fParam.starting_at + timedelta(minutes=lastLandmark.arrival_delta)
-
-        name = getServiceName(session, route, bus, fParam.starting_at)
-
-        routeData = jsonable_encoder(route)
-        for landmark in landmarksInRoute:
-            routeData["landmark"] = [jsonable_encoder(landmark)]
-
-        fareData = jsonable_encoder(fare)
-        ticketCreator = v1.TicketCreator()
-        privateKey = ticketCreator.getPEMprivateKeyString()
-        publicKey = ticketCreator.getPEMpublicKeyString()
+        serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
             company_id=token.company_id,
-            name=name,
             bus_id=fParam.bus_id,
-            route=routeData,
-            fare=fareData,
-            starting_at=fParam.starting_at,
-            ending_at=ending_at,
-            private_key=privateKey,
-            public_key=publicKey,
+            ticket_mode=fParam.ticket_mode,
+            name=serviceData.name,
+            route=serviceData.route,
+            fare=serviceData.fare,
+            starting_at=serviceData.starting_at,
+            ending_at=serviceData.ending_at,
+            private_key=serviceData.private_key,
+            public_key=serviceData.public_key,
         )
         session.add(service)
         session.commit()
