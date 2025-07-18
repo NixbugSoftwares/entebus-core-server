@@ -10,7 +10,7 @@ from app.api.bearer import bearer_executive, bearer_vendor
 from app.src.db import VendorRole, ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
@@ -118,27 +118,21 @@ class QueryParamsForEX(QueryParamsForVE):
 
 ## Functions
 def updateRole(role: VendorRole, fParam: UpdateForm):
-    if fParam.name is not None and role.name != fParam.name:
-        role.name = fParam.name
-    if fParam.manage_token is not None and role.manage_token != fParam.manage_token:
-        role.manage_token = fParam.manage_token
-    if (
-        fParam.update_business is not None
-        and role.update_business != fParam.update_business
-    ):
-        role.update_business = fParam.update_business
-    if fParam.create_vendor is not None and role.create_vendor != fParam.create_vendor:
-        role.create_vendor = fParam.create_vendor
-    if fParam.update_vendor is not None and role.update_vendor != fParam.update_vendor:
-        role.update_vendor = fParam.update_vendor
-    if fParam.delete_vendor is not None and role.delete_vendor != fParam.delete_vendor:
-        role.delete_vendor = fParam.delete_vendor
-    if fParam.create_role is not None and role.create_role != fParam.create_role:
-        role.create_role = fParam.create_role
-    if fParam.update_role is not None and role.update_role != fParam.update_role:
-        role.update_role = fParam.update_role
-    if fParam.delete_role is not None and role.delete_role != fParam.delete_role:
-        role.delete_role = fParam.delete_role
+    updateIfChanged(
+        role,
+        fParam,
+        [
+            VendorRole.name.key,
+            VendorRole.manage_token.key,
+            VendorRole.update_business.key,
+            VendorRole.create_vendor.key,
+            VendorRole.update_vendor.key,
+            VendorRole.delete_vendor.key,
+            VendorRole.create_role.key,
+            VendorRole.update_role.key,
+            VendorRole.delete_role.key,
+        ],
+    )
 
 
 def searchRole(

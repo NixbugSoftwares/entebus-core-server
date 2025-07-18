@@ -16,7 +16,7 @@ from app.src.db import BusStop, Landmark, ExecutiveRole, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.enums import LandmarkType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, getArea, makeExceptionResponses
+from app.src.functions import enumStr, getArea, makeExceptionResponses, updateIfChanged
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -268,8 +268,7 @@ async def update_landmark(
         if landmark is None:
             raise exceptions.InvalidIdentifier()
 
-        if fParam.name is not None and landmark.name != fParam.name:
-            landmark.name = fParam.name
+        updateIfChanged(landmark, fParam, [Landmark.name.key, Landmark.type.key])
         if fParam.boundary is not None:
             boundaryGeom = validateBoundary(fParam)
             currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
@@ -285,8 +284,6 @@ async def update_landmark(
                     if not busStopGeom.within(boundaryGeom):
                         raise exceptions.BusStopOutsideLandmark()
                 landmark.boundary = fParam.boundary
-        if fParam.type is not None and landmark.type != fParam.type:
-            landmark.type = fParam.type
 
         haveUpdates = session.is_modified(landmark)
         if haveUpdates:

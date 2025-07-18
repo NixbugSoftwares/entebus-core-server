@@ -105,6 +105,16 @@ def getArea(geom: BaseGeometry) -> float:
     return projectedGeom.area
 
 
+def updateIfChanged(targetObj, sourceObj, fields: list[str]):
+    # Update fields from source_obj only if the field is not None and its value differs from the current value
+    for field in fields:
+        updatedData = getattr(sourceObj, field, None)
+        if updatedData is not None:
+            existingData = getattr(targetObj, field)
+            if existingData != updatedData:
+                setattr(targetObj, field, updatedData)
+
+
 def promoteToParent(
     child_obj: BaseModel, target_cls: Type[BaseModel], **overrides
 ) -> BaseModel:

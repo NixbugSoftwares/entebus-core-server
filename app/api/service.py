@@ -23,7 +23,7 @@ from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import TicketingMode, ServiceStatus, FareScope, BusStatus
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.digital_ticket import v1
 from app.src.functions import promoteToParent
 
@@ -192,15 +192,12 @@ def updateService(service: Service, fParam: UpdateForm):
         ServiceStatus.ENDED: [ServiceStatus.STARTED],
         ServiceStatus.AUDITED: [],
     }
-    if fParam.ticket_mode is not None and service.ticket_mode != fParam.ticket_mode:
-        service.ticket_mode = fParam.ticket_mode
+    updateIfChanged(service, fParam, [Service.ticket_mode.key, Service.remark.key])
     if fParam.status is not None and service.status != fParam.status:
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
         service.status = fParam.status
-    if fParam.remark is not None and service.remark != fParam.remark:
-        service.remark = fParam.remark
 
 
 def searchService(

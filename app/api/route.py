@@ -10,7 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
@@ -91,10 +91,7 @@ class QueryParams(QueryParamsForOP):
 
 ## Function
 def updateRoute(route: Route, fParam: UpdateForm):
-    if fParam.name is not None and route.name != fParam.name:
-        route.name = fParam.name
-    if fParam.start_time is not None and route.start_time != fParam.start_time:
-        route.start_time = fParam.start_time
+    updateIfChanged(route, fParam, [Route.name.key, Route.start_time.key])
 
 
 def searchRoute(

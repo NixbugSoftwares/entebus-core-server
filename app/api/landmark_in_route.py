@@ -10,7 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import Landmark, LandmarkInRoute, Route, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
@@ -123,21 +123,15 @@ def createLandmarkInRoute(session: Session, route: Route, fParam: CreateForm):
 
 
 def updateLandmarkInRoute(landmarkInRoute: LandmarkInRoute, fParam: UpdateForm):
-    if (
-        fParam.distance_from_start is not None
-        and landmarkInRoute.distance_from_start != fParam.distance_from_start
-    ):
-        landmarkInRoute.distance_from_start = fParam.distance_from_start
-    if (
-        fParam.arrival_delta is not None
-        and landmarkInRoute.arrival_delta != fParam.arrival_delta
-    ):
-        landmarkInRoute.arrival_delta = fParam.arrival_delta
-    if (
-        fParam.departure_delta is not None
-        and landmarkInRoute.departure_delta != fParam.departure_delta
-    ):
-        landmarkInRoute.departure_delta = fParam.departure_delta
+    updateIfChanged(
+        landmarkInRoute,
+        fParam,
+        [
+            LandmarkInRoute.distance_from_start.key,
+            LandmarkInRoute.arrival_delta.key,
+            LandmarkInRoute.departure_delta.key,
+        ],
+    )
     if landmarkInRoute.arrival_delta > landmarkInRoute.departure_delta:
         raise exceptions.InvalidValue(LandmarkInRoute.arrival_delta)
 

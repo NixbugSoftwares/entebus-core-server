@@ -12,7 +12,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import BusStatus
 from app.src.constants import REGEX_REGISTRATION_NUMBER
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.functions import promoteToParent
 
 route_executive = APIRouter()
@@ -147,31 +147,20 @@ class QueryParamsForEX(QueryParamsForOP):
 
 ## Function
 def updateBus(bus: Bus, fParam: UpdateForm):
-    if fParam.name is not None and bus.name != fParam.name:
-        bus.name = fParam.name
-    if fParam.capacity is not None and bus.capacity != fParam.capacity:
-        bus.capacity = fParam.capacity
-    if (
-        fParam.manufactured_on is not None
-        and bus.manufactured_on != fParam.manufactured_on
-    ):
-        bus.manufactured_on = fParam.manufactured_on
-    if (
-        fParam.insurance_upto is not None
-        and bus.insurance_upto != fParam.insurance_upto
-    ):
-        bus.insurance_upto = fParam.insurance_upto
-    if (
-        fParam.pollution_upto is not None
-        and bus.pollution_upto != fParam.pollution_upto
-    ):
-        bus.pollution_upto = fParam.pollution_upto
-    if fParam.fitness_upto is not None and bus.fitness_upto != fParam.fitness_upto:
-        bus.fitness_upto = fParam.fitness_upto
-    if fParam.road_tax_upto is not None and bus.road_tax_upto != fParam.road_tax_upto:
-        bus.road_tax_upto = fParam.road_tax_upto
-    if fParam.status is not None and bus.status != fParam.status:
-        bus.status = fParam.status
+    updateIfChanged(
+        bus,
+        fParam,
+        [
+            Bus.name.key,
+            Bus.capacity.key,
+            Bus.manufactured_on.key,
+            Bus.insurance_upto.key,
+            Bus.pollution_upto.key,
+            Bus.fitness_upto.key,
+            Bus.road_tax_upto.key,
+            Bus.status.key,
+        ],
+    )
 
 
 def searchBus(
