@@ -9,11 +9,6 @@ class DynamicFare:
         try:
             jsContext = MiniRacer()
             jsContext.eval(jsCode, timeout=TIMEOUT_LIMIT, max_memory=MAX_MEMORY_SIZE)
-            jsContext.eval(
-                f'function getFare("{ticketType}", {totalDistance})',
-                timeout=TIMEOUT_LIMIT,
-                max_memory=MAX_MEMORY_SIZE,
-            )
             jsContext.call(
                 "getFare",
                 ticketType,

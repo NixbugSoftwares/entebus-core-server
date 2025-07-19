@@ -278,12 +278,11 @@ async def create_paper_ticket(
                     break
             if attributeTicketTypes is None:
                 raise exceptions.UnknownTicketType(ticketTypeName)
-            if not v1.DynamicFare.validate(service.fare["function"], ticketTypeName, distance):
-                raise exceptions.InvalidFareFunction()
-            ticketPrice = v1.DynamicFare.evaluate(
-                service.fare["function"], ticketTypeName, distance
-            )
-            totalFare += ticketPrice * ticketTypeCount
+            if v1.DynamicFare.validate(service.fare["function"], ticketTypeName, distance):
+                ticketPrice = v1.DynamicFare.evaluate(
+                    service.fare["function"], ticketTypeName, distance
+                )
+                totalFare += ticketPrice * ticketTypeCount
 
         if totalFare != fParam.amount:
             raise exceptions.UnknownValue(PaperTicket.amount)
