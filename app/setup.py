@@ -1,4 +1,4 @@
-import argparse, logging
+import argparse
 from datetime import datetime, time, timedelta, timezone
 from fastapi.encoders import jsonable_encoder
 
@@ -36,14 +36,10 @@ from app.src.db import (
     CompanyWallet,
     BusinessWallet,
     Duty,
-    ExecutiveToken,
-    OperatorToken,
-    VendorToken,
     sessionMaker,
     engine,
     ORMbase,
 )
-from sqlalchemy.orm import Session
 
 
 # ----------------------------------- Project Setup -------------------------------------------#
@@ -644,34 +640,6 @@ def testDB():
     session.close()
 
 
-# Cleaner to remove dangling resources
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("Cleaner")
-
-
-def removeExpiredTokens(session: Session, model, tokenName: str):
-    currentTime = datetime.now(timezone.utc)
-    expiredTokens = session.query(model).filter(model.expires_at < currentTime).all()
-
-    if expiredTokens:
-        for token in expiredTokens:
-            session.delete(token)
-        session.commit()
-        logger.info(f"Removed {len(expiredTokens)} expired {tokenName} tokens.")
-    else:
-        logger.info(f"No expired {tokenName} tokens found.")
-
-
-def executeCleaner():
-    try:
-        with sessionMaker() as session:
-            removeExpiredTokens(session, ExecutiveToken, "executive")
-            removeExpiredTokens(session, OperatorToken, "operator")
-            removeExpiredTokens(session, VendorToken, "vendor")
-    except Exception as e:
-        logger.exception(f"Cleaning failed: {e}")
-
-
 # Setup database
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -680,7 +648,6 @@ if __name__ == "__main__":
     parser.add_argument("-cr", action="store_true", help="create tables")
     parser.add_argument("-init", action="store_true", help="initialize DB")
     parser.add_argument("-test", action="store_true", help="add test data")
-    parser.add_argument("-ct", action="store_true", help="cleaner token")
     args = parser.parse_args()
 
     if args.cr:
@@ -691,5 +658,3 @@ if __name__ == "__main__":
         testDB()
     if args.rm:
         removeTables()
-    if args.ct:
-        executeCleaner()
