@@ -1,15 +1,19 @@
-import pythonmonkey
+from py_mini_racer import MiniRacer
 
 
 # Load the JS function into memory
 # This can also be used to check if the JS code is proper
 class DynamicFare:
-    def validate(js_code) -> bool:
+    def validate(jsCode, ticketType, totalDistance) -> bool:
         try:
-            pythonmonkey.eval(js_code)
+            jsContext = MiniRacer()
+            jsContext.eval(jsCode)
+            jsContext.call("getFare", ticketType, totalDistance)
             return True
-        except pythonmonkey.SpiderMonkeyError as e:
+        except Exception as e:
             return False
 
-    def evaluate(ticket_type, total_distance) -> float:
-        return pythonmonkey.eval(f'getFare("{ticket_type}", {total_distance})')
+    def evaluate(jsCode, ticketType, totalDistance) -> float:
+        jsContext = MiniRacer()
+        jsContext.eval(jsCode)
+        return jsContext.call("getFare", ticketType, totalDistance)
