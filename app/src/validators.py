@@ -162,20 +162,19 @@ def landmarkInRoute(route: int, session: Session):
 
 
 def fareFunction(function, attributes) -> str:
-    if not v1.DynamicFare.validate(function):
-        raise exceptions.InvalidFareFunction()
-
     ticketTypes = attributes["ticket_types"]
     ticketTypeNames = []
     for ticketType in ticketTypes:
         ticketTypeName = ticketType["name"]
-        totalFareFor0m = v1.DynamicFare.evaluate(ticketTypeName, 0)
-        totalFareFor1m = v1.DynamicFare.evaluate(ticketTypeName, 1)
+        if not v1.DynamicFare.validate(function, ticketTypeName, 0):
+            raise exceptions.InvalidFareFunction()
+        totalFareFor0m = v1.DynamicFare.evaluate(function, ticketTypeName, 0)
+        totalFareFor1m = v1.DynamicFare.evaluate(function, ticketTypeName, 1)
         if totalFareFor0m < 0 or totalFareFor1m < 0:
             raise exceptions.UnknownTicketType(ticketTypeName)
         ticketTypeNames.append(ticketTypeName)
 
     newTicketTypeName = "".join(random.choices(string.ascii_letters, k=32))
-    totalFareFor0m = v1.DynamicFare.evaluate(newTicketTypeName, 0)
+    totalFareFor0m = v1.DynamicFare.evaluate(function, newTicketTypeName, 0)
     if totalFareFor0m != -1.0:
         raise exceptions.InvalidFareFunction()
