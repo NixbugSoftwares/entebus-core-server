@@ -8,22 +8,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Cleaner")
 
 
-def removeExpiredTokens(session: Session, model, tokenName: str):
+def removeExpiredTokens(session: Session, model, tableName: str):
     currentTime = datetime.datetime.now(datetime.timezone.utc)
-    result = session.execute(delete(model).where(model.expires_at < currentTime))
+    result = session.execute(delete(model).where(model.expiresAt < currentTime))
     session.commit()
-    deleted_count = result.rowcount
+    deletedCount = result.rowcount
     logger.info(
-        f"Removed {deleted_count} expired {tokenName} tokens."
-        if deleted_count > 0
-        else f"No expired {tokenName} tokens found."
+        f"Removed {deletedCount} tokens from {tableName} table."
+        if deletedCount > 0
+        else f"No tokens found in {tableName} table."
     )
 
 
 try:
     with sessionMaker() as session:
-        removeExpiredTokens(session, ExecutiveToken, "executive")
-        removeExpiredTokens(session, OperatorToken, "operator")
-        removeExpiredTokens(session, VendorToken, "vendor")
+        removeExpiredTokens(session, ExecutiveToken.__name__)
+        removeExpiredTokens(session, OperatorToken.__name__)
+        removeExpiredTokens(session, VendorToken.__name__)
 except Exception as e:
     logger.exception(f"Cleaning failed: {e}")
