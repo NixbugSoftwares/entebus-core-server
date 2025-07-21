@@ -1,4 +1,4 @@
-from py_mini_racer import MiniRacer
+from py_mini_racer import MiniRacer, py_mini_racer
 from app.src.constants import TIMEOUT_LIMIT, MAX_MEMORY_SIZE
 
 
@@ -24,4 +24,17 @@ class DynamicFare:
             return False
 
     def evaluate(self, ticketType, totalDistance) -> float:
-        return self.jsContext.call("getFare", ticketType, totalDistance)
+        try:
+            return self.jsContext.call(
+                "getFare",
+                ticketType,
+                totalDistance,
+                timeout=TIMEOUT_LIMIT,
+                max_memory=MAX_MEMORY_SIZE,
+            )
+        except (
+            py_mini_racer.JSTimeoutException,
+            py_mini_racer.JSOOMException,
+            Exception,
+        ):
+            return -1.0
