@@ -248,6 +248,6 @@ class JSTimeoutExceeded(APIException):
 
 
 class JSMemoryLimitExceeded(APIException):
-    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "JSMemoryLimitExceeded"}
     detail = "JavaScript execution exceeded the allowed memory limit."
