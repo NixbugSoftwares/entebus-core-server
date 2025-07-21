@@ -242,7 +242,7 @@ class UnknownTicketType(APIException):
 
 
 class JSTimeoutExceeded(APIException):
-    status_code = status.HTTP_408_REQUEST_TIMEOUT
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "JSTimeout"}
     detail = "JavaScript execution timed out."
 
