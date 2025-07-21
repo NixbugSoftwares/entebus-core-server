@@ -163,7 +163,6 @@ def landmarkInRoute(route: int, session: Session):
 
 def fareFunction(function, attributes) -> str:
     fareFunction = v1.DynamicFare(function)
-    fareFunction.validate()
 
     ticketTypes = attributes["ticket_types"]
     ticketTypeNames = []

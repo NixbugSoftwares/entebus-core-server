@@ -7,11 +7,8 @@ from app.src import exceptions
 # This can also be used to check if the JS code is proper
 class DynamicFare:
     def __init__(self, jsCode):
-        self.jsCode = jsCode
-        self.jsContext = None
-
-    def validate(self):
         try:
+            self.jsCode = jsCode
             self.jsContext = MiniRacer()
             getFare = self.jsContext.eval(
                 f"{self.jsCode}; typeof getFare === 'function';"

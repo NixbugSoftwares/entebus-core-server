@@ -266,7 +266,6 @@ async def create_paper_ticket(
         fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
         totalFare = 0
         fareFunction = v1.DynamicFare(service.fare["function"])
-        fareFunction.validate()
         for ticketType in fParam.ticket_types:
             ticketTypeName = ticketType["name"]
             ticketTypeCount = ticketType["count"]
