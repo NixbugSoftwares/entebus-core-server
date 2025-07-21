@@ -13,11 +13,7 @@ def removeExpiredTokens(session: Session, model, tableName: str):
     result = session.execute(delete(model).where(model.expiresAt < currentTime))
     session.commit()
     deletedCount = result.rowcount
-    logger.info(
-        f"Removed {deletedCount} tokens from {tableName} table."
-        if deletedCount > 0
-        else f"No tokens found in {tableName} table."
-    )
+    logger.info(f"Removed {deletedCount} tokens from {tableName} table")
 
 
 try:
