@@ -1,5 +1,6 @@
 from py_mini_racer import MiniRacer, py_mini_racer
 from app.src.constants import TIMEOUT_LIMIT, MAX_MEMORY_SIZE
+from app.src import exceptions
 
 
 # Load the JS function into memory
@@ -9,21 +10,18 @@ class DynamicFare:
         self.jsCode = jsCode
         self.jsContext = None
 
-    def validate(self) -> bool:
+    def validate(self):
         try:
             self.jsContext = MiniRacer()
-            fareFunction = self.jsContext.eval(
-                f"{self.jsCode}; typeof getFare === 'function';",
-                timeout=TIMEOUT_LIMIT,
-                max_memory=MAX_MEMORY_SIZE,
+            getFare = self.jsContext.eval(
+                f"{self.jsCode}; typeof getFare === 'function';"
             )
-            if not fareFunction:
-                return False
-            return True
-        except Exception as e:
-            return False
+            if not getFare:
+                raise exceptions.InvalidFareFunction()
+        except Exception:
+            raise exceptions.InvalidFareFunction()
 
-    def evaluate(self, ticketType, totalDistance) -> float:
+    def evaluate(self, ticketType, totalDistance):
         try:
             return self.jsContext.call(
                 "getFare",
@@ -32,9 +30,8 @@ class DynamicFare:
                 timeout=TIMEOUT_LIMIT,
                 max_memory=MAX_MEMORY_SIZE,
             )
-        except (
-            py_mini_racer.JSTimeoutException,
-            py_mini_racer.JSOOMException,
-            Exception,
-        ):
-            return -1.0
+        except py_mini_racer.JSTimeoutException:
+            return exceptions.JSTimeoutExceeded()
+        except py_mini_racer.JSOOMException:
+            return exceptions.JSMemoryLimitExceeded()
+
