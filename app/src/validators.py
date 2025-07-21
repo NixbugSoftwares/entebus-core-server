@@ -163,8 +163,7 @@ def landmarkInRoute(route: int, session: Session):
 
 def fareFunction(function, attributes) -> str:
     fareFunction = v1.DynamicFare(function)
-    if not fareFunction.validate():
-        raise exceptions.InvalidFareFunction()
+    fareFunction.validate()
 
     ticketTypes = attributes["ticket_types"]
     ticketTypeNames = []
@@ -172,8 +171,16 @@ def fareFunction(function, attributes) -> str:
         ticketTypeName = ticketType["name"]
         totalFareFor0m = fareFunction.evaluate(ticketTypeName, 0)
         totalFareFor1m = fareFunction.evaluate(ticketTypeName, 1)
-        if totalFareFor0m == -1.0 or totalFareFor1m == -1.0:
-            raise exceptions.JSExecutionLimitExceeded()
+
+        if isinstance(totalFareFor0m, exceptions.JSTimeoutExceeded):
+            raise totalFareFor0m
+        if isinstance(totalFareFor1m, exceptions.JSTimeoutExceeded):
+            raise totalFareFor1m
+        if isinstance(totalFareFor0m, exceptions.JSMemoryLimitExceeded):
+            raise totalFareFor0m
+        if isinstance(totalFareFor1m, exceptions.JSMemoryLimitExceeded):
+            raise totalFareFor1m
+        
         if totalFareFor0m < 0 or totalFareFor1m < 0:
             raise exceptions.UnknownTicketType(ticketTypeName)
         ticketTypeNames.append(ticketTypeName)

@@ -266,22 +266,22 @@ async def create_paper_ticket(
         fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
         totalFare = 0
         fareFunction = v1.DynamicFare(service.fare["function"])
-        if fareFunction.validate():
-            for ticketType in fParam.ticket_types:
-                ticketTypeName = ticketType["name"]
-                ticketTypeCount = ticketType["count"]
-                if ticketTypeCount <= 0:
-                    raise exceptions.UnknownValue(PaperTicket.ticket_types)
-                attributeTicketTypes = None
-                fareTicketTypes = service.fare["attributes"]["ticket_types"]
-                for attributeTicketType in fareTicketTypes:
-                    if attributeTicketType["name"] == ticketTypeName:
-                        attributeTicketTypes = attributeTicketType
-                        break
-                if attributeTicketTypes is None:
-                    raise exceptions.UnknownTicketType(ticketTypeName)
-                ticketPrice = fareFunction.evaluate(ticketTypeName, distance)
-                totalFare += ticketPrice * ticketTypeCount
+        fareFunction.validate()
+        for ticketType in fParam.ticket_types:
+            ticketTypeName = ticketType["name"]
+            ticketTypeCount = ticketType["count"]
+            if ticketTypeCount <= 0:
+                raise exceptions.UnknownValue(PaperTicket.ticket_types)
+            attributeTicketTypes = None
+            fareTicketTypes = service.fare["attributes"]["ticket_types"]
+            for attributeTicketType in fareTicketTypes:
+                if attributeTicketType["name"] == ticketTypeName:
+                    attributeTicketTypes = attributeTicketType
+                    break
+            if attributeTicketTypes is None:
+                raise exceptions.UnknownTicketType(ticketTypeName)
+            ticketPrice = fareFunction.evaluate(ticketTypeName, distance)
+            totalFare += ticketPrice * ticketTypeCount
 
         if totalFare != fParam.amount:
             raise exceptions.UnknownValue(PaperTicket.amount)
