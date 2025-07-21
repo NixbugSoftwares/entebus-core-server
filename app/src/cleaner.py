@@ -16,10 +16,15 @@ def removeExpiredTokens(session: Session, model, tableName: str):
     logger.info(f"Removed {deletedCount} tokens from {tableName} table")
 
 
-try:
-    with sessionMaker() as session:
-        removeExpiredTokens(session, ExecutiveToken.__name__)
-        removeExpiredTokens(session, OperatorToken.__name__)
-        removeExpiredTokens(session, VendorToken.__name__)
-except Exception as e:
-    logger.exception(f"Cleaning failed: {e}")
+def main():
+    try:
+        with sessionMaker() as session:
+            removeExpiredTokens(session, ExecutiveToken.__name__)
+            removeExpiredTokens(session, OperatorToken.__name__)
+            removeExpiredTokens(session, VendorToken.__name__)
+    except Exception as e:
+        logger.exception(f"Cleaning failed: {e}")
+
+
+if __name__ == "__main__":
+    main()
