@@ -241,7 +241,13 @@ class UnknownTicketType(APIException):
         super().__init__(detail=detail)
 
 
-class JSExecutionLimitExceeded(APIException):
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-    headers = {"X-Error": "JSExecutionLimitExceeded"}
-    detail = "JavaScript execution failed due to timeout or memory limit breach."
+class JSTimeoutExceeded(APIException):
+    status_code = status.HTTP_408_REQUEST_TIMEOUT
+    headers = {"X-Error": "JSTimeout"}
+    detail = "JavaScript execution timed out."
+
+
+class JSMemoryLimitExceeded(APIException):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    headers = {"X-Error": "JSMemoryLimitExceeded"}
+    detail = "JavaScript execution exceeded the allowed memory limit."
