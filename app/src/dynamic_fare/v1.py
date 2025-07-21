@@ -28,7 +28,7 @@ class DynamicFare:
                 max_memory=MAX_MEMORY_SIZE,
             )
         except py_mini_racer.JSTimeoutException:
-            return exceptions.JSTimeoutExceeded()
+            return exceptions.JSTimeLimitExceeded()
         except py_mini_racer.JSOOMException:
             return exceptions.JSMemoryLimitExceeded()
 

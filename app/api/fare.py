@@ -198,7 +198,7 @@ def searchFare(
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
             exceptions.JSMemoryLimitExceeded,
-            exceptions.JSTimeoutExceeded,
+            exceptions.JSTimeLimitExceeded,
         ]
     ),
     description="""
@@ -264,7 +264,7 @@ async def create_fare(
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
             exceptions.JSMemoryLimitExceeded,
-            exceptions.JSTimeoutExceeded,
+            exceptions.JSTimeLimitExceeded,
         ]
     ),
     description="""

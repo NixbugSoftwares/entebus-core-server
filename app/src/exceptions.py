@@ -241,7 +241,7 @@ class UnknownTicketType(APIException):
         super().__init__(detail=detail)
 
 
-class JSTimeoutExceeded(APIException):
+class JSTimeLimitExceeded(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "JSTimeout"}
     detail = "JavaScript execution timed out."
