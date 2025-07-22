@@ -251,3 +251,9 @@ class JSMemoryLimitExceeded(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "JSMemoryLimitExceeded"}
     detail = "JavaScript execution exceeded the allowed memory limit"
+
+
+class LockAcquireTimeLimitExceeded(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "LockAcquireTimeLimitExceeded"}
+    detail = "Lock acquire time limit exceeded"
