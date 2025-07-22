@@ -256,4 +256,4 @@ class JSMemoryLimitExceeded(APIException):
 class LockAcquireTimeLimitExceeded(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "LockAcquireTimeLimitExceeded"}
-    detail = "Lock acquire time limit exceeded"
+    detail = "Mutex lock acquire time out"
