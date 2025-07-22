@@ -23,7 +23,7 @@ def main():
             removeExpiredTokens(session, OperatorToken.__name__)
             removeExpiredTokens(session, VendorToken.__name__)
     except Exception as e:
-        logger.exception(f"Cleaning failed: {e}")
+        logger.exception("cleaner.py failed")
 
 
 if __name__ == "__main__":
