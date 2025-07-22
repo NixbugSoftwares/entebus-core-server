@@ -6,12 +6,14 @@ from app.src import exceptions
 # Load the JS function into memory
 # This can also be used to check if the JS code is proper
 class DynamicFare:
-    def __init__(self, jsCode):
+    def __init__(
+        self, jsCode, timeOutLimit=TIMEOUT_LIMIT, maxMemorySize=MAX_MEMORY_SIZE
+    ):
         try:
             self.jsContext = MiniRacer()
-            getFare = self.jsContext.eval(
-                f"{jsCode}; typeof getFare === 'function';"
-            )
+            self.timeOutLimit = timeOutLimit
+            self.maxMemorySize = maxMemorySize
+            getFare = self.jsContext.eval(f"{jsCode}; typeof getFare === 'function';")
             if not getFare:
                 raise exceptions.InvalidFareFunction()
         except Exception:
@@ -23,11 +25,10 @@ class DynamicFare:
                 "getFare",
                 ticketType,
                 totalDistance,
-                timeout=TIMEOUT_LIMIT,
-                max_memory=MAX_MEMORY_SIZE,
+                timeout=self.timeOutLimit,
+                max_memory=self.maxMemorySize,
             )
         except py_mini_racer.JSTimeoutException:
             raise exceptions.JSTimeLimitExceeded()
         except py_mini_racer.JSOOMException:
             raise exceptions.JSMemoryLimitExceeded()
-
