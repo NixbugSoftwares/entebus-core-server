@@ -170,16 +170,6 @@ def fareFunction(function, attributes) -> str:
         ticketTypeName = ticketType["name"]
         totalFareFor0m = fareFunction.evaluate(ticketTypeName, 0)
         totalFareFor1m = fareFunction.evaluate(ticketTypeName, 1)
-
-        if isinstance(totalFareFor0m, exceptions.JSTimeLimitExceeded):
-            raise totalFareFor0m
-        if isinstance(totalFareFor1m, exceptions.JSTimeLimitExceeded):
-            raise totalFareFor1m
-        if isinstance(totalFareFor0m, exceptions.JSMemoryLimitExceeded):
-            raise totalFareFor0m
-        if isinstance(totalFareFor1m, exceptions.JSMemoryLimitExceeded):
-            raise totalFareFor1m
-        
         if totalFareFor0m < 0 or totalFareFor1m < 0:
             raise exceptions.UnknownTicketType(ticketTypeName)
         ticketTypeNames.append(ticketTypeName)
