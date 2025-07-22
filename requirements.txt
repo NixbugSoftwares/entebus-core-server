@@ -16,4 +16,4 @@ minio
 requests
 pyproj
 redis
-pythonmonkey
+py-mini-racer

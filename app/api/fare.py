@@ -197,6 +197,8 @@ def searchFare(
             exceptions.MissingParameter(Fare.company_id),
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
+            exceptions.JSMemoryLimitExceeded,
+            exceptions.JSTimeLimitExceeded,
         ]
     ),
     description="""
@@ -208,6 +210,8 @@ def searchFare(
     The DF function is validated against the attributes.    
     The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
     The getFare function must return -1 if there is some logical or runtime error occurred during the function call.   
+    The max size of fare function is 10 MB. 
+    The fare function should not take more than 1 seconds to execute.   
     Log the fare creation activity with the associated token.
     """,
 )
@@ -259,6 +263,8 @@ async def create_fare(
             exceptions.InvalidIdentifier,
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
+            exceptions.JSMemoryLimitExceeded,
+            exceptions.JSTimeLimitExceeded,
         ]
     ),
     description="""
@@ -269,7 +275,9 @@ async def create_fare(
     The DF function is validated against the attributes.    
     The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
     The getFare function must return -1 if there is some logical or runtime error occurred during the function call.      
-    Changes are saved only if the fare data has been modified.     
+    Changes are saved only if the fare data has been modified.    
+    The max size of fare function is 10 MB. 
+    The fare function should not take more than 1 seconds to execute.   
     The version is automatically incremented, when the fare is modified.    
     Logs the fare updating activity with the associated token.
     """,

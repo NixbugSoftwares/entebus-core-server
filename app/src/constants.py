@@ -68,3 +68,7 @@ SERVICE_START_BUFFER_TIME = (
 # Timezone constants
 TMZ_PRIMARY = ZoneInfo("UTC")
 TMZ_SECONDARY = ZoneInfo("Asia/Kolkata")
+
+# MiniRacer constants
+TIMEOUT_LIMIT = 1000  # Timeout in milliseconds (1000 ms = 1 second)
+MAX_MEMORY_SIZE = 10 * 1024 * 1024  # Maximum memory size in bytes (10 MB)

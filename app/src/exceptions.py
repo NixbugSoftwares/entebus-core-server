@@ -239,3 +239,15 @@ class UnknownTicketType(APIException):
             f"Ticket type '{ticket_type_name}' cannot be validated using the function"
         )
         super().__init__(detail=detail)
+
+
+class JSTimeLimitExceeded(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "JSTimeout"}
+    detail = "JavaScript execution timed out"
+
+
+class JSMemoryLimitExceeded(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "JSMemoryLimitExceeded"}
+    detail = "JavaScript execution exceeded the allowed memory limit"
