@@ -73,5 +73,6 @@ TMZ_SECONDARY = ZoneInfo("Asia/Kolkata")
 TIMEOUT_LIMIT = 1000  # Timeout in milliseconds (1000 ms = 1 second)
 MAX_MEMORY_SIZE = 10 * 1024 * 1024  # Maximum memory size in bytes (10 MB)
 
-# Redis lock constants
-LOCK_EXPIRE_LIMIT = 10  # Timeout in seconds
+# Redis mutex lock constants
+MUTEX_LOCK_TIMEOUT = 10  # Timeout in seconds
+MUTEX_LOCK_MAX_WAIT_TIME = 60  # Blocking time in seconds
