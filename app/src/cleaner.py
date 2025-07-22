@@ -10,9 +10,7 @@ logger = logging.getLogger("Cleaner")
 
 def removeExpiredTokens(session: Session, tableName: str):
     currentTime = datetime.datetime.now(datetime.timezone.utc)
-    result = session.execute(
-        delete(ExecutiveToken).where(ExecutiveToken.expires_at < currentTime)
-    )
+    result = session.execute(delete(tableName).where(tableName.expire_at < currentTime))
     session.commit()
     deletedCount = result.rowcount
     logger.info(f"Removed {deletedCount} tokens from {tableName} table")
