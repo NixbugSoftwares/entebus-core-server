@@ -8,10 +8,9 @@ from app.src import exceptions
 class DynamicFare:
     def __init__(self, jsCode):
         try:
-            self.jsCode = jsCode
             self.jsContext = MiniRacer()
             getFare = self.jsContext.eval(
-                f"{self.jsCode}; typeof getFare === 'function';"
+                f"{jsCode}; typeof getFare === 'function';"
             )
             if not getFare:
                 raise exceptions.InvalidFareFunction()
