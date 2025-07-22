@@ -195,6 +195,9 @@ async def fetch_paper_ticket(
             exceptions.InvalidToken,
             exceptions.UnknownValue(PaperTicket.service_id),
             exceptions.UnknownTicketType("ticket_type"),
+            exceptions.InvalidFareFunction,
+            exceptions.JSMemoryLimitExceeded,
+            exceptions.JSTimeLimitExceeded,
         ]
     ),
     description="""
