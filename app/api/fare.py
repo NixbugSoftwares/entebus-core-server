@@ -18,6 +18,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_FARE
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -185,7 +186,7 @@ def searchFare(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
     status_code=status.HTTP_201_CREATED,
@@ -249,7 +250,7 @@ async def create_fare(
 
 
 @route_executive.patch(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
     responses=makeExceptionResponses(
@@ -307,7 +308,7 @@ async def update_fare(
 
 
 @route_executive.delete(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -345,7 +346,7 @@ async def delete_fare(
 
 
 @route_executive.get(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -373,7 +374,7 @@ async def fetch_fare(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -400,7 +401,7 @@ async def fetch_route(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
     status_code=status.HTTP_201_CREATED,
@@ -458,7 +459,7 @@ async def create_fare(
 
 
 @route_operator.patch(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
     responses=makeExceptionResponses(
@@ -521,7 +522,7 @@ async def update_fare(
 
 
 @route_operator.delete(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -563,7 +564,7 @@ async def delete_fare(
 
 
 @route_operator.get(
-    "/company/fare",
+    URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
