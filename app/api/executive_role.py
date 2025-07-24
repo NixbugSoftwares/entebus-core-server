@@ -10,6 +10,7 @@ from app.src.db import ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.urls import URL_EXECUTIVE_ROLE
 
 route_executive = APIRouter()
 
@@ -279,7 +280,7 @@ class QueryParams(BaseModel):
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/role",
+    URL_EXECUTIVE_ROLE,
     tags=["Role"],
     response_model=ExecutiveRoleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -369,7 +370,7 @@ async def create_role(
 
 
 @route_executive.patch(
-    "/role",
+    URL_EXECUTIVE_ROLE,
     tags=["Role"],
     response_model=ExecutiveRoleSchema,
     responses=makeExceptionResponses(
@@ -470,7 +471,7 @@ async def update_role(
 
 
 @route_executive.delete(
-    "/role",
+    URL_EXECUTIVE_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -510,7 +511,7 @@ async def delete_role(
 
 
 @route_executive.get(
-    "/role",
+    URL_EXECUTIVE_ROLE,
     tags=["Role"],
     response_model=List[ExecutiveRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
