@@ -13,7 +13,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses
-from app.src.urls import URL_TOKEN
+from app.src.urls import URL_EXECUTIVE_TOKEN
 
 route_executive = APIRouter()
 
@@ -91,7 +91,7 @@ class QueryParams(BaseModel):
 
 ## API endpoints [Executive]
 @route_executive.post(
-    URL_TOKEN,
+    URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
     status_code=status.HTTP_201_CREATED,
@@ -162,7 +162,7 @@ async def create_token(
 
 
 @route_executive.patch(
-    URL_TOKEN,
+    URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
     responses=makeExceptionResponses(
@@ -218,7 +218,7 @@ async def refresh_token(
 
 
 @route_executive.delete(
-    URL_TOKEN,
+    URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -274,7 +274,7 @@ async def delete_token(
 
 
 @route_executive.get(
-    URL_TOKEN,
+    URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     response_model=List[MaskedExecutiveTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
