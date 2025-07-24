@@ -16,6 +16,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_VENDOR_ROLE
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -202,7 +203,7 @@ def searchRole(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     response_model=VendorRoleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -253,7 +254,7 @@ async def create_role(
 
 
 @route_executive.patch(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     response_model=VendorRoleSchema,
     responses=makeExceptionResponses(
@@ -299,7 +300,7 @@ async def update_role(
 
 
 @route_executive.delete(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -337,7 +338,7 @@ async def delete_role(
 
 
 @route_executive.get(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     response_model=List[VendorRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -364,7 +365,7 @@ async def fetch_role(
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Role"],
     response_model=VendorRoleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -415,7 +416,7 @@ async def create_role(
 
 
 @route_vendor.patch(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Role"],
     response_model=VendorRoleSchema,
     responses=makeExceptionResponses(
@@ -466,7 +467,7 @@ async def update_role(
 
 
 @route_vendor.delete(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -509,7 +510,7 @@ async def delete_role(
 
 
 @route_vendor.get(
-    "/business/role",
+    URL_VENDOR_ROLE,
     tags=["Role"],
     response_model=List[VendorRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
