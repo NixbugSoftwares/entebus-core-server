@@ -1,4 +1,4 @@
-# Executive URLs
+# URLs
 URL_OPERATOR_TOKEN = "/company/account/token"
 URL_TOKEN = "/entebus/account/token"
 URL_VENDOR_TOKEN = "/business/account/token"
@@ -21,3 +21,4 @@ URL_OPERATOR_ROLE = "/company/role"
 URL_OPERATOR_ROLE_MAP = "/company/account/role"
 URL_VENDOR_ROLE = "/business/role"
 URL_VENDOR_ROLE_MAP = "/business/account/role"
+URL_PAPER_TICKET = "/company/service/ticket/paper"
