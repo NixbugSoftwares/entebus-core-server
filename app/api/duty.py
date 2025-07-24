@@ -27,6 +27,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_DUTY
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -210,7 +211,7 @@ def searchDuty(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
     status_code=status.HTTP_201_CREATED,
@@ -285,7 +286,7 @@ async def create_duty(
 
 
 @route_executive.patch(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
     responses=makeExceptionResponses(
@@ -342,7 +343,7 @@ async def update_duty(
 
 
 @route_executive.delete(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -385,7 +386,7 @@ async def delete_duty(
 
 
 @route_executive.get(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=list[DutySchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -411,7 +412,7 @@ async def get_duties(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
     status_code=status.HTTP_201_CREATED,
@@ -508,7 +509,7 @@ async def create_duty(
 
 
 @route_operator.patch(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
     responses=makeExceptionResponses(
@@ -570,7 +571,7 @@ async def update_duty(
 
 
 @route_operator.delete(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -619,7 +620,7 @@ async def delete_duty(
 
 
 @route_operator.get(
-    "/company/service/duty",
+    URL_DUTY,
     tags=["Duty"],
     response_model=list[DutySchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
