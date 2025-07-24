@@ -1,2 +1,2 @@
 # Executive URLs
-URL_EXECUTIVE_OPERATOR_TOKEN = "/executive/company/account/token"
+URL_OPERATOR_TOKEN = "/company/account/token"

@@ -14,7 +14,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
-from app.src.urls import URL_EXECUTIVE_OPERATOR_TOKEN
+from app.src.urls import URL_OPERATOR_TOKEN
 
 route_operator = APIRouter()
 route_executive = APIRouter()
@@ -152,7 +152,7 @@ def searchOperatorToken(
 
 ## API endpoints [Executive]
 @route_executive.get(
-    URL_EXECUTIVE_OPERATOR_TOKEN,
+    URL_OPERATOR_TOKEN,
     tags=["Operator token"],
     response_model=List[MaskedOperatorTokenSchema],
     responses=makeExceptionResponses(
@@ -183,7 +183,7 @@ async def fetch_tokens(
 
 
 @route_executive.delete(
-    URL_EXECUTIVE_OPERATOR_TOKEN,
+    URL_OPERATOR_TOKEN,
     tags=["Operator token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
