@@ -27,16 +27,15 @@ def acquireLock(
             lockName = f"lock:{tableName}:{pk}"
         lock = redisClient.lock(lockName, timeout=timeOut)
         acquired = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
-        if not acquired:
-            raise exceptions.LockAcquireFailed()
-        return lock
+        if acquired:
+            return lock
+        else:
+            return None
     except Exception:
-        raise exceptions.LockAcquireFailed()
+        raise exceptions.InvalidIdentifier()
 
 
 def releaseLock(lock: Lock):
     # Release a previously acquired Redis lock.
-    try:
+    if lock.locked():
         lock.release()
-    except Exception:
-        raise exceptions.LockReleaseFailed()
