@@ -14,7 +14,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
-from app.src.urls import URL_OPERATOR_TOKEN, URL_EXECUTIVE_OPERATOR_TOKEN
+from app.src.urls import URL_EXECUTIVE_OPERATOR_TOKEN
 
 route_operator = APIRouter()
 route_executive = APIRouter()
@@ -228,7 +228,7 @@ async def delete_token(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    URL_OPERATOR_TOKEN,
+    "/company/account/token",
     tags=["Token"],
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_201_CREATED,
@@ -306,7 +306,7 @@ async def create_token(
 
 
 @route_operator.patch(
-    URL_OPERATOR_TOKEN,
+    "/company/account/token",
     tags=["Token"],
     response_model=OperatorTokenSchema,
     responses=makeExceptionResponses(
@@ -361,7 +361,7 @@ async def refresh_token(
 
 
 @route_operator.delete(
-    URL_OPERATOR_TOKEN,
+    "/company/account/token",
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -418,7 +418,7 @@ async def delete_token(
 
 
 @route_operator.get(
-    URL_OPERATOR_TOKEN,
+    "/company/account/token",
     tags=["Token"],
     response_model=List[MaskedOperatorTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
