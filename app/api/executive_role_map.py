@@ -10,6 +10,7 @@ from app.src.db import ExecutiveRole, ExecutiveRoleMap, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.urls import URL_EXECUTIVE_ROLE_MAP
 
 route_executive = APIRouter()
 
@@ -74,7 +75,7 @@ class QueryParams(BaseModel):
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/account/role",
+    URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     response_model=ExecutiveRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
@@ -115,7 +116,7 @@ async def create_role_map(
 
 
 @route_executive.patch(
-    "/account/role",
+    URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     response_model=ExecutiveRoleMapSchema,
     responses=makeExceptionResponses(
@@ -165,7 +166,7 @@ async def update_role_map(
 
 
 @route_executive.delete(
-    "/account/role",
+    URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -207,7 +208,7 @@ async def delete_role_map(
 
 
 @route_executive.get(
-    "/account/role",
+    URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[ExecutiveRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
