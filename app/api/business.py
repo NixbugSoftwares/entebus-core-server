@@ -30,6 +30,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_BUSINESS
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -281,7 +282,7 @@ def searchBusiness(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=BusinessSchema,
     status_code=status.HTTP_201_CREATED,
@@ -357,7 +358,7 @@ async def create_business(
 
 
 @route_executive.patch(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=BusinessSchema,
     responses=makeExceptionResponses(
@@ -409,7 +410,7 @@ async def update_business(
 
 
 @route_executive.delete(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -447,7 +448,7 @@ async def delete_business(
 
 
 @route_executive.get(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchema],
     responses=makeExceptionResponses(
@@ -479,7 +480,7 @@ async def fetch_business(
 
 ## API endpoints [Vendor]
 @route_vendor.patch(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=BusinessSchema,
     responses=makeExceptionResponses(
@@ -533,7 +534,7 @@ async def update_business(
 
 
 @route_vendor.get(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchema],
     responses=makeExceptionResponses(
@@ -573,7 +574,7 @@ async def fetch_business(
 
 ## API endpoints [Public]
 @route_public.get(
-    "/business",
+    URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchemaForPU],
     responses=makeExceptionResponses(
