@@ -217,7 +217,6 @@ def testDB():
     URL_SCHEDULE = "http://127.0.0.1:8080//executive/company/schedule"
     URL_SERVICE = "http://127.0.0.1:8080//executive/company/service"
     URL_DUTY = "http://127.0.0.1:8080//executive/company/service/duty"
-    URL_PAPER_TICKET = "http://127.0.0.1:8080//executive/company/service/ticket/paper"
     URL_BUSINESS = "http://127.0.0.1:8080//executive/business"
     URL_VENDOR_ACCOUNT = "http://127.0.0.1:8080//executive/business/account"
     URL_VENDOR_ROLE = "http://127.0.0.1:8080//executive/business/role"
