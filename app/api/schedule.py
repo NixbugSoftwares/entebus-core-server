@@ -26,6 +26,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_SCHEDULE
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -253,7 +254,7 @@ def searchSchedule(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -332,7 +333,7 @@ async def create_schedule(
 
 
 @route_executive.patch(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
     responses=makeExceptionResponses(
@@ -384,7 +385,7 @@ async def update_schedule(
 
 
 @route_executive.delete(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -420,7 +421,7 @@ async def delete_schedule(
 
 
 @route_executive.get(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=List[ScheduleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -446,7 +447,7 @@ async def fetch_schedule(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -527,7 +528,7 @@ async def create_schedule(
 
 
 @route_operator.patch(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
     responses=makeExceptionResponses(
@@ -583,7 +584,7 @@ async def update_schedule(
 
 
 @route_operator.delete(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -626,7 +627,7 @@ async def delete_schedule(
 
 
 @route_operator.get(
-    "/company/schedule",
+    URL_SCHEDULE,
     tags=["Schedule"],
     response_model=List[ScheduleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
