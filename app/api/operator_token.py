@@ -228,7 +228,7 @@ async def delete_token(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/account/token",
+    URL_OPERATOR_TOKEN,
     tags=["Token"],
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_201_CREATED,
@@ -306,7 +306,7 @@ async def create_token(
 
 
 @route_operator.patch(
-    "/company/account/token",
+    URL_OPERATOR_TOKEN,
     tags=["Token"],
     response_model=OperatorTokenSchema,
     responses=makeExceptionResponses(
@@ -361,7 +361,7 @@ async def refresh_token(
 
 
 @route_operator.delete(
-    "/company/account/token",
+    URL_OPERATOR_TOKEN,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -418,7 +418,7 @@ async def delete_token(
 
 
 @route_operator.get(
-    "/company/account/token",
+    URL_OPERATOR_TOKEN,
     tags=["Token"],
     response_model=List[MaskedOperatorTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
