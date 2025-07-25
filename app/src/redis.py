@@ -32,7 +32,7 @@ def acquireLock(
         else:
             return None
     except Exception:
-        raise exceptions.InvalidIdentifier()
+        raise exceptions.LockAcquireFailed()
 
 
 def releaseLock(lock: Lock):
