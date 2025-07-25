@@ -115,6 +115,7 @@ def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
     if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
         raise exceptions.InvalidBoundaryArea()
     fParam.boundary = wkt.dumps(boundaryGeom)
+    return boundaryGeom
 
 
 def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
