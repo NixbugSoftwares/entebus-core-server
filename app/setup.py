@@ -5,6 +5,26 @@ from datetime import date, datetime, timedelta
 
 from app.src import argon2
 from app.src.enums import CompanyStatus, Day
+from app.src.urls import (
+    URL_EXECUTIVE_TOKEN,
+    URL_LANDMARK,
+    URL_BUS_STOP,
+    URL_OPERATOR_ACCOUNT,
+    URL_OPERATOR_ROLE,
+    URL_OPERATOR_ROLE_MAP,
+    URL_COMPANY,
+    URL_BUSINESS,
+    URL_ROUTE,
+    URL_LANDMARK_IN_ROUTE,
+    URL_BUS,
+    URL_SCHEDULE,
+    URL_FARE,
+    URL_DUTY,
+    URL_VENDOR_ROLE,
+    URL_VENDOR_ROLE_MAP,
+    URL_SERVICE,
+    URL_VENDOR_ACCOUNT,
+)
 from app.src.db import (
     Executive,
     ExecutiveRole,
@@ -200,30 +220,15 @@ def POST(URL: str, header: dict = {}, status_code: int = HTTPStatus.CREATED, **k
 
 
 def testDB():
-    # URLS
-    URL_EXECUTIVE_TOKEN = "http://127.0.0.1:8080//executive/entebus/account/token"
-    URL_LANDMARK = "http://127.0.0.1:8080//executive/landmark"
-    URL_BUS_STOP = "http://127.0.0.1:8080//executive/landmark/bus_stop"
-    URL_OPERATOR_ACCOUNT = "http://127.0.0.1:8080//executive/company/account"
-    URL_OPERATOR_ROLE = "http://127.0.0.1:8080//executive/company/role"
-    URL_OPERATOR_ROLE_MAP = "http://127.0.0.1:8080//executive/company/account/role"
-    URL_COMPANY = "http://127.0.0.1:8080//executive/company"
-    URL_ROUTE = "http://127.0.0.1:8080//executive/company/route"
-    URL_LANDMARK_IN_ROUTE = "http://127.0.0.1:8080//executive/company/route/landmark"
-    URL_BUS = "http://127.0.0.1:8080//executive/company/bus"
-    URL_FARE = "http://127.0.0.1:8080//executive/company/fare"
-    URL_SCHEDULE = "http://127.0.0.1:8080//executive/company/schedule"
-    URL_SERVICE = "http://127.0.0.1:8080//executive/company/service"
-    URL_DUTY = "http://127.0.0.1:8080//executive/company/service/duty"
-    URL_BUSINESS = "http://127.0.0.1:8080//executive/business"
-    URL_VENDOR_ACCOUNT = "http://127.0.0.1:8080//executive/business/account"
-    URL_VENDOR_ROLE = "http://127.0.0.1:8080//executive/business/role"
-    URL_VENDOR_ROLE_MAP = "http://127.0.0.1:8080//executive/business/account/role"
+    # Base URL
+    BASE_URL = "http://127.0.0.1:8080//executive"
 
     # Create Executive Token
     credentials = {"username": "admin", "password": "password"}
     response = POST(
-        URL_EXECUTIVE_TOKEN, data=credentials, status_code=HTTPStatus.CREATED
+        (BASE_URL + URL_EXECUTIVE_TOKEN),
+        data=credentials,
+        status_code=HTTPStatus.CREATED,
     )
     if response.status_code == HTTPStatus.CREATED:
         print("* Created token for admin")
@@ -240,7 +245,7 @@ def testDB():
         "location": "POINT(76.68899711264336 8.761725176790257)",
     }
     company = POST(
-        URL_COMPANY,
+        (BASE_URL + URL_COMPANY),
         header=accessToken,
         data=companyData,
         status_code=HTTPStatus.CREATED,
@@ -262,13 +267,13 @@ def testDB():
         "full_name": "Entebus Conductor",
     }
     admin = POST(
-        URL_OPERATOR_ACCOUNT,
+        (BASE_URL + URL_OPERATOR_ACCOUNT),
         header=accessToken,
         data=adminData,
         status_code=HTTPStatus.CREATED,
     )
     guest = POST(
-        URL_OPERATOR_ACCOUNT,
+        (BASE_URL + URL_OPERATOR_ACCOUNT),
         header=accessToken,
         data=guestData,
         status_code=HTTPStatus.CREATED,
@@ -338,13 +343,13 @@ def testDB():
         "delete_role": False,
     }
     adminRole = POST(
-        URL_OPERATOR_ROLE,
+        (BASE_URL + URL_OPERATOR_ROLE),
         header=accessToken,
         data=adminRoleData,
         status_code=HTTPStatus.CREATED,
     )
     guestRole = POST(
-        URL_OPERATOR_ROLE,
+        (BASE_URL + URL_OPERATOR_ROLE),
         header=accessToken,
         data=guestRoleData,
         status_code=HTTPStatus.CREATED,
@@ -364,13 +369,13 @@ def testDB():
         "company_id": company.json()["id"],
     }
     POST(
-        URL_OPERATOR_ROLE_MAP,
+        (BASE_URL + URL_OPERATOR_ROLE_MAP),
         header=accessToken,
         data=adminMappingData,
         status_code=HTTPStatus.CREATED,
     )
     POST(
-        URL_OPERATOR_ROLE_MAP,
+        (BASE_URL + URL_OPERATOR_ROLE_MAP),
         header=accessToken,
         data=guestMappingData,
         status_code=HTTPStatus.CREATED,
@@ -388,13 +393,13 @@ def testDB():
         "boundary": "POLYGON((76.6962373 8.7642725, 76.6962373 8.7633725, 76.6953373 8.7633725, 76.6953373 8.7642725, 76.6962373 8.7642725))",
     }
     landmark1 = POST(
-        URL_LANDMARK,
+        (BASE_URL + URL_LANDMARK),
         header=accessToken,
         data=landmark1Data,
         status_code=HTTPStatus.CREATED,
     )
     landmark2 = POST(
-        URL_LANDMARK,
+        (BASE_URL + URL_LANDMARK),
         header=accessToken,
         data=landmark2Data,
         status_code=HTTPStatus.CREATED,
@@ -414,13 +419,13 @@ def testDB():
         "location": "POINT(76.6957873 8.7638225)",
     }
     POST(
-        URL_BUS_STOP,
+        (BASE_URL + URL_BUS_STOP),
         header=accessToken,
         data=busStop1Data,
         status_code=HTTPStatus.CREATED,
     )
     POST(
-        URL_BUS_STOP,
+        (BASE_URL + URL_BUS_STOP),
         header=accessToken,
         data=busStop2Data,
         status_code=HTTPStatus.CREATED,
@@ -435,7 +440,10 @@ def testDB():
         "start_time": (datetime.now() + timedelta(minutes=5)).time().isoformat(),
     }
     route = POST(
-        URL_ROUTE, header=accessToken, data=routeData, status_code=HTTPStatus.CREATED
+        (BASE_URL + URL_ROUTE),
+        header=accessToken,
+        data=routeData,
+        status_code=HTTPStatus.CREATED,
     )
     if response.status_code == HTTPStatus.CREATED:
         print("* Created route")
@@ -456,13 +464,13 @@ def testDB():
         "departure_delta": 30,
     }
     POST(
-        URL_LANDMARK_IN_ROUTE,
+        (BASE_URL + URL_LANDMARK_IN_ROUTE),
         header=accessToken,
         data=landmark1InRouteData,
         status_code=HTTPStatus.CREATED,
     )
     POST(
-        URL_LANDMARK_IN_ROUTE,
+        (BASE_URL + URL_LANDMARK_IN_ROUTE),
         header=accessToken,
         data=landmark2InRouteData,
         status_code=HTTPStatus.CREATED,
@@ -486,10 +494,16 @@ def testDB():
         "manufactured_on": "2024-03-25T11:24:33.649Z",
     }
     bus1 = POST(
-        URL_BUS, header=accessToken, data=bus1Data, status_code=HTTPStatus.CREATED
+        (BASE_URL + URL_BUS),
+        header=accessToken,
+        data=bus1Data,
+        status_code=HTTPStatus.CREATED,
     )
     bus2 = POST(
-        URL_BUS, header=accessToken, data=bus2Data, status_code=HTTPStatus.CREATED
+        (BASE_URL + URL_BUS),
+        header=accessToken,
+        data=bus2Data,
+        status_code=HTTPStatus.CREATED,
     )
     if response.status_code == HTTPStatus.CREATED:
         print("* Created buses")
@@ -512,7 +526,10 @@ def testDB():
         "scope": 1,
     }
     fare = POST(
-        URL_FARE, header=accessToken, json=fareData, status_code=HTTPStatus.CREATED
+        (BASE_URL + URL_FARE),
+        header=accessToken,
+        json=fareData,
+        status_code=HTTPStatus.CREATED,
     )
     if response.status_code == HTTPStatus.CREATED:
         print("* Created fare")
@@ -535,7 +552,7 @@ def testDB():
         ],
     }
     POST(
-        URL_SCHEDULE,
+        (BASE_URL + URL_SCHEDULE),
         header=accessToken,
         json=scheduleData,
         status_code=HTTPStatus.CREATED,
@@ -552,7 +569,7 @@ def testDB():
         "starting_at": date.today().isoformat(),
     }
     service = POST(
-        URL_SERVICE,
+        (BASE_URL + URL_SERVICE),
         header=accessToken,
         data=serviceData,
         status_code=HTTPStatus.CREATED,
@@ -566,7 +583,12 @@ def testDB():
         "operator_id": admin.json()["id"],
         "service_id": service.json()["id"],
     }
-    POST(URL_DUTY, header=accessToken, data=dutyData, status_code=HTTPStatus.CREATED)
+    POST(
+        (BASE_URL + URL_DUTY),
+        header=accessToken,
+        data=dutyData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
         print("* Assigned duty")
 
@@ -580,7 +602,7 @@ def testDB():
         "location": "POINT(76.68899711264336 8.761725176790257)",
     }
     business = POST(
-        URL_BUSINESS,
+        (BASE_URL + URL_BUSINESS),
         header=accessToken,
         data=businessData,
         status_code=HTTPStatus.CREATED,
@@ -602,13 +624,13 @@ def testDB():
         "full_name": "Guest Vendor",
     }
     vendorAdmin = POST(
-        URL_VENDOR_ACCOUNT,
+        (BASE_URL + URL_VENDOR_ACCOUNT),
         header=accessToken,
         data=vendorAdminData,
         status_code=HTTPStatus.CREATED,
     )
     vendorGuest = POST(
-        URL_VENDOR_ACCOUNT,
+        (BASE_URL + URL_VENDOR_ACCOUNT),
         header=accessToken,
         data=vendorGuestData,
         status_code=HTTPStatus.CREATED,
@@ -642,13 +664,13 @@ def testDB():
         "delete_role": False,
     }
     vendorAdminRole = POST(
-        URL_VENDOR_ROLE,
+        (BASE_URL + URL_VENDOR_ROLE),
         header=accessToken,
         data=vendorAdminRoleData,
         status_code=HTTPStatus.CREATED,
     )
     vendorGuestRole = POST(
-        URL_VENDOR_ROLE,
+        (BASE_URL + URL_VENDOR_ROLE),
         header=accessToken,
         data=vendorGuestRoleData,
         status_code=HTTPStatus.CREATED,
@@ -668,13 +690,13 @@ def testDB():
         "business_id": business.json()["id"],
     }
     POST(
-        URL_VENDOR_ROLE_MAP,
+        (BASE_URL + URL_VENDOR_ROLE_MAP),
         header=accessToken,
         data=vendorAdminMapData,
         status_code=HTTPStatus.CREATED,
     )
     POST(
-        URL_VENDOR_ROLE_MAP,
+        (BASE_URL + URL_VENDOR_ROLE_MAP),
         header=accessToken,
         data=vendorGuestMapData,
         status_code=HTTPStatus.CREATED,
