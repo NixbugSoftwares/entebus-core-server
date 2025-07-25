@@ -121,7 +121,11 @@ class OrderBy(IntEnum):
     created_on = 4
 
 
-class QueryParamsForVE(BaseModel):
+class QueryParamsForOP(BaseModel):
+    id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForVE(QueryParamsForOP):
     name: str | None = Field(Query(default=None))
     type: CompanyType | None = Field(
         Query(default=None, description=enumStr(CompanyType))
@@ -130,7 +134,6 @@ class QueryParamsForVE(BaseModel):
         Query(default=None, description="Accepts only SRID 4326 (WGS84)")
     )
     # id based
-    id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
@@ -146,6 +149,10 @@ class QueryParamsForVE(BaseModel):
     # Pagination
     offset: int = Field(Query(default=0, ge=0))
     limit: int = Field(Query(default=20, gt=0, le=100))
+
+
+class QueryParamsForPU(QueryParamsForVE):
+    pass
 
 
 class QueryParamsForEX(QueryParamsForVE):
@@ -210,7 +217,8 @@ def updateCompany(
 
 
 def searchCompany(
-    session: Session, qParam: QueryParamsForEX | QueryParamsForVE
+    session: Session,
+    qParam: QueryParamsForEX | QueryParamsForVE | QueryParamsForOP | QueryParamsForPU,
 ) -> List[Company]:
     query = session.query(Company)
 
@@ -587,14 +595,21 @@ async def update_company(
     Requires a valid operator token.
     """,
 )
-async def fetch_company(bearer=Depends(bearer_operator)):
+async def fetch_company(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
+        if qParam.id is None:
+            qParam.id = token.company_id
+        if qParam.id != token.company_id:
+            raise exceptions.InvalidIdentifier()
         company = session.query(Company).filter(Company.id == token.company_id).first()
-        companyData = jsonable_encoder(company, exclude={"location"})
-        companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
+        if company is not None:
+            companyData = jsonable_encoder(company, exclude={"location"})
+            companyData["location"] = (wkb.loads(bytes(company.location.data))).wkt
         return [companyData]
     except Exception as e:
         exceptions.handle(e)
@@ -616,9 +631,15 @@ async def fetch_company(bearer=Depends(bearer_operator)):
     Requires no authentication.
     """,
 )
-async def fetch_company(qParam: QueryParamsForEX = Depends()):
+async def fetch_company(qParam: QueryParamsForPU = Depends()):
     try:
         session = sessionMaker()
+
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
+            status=CompanyStatus.VERIFIED,
+        )
         return searchCompany(session, qParam)
     except Exception as e:
         exceptions.handle(e)
