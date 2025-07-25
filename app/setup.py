@@ -1,7 +1,7 @@
 import argparse
 from http import HTTPStatus
 from requests import post
-from datetime import datetime, timedelta, time, timezone
+from datetime import date, datetime, timedelta, time, timezone
 
 from app.src import argon2
 from app.src.enums import CompanyStatus,Day
@@ -195,8 +195,11 @@ def POST(
     URL: str, header: dict = {}, status_code: int = HTTPStatus.CREATED, **kwargs
 ):
     response = post(URL, headers=header, **kwargs)
+    # print(f"Response status: {response.status_code}")  # Debug output
+    # print(f"Response content: {response.text}")  
     if response.status_code != status_code:
         assert response.status_code == status_code
+        # raise Exception(f"Expected status {status_code}, got {response.status_code}. Response: {response.text}")
     else:
         return response
 
@@ -374,13 +377,17 @@ def testDB():
         print("* Bus Stop created successfully")
 
     # Create Route
-    nowUTC = datetime.now(timezone.utc)
-    startTime = nowUTC + timedelta(minutes=1)
-    routeTime = time(startTime.hour, startTime.minute, startTime.second)
+    # nowUTC = datetime.now(timezone.utc)
+    # startTime = nowUTC + timedelta(minutes=1)
+    # routeTime = time(startTime.hour, startTime.minute, startTime.second)
     routeData = {
         "company_id": company.json()["id"],
         "name": "Varkala -> Edava",
-        "start_time": routeTime.isoformat(),
+        # "start_time": routeTime.isoformat(),
+        # "start_time": time().isoformat(),
+        # "start_time": datetime.now(timezone.utc).time().isoformat()
+        # "start_time": datetime.now().time().isoformat()
+        "start_time": (datetime.now() + timedelta(minutes=5)).time().isoformat()
     }
     route = POST(URL_ROUTE, header=accessToken, data=routeData, status_code=HTTPStatus.CREATED)
     if response.status_code == HTTPStatus.CREATED:
@@ -428,22 +435,22 @@ def testDB():
 
     # Create Fare
     fareData = {
-            "name": "Kerala Ordinary in global scope",
-            "attributes": {
-                "df_version": 1,
-                "ticket_types": [
-                  {"id": 1, "name": "Adult"},
-                  {"id": 2, "name": "Child"},
-                  {"id": 3, "name": "Student"}
-                ],
-                "currency_type": "INR",
-                "distance_unit": "m",
-                "extra": {}
-              },
-            "function": "function getFare(ticket_type, distance, extra) {\n    const base_fare_distance = 2.5;\n    const base_fare = 10;\n    const rate_per_km = 1;\n\n    distance = distance / 1000;\n    if (ticket_type == \"Student\") {\n        if (distance <= 2.5) {\n            return 1;\n        } else if (distance <= 7.5) {\n            return 2;\n        } else if (distance <= 17.5) {\n            return 3;\n        } else if (distance <= 27.5) {\n            return 4;\n        } else {\n            return 5;\n        }\n    }\n\n    if (ticket_type == \"Adult\") {\n        if (distance <= base_fare_distance) {\n            return base_fare;\n        } else {\n            return base_fare + ((distance - base_fare_distance) * rate_per_km);\n        }\n    }\n\n    if (ticket_type == \"Child\") {\n        if (distance <= base_fare_distance) {\n            return base_fare / 2;\n        } else {\n            return (base_fare + ((distance - base_fare_distance) * rate_per_km)) / 2;\n        }\n    }\n    return -1;\n}",
-            "scope": 1
-            }
-    fare = POST(URL_FARE, header=accessToken, data=fareData, status_code=HTTPStatus.CREATED)
+        "name": "Test fare",
+        "attributes":{
+            "df_version": 1,
+            "ticket_types": [
+                {"id": 1, "name": "Adult"},
+                {"id": 2, "name": "Child"},
+                {"id": 3, "name": "Student"}
+            ],
+            "currency_type": "INR",
+            "distance_unit": "m",
+            "extra": {}
+        },
+        "function": """function getFare(ticket_type, distance, extra) {\n    const base_fare_distance = 2.5;\n    const base_fare = 10;\n    const rate_per_km = 1;\n\n    distance = distance / 1000;\n    if (ticket_type == \"Student\") {\n        if (distance <= 2.5) {\n            return 1;\n        } else if (distance <= 7.5) {\n            return 2;\n        } else if (distance <= 17.5) {\n            return 3;\n        } else if (distance <= 27.5) {\n            return 4;\n        } else {\n            return 5;\n        }\n    }\n\n    if (ticket_type == \"Adult\") {\n        if (distance <= base_fare_distance) {\n            return base_fare;\n        } else {\n            return base_fare + ((distance - base_fare_distance) * rate_per_km);\n        }\n    }\n\n    if (ticket_type == \"Child\") {\n        if (distance <= base_fare_distance) {\n            return base_fare / 2;\n        } else {\n            return (base_fare + ((distance - base_fare_distance) * rate_per_km)) / 2;\n        }\n    }\n    return -1;\n}""",
+        "scope": 1
+    }
+    fare = POST(URL_FARE, header=accessToken, json=fareData, status_code=HTTPStatus.CREATED)
     if response.status_code == HTTPStatus.CREATED:
         print("* Fare created successfully")
 
@@ -464,7 +471,7 @@ def testDB():
             Day.SUNDAY,
         ],
     }
-    POST(URL_SCHEDULE, header=accessToken, data=scheduleData, status_code=HTTPStatus.CREATED)
+    POST(URL_SCHEDULE, header=accessToken, json=scheduleData, status_code=HTTPStatus.CREATED)
     if response.status_code == HTTPStatus.CREATED:
         print("* Schedule created successfully")
 
@@ -474,7 +481,8 @@ def testDB():
         "route": route.json()["id"],
         "fare": fare.json()["id"],
         "bus_id": bus2.json()["id"],
-        "starting_at": nowUTC + timedelta(),
+        # "starting_at": (nowUTC + timedelta()).date().isoformat(),
+        "starting_at": date.today().isoformat()
     }
     service = POST(URL_SERVICE, header=accessToken, data=serviceData, status_code=HTTPStatus.CREATED)
     if response.status_code == HTTPStatus.CREATED:
