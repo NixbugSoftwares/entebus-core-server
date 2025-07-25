@@ -14,19 +14,13 @@ from app.src.db import (
     OperatorRole,
     Service,
     Duty,
-    PaperTicket,
     sessionMaker,
 )
 from app.src.constants import SERVICE_START_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
-from app.src.functions import (
-    enumStr,
-    makeExceptionResponses,
-    updateIfChanged,
-    promoteToParent,
-)
+from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.urls import URL_DUTY
 
 route_executive = APIRouter()
@@ -525,6 +519,7 @@ async def create_duty(
     Requires operator role with `update_duty` permission.       
     When status is updated to STARTED, the duty started_on and service started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
+    Duty assigned operator can only update the status to STARTED or ENDED.  
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
@@ -553,6 +548,11 @@ async def update_duty(
         )
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        if (
+            fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]
+            and token.operator_id != duty.operator_id
+        ):
+            raise exceptions.NoPermission()
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
