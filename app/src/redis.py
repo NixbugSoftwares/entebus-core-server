@@ -26,11 +26,9 @@ def acquireLock(
         else:
             lockName = f"lock:{tableName}:{pk}"
         lock = redisClient.lock(lockName, timeout=timeOut)
-        acquired = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
-        if acquired:
+        isLocked = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
+        if isLocked:
             return lock
-        else:
-            return None
     except Exception:
         raise exceptions.LockAcquireFailed()
 
