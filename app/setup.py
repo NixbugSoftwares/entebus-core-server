@@ -1,10 +1,10 @@
 import argparse
 from http import HTTPStatus
 from requests import post
-from datetime import date, datetime, timedelta, time, timezone
+from datetime import date, datetime, timedelta
 
 from app.src import argon2
-from app.src.enums import CompanyStatus,Day
+from app.src.enums import CompanyStatus, Day
 from app.src.db import (
     Executive,
     ExecutiveRole,
@@ -191,15 +191,10 @@ def initDB():
     session.close()
 
 
-def POST(
-    URL: str, header: dict = {}, status_code: int = HTTPStatus.CREATED, **kwargs
-):
+def POST(URL: str, header: dict = {}, status_code: int = HTTPStatus.CREATED, **kwargs):
     response = post(URL, headers=header, **kwargs)
-    # print(f"Response status: {response.status_code}")  # Debug output
-    # print(f"Response content: {response.text}")  
     if response.status_code != status_code:
         assert response.status_code == status_code
-        # raise Exception(f"Expected status {status_code}, got {response.status_code}. Response: {response.text}")
     else:
         return response
 
@@ -227,9 +222,11 @@ def testDB():
 
     # Create Executive Token
     credentials = {"username": "admin", "password": "password"}
-    response = POST(URL_EXECUTIVE_TOKEN, data=credentials, status_code=HTTPStatus.CREATED)
+    response = POST(
+        URL_EXECUTIVE_TOKEN, data=credentials, status_code=HTTPStatus.CREATED
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Token created successfully")
+        print("* Created token for admin")
     accessToken = {"Authorization": f"Bearer {response.json()['access_token']}"}
 
     # Create Company
@@ -242,9 +239,14 @@ def testDB():
         "email_id": "example@test.com",
         "location": "POINT(76.68899711264336 8.761725176790257)",
     }
-    company = POST(URL_COMPANY,header=accessToken,data=companyData,status_code=HTTPStatus.CREATED)
+    company = POST(
+        URL_COMPANY,
+        header=accessToken,
+        data=companyData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Company created successfully")
+        print("* Created company")
 
     # Create Operator accounts
     adminData = {
@@ -259,76 +261,96 @@ def testDB():
         "password": "password",
         "full_name": "Entebus Conductor",
     }
-    admin = POST(URL_OPERATOR_ACCOUNT,header=accessToken,data=adminData,status_code=HTTPStatus.CREATED)
-    guest = POST(URL_OPERATOR_ACCOUNT,header=accessToken,data=guestData,status_code=HTTPStatus.CREATED)
+    admin = POST(
+        URL_OPERATOR_ACCOUNT,
+        header=accessToken,
+        data=adminData,
+        status_code=HTTPStatus.CREATED,
+    )
+    guest = POST(
+        URL_OPERATOR_ACCOUNT,
+        header=accessToken,
+        data=guestData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Operator created successfully")
+        print("* Created operator accounts")
 
     # Create Operator roles
     adminRoleData = {
-    "company_id": company.json()["id"],
-    "name": "Admin",
-    "manage_token": True,
-    "update_company": True,
-    "create_operator": True,
-    "update_operator": True,
-    "delete_operator": True,
-    "create_route": True,
-    "update_route": True,
-    "delete_route": True,
-    "create_bus": True,
-    "update_bus": True,
-    "delete_bus": True,
-    "create_schedule": True,
-    "update_schedule": True,
-    "delete_schedule": True,
-    "create_service": True,
-    "update_service": True,
-    "delete_service": True,
-    "create_fare": True,
-    "update_fare": True,
-    "delete_fare": True,
-    "create_duty": True,
-    "update_duty": True,
-    "delete_duty": True,
-    "create_role": True,
-    "update_role": True,
-    "delete_role": True,
-}
+        "company_id": company.json()["id"],
+        "name": "Admin",
+        "manage_token": True,
+        "update_company": True,
+        "create_operator": True,
+        "update_operator": True,
+        "delete_operator": True,
+        "create_route": True,
+        "update_route": True,
+        "delete_route": True,
+        "create_bus": True,
+        "update_bus": True,
+        "delete_bus": True,
+        "create_schedule": True,
+        "update_schedule": True,
+        "delete_schedule": True,
+        "create_service": True,
+        "update_service": True,
+        "delete_service": True,
+        "create_fare": True,
+        "update_fare": True,
+        "delete_fare": True,
+        "create_duty": True,
+        "update_duty": True,
+        "delete_duty": True,
+        "create_role": True,
+        "update_role": True,
+        "delete_role": True,
+    }
     guestRoleData = {
-    "company_id": company.json()["id"],
-    "name": "Guest",
-    "manage_token": False,
-    "update_company": False,
-    "create_operator": False,
-    "update_operator": False,
-    "delete_operator": False,
-    "create_route": False,
-    "update_route": False,
-    "delete_route": False,
-    "create_bus": False,
-    "update_bus": False,
-    "delete_bus": False,
-    "create_schedule": False,
-    "update_schedule": False,
-    "delete_schedule": False,
-    "create_service": False,
-    "update_service": False,
-    "delete_service": False,
-    "create_fare": False,
-    "update_fare": False,
-    "delete_fare": False,
-    "create_duty": False,
-    "update_duty": False,
-    "delete_duty": False,
-    "create_role": False,
-    "update_role": False,
-    "delete_role": False,
-}
-    adminRole = POST(URL_OPERATOR_ROLE,header=accessToken,data=adminRoleData,status_code=HTTPStatus.CREATED)
-    guestRole = POST(URL_OPERATOR_ROLE,header=accessToken,data=guestRoleData,status_code=HTTPStatus.CREATED)
+        "company_id": company.json()["id"],
+        "name": "Guest",
+        "manage_token": False,
+        "update_company": False,
+        "create_operator": False,
+        "update_operator": False,
+        "delete_operator": False,
+        "create_route": False,
+        "update_route": False,
+        "delete_route": False,
+        "create_bus": False,
+        "update_bus": False,
+        "delete_bus": False,
+        "create_schedule": False,
+        "update_schedule": False,
+        "delete_schedule": False,
+        "create_service": False,
+        "update_service": False,
+        "delete_service": False,
+        "create_fare": False,
+        "update_fare": False,
+        "delete_fare": False,
+        "create_duty": False,
+        "update_duty": False,
+        "delete_duty": False,
+        "create_role": False,
+        "update_role": False,
+        "delete_role": False,
+    }
+    adminRole = POST(
+        URL_OPERATOR_ROLE,
+        header=accessToken,
+        data=adminRoleData,
+        status_code=HTTPStatus.CREATED,
+    )
+    guestRole = POST(
+        URL_OPERATOR_ROLE,
+        header=accessToken,
+        data=guestRoleData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Operator Roles created successfully")
+        print("* Created operator Roles")
 
     # Create Operator Roles Mapping
     adminMappingData = {
@@ -341,11 +363,21 @@ def testDB():
         "role_id": guestRole.json()["id"],
         "company_id": company.json()["id"],
     }
-    POST(URL_OPERATOR_ROLE_MAP,header=accessToken,data=adminMappingData,status_code=HTTPStatus.CREATED)
-    POST(URL_OPERATOR_ROLE_MAP,header=accessToken,data=guestMappingData,status_code=HTTPStatus.CREATED)
+    POST(
+        URL_OPERATOR_ROLE_MAP,
+        header=accessToken,
+        data=adminMappingData,
+        status_code=HTTPStatus.CREATED,
+    )
+    POST(
+        URL_OPERATOR_ROLE_MAP,
+        header=accessToken,
+        data=guestMappingData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Operator Roles Mapping created successfully")
-    
+        print("* Created operator Role Mappings")
+
     # Create Landmarks
     landmark1Data = {
         "name": "Varkala",
@@ -355,10 +387,20 @@ def testDB():
         "name": "Edava",
         "boundary": "POLYGON((76.6962373 8.7642725, 76.6962373 8.7633725, 76.6953373 8.7633725, 76.6953373 8.7642725, 76.6962373 8.7642725))",
     }
-    landmark1 = POST(URL_LANDMARK, header=accessToken, data=landmark1Data, status_code=HTTPStatus.CREATED)
-    landmark2 = POST(URL_LANDMARK, header=accessToken, data=landmark2Data, status_code=HTTPStatus.CREATED)
+    landmark1 = POST(
+        URL_LANDMARK,
+        header=accessToken,
+        data=landmark1Data,
+        status_code=HTTPStatus.CREATED,
+    )
+    landmark2 = POST(
+        URL_LANDMARK,
+        header=accessToken,
+        data=landmark2Data,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Landmark created successfully")
+        print("* Created landmarks")
 
     # Create Bus Stop
     busStop1Data = {
@@ -371,27 +413,32 @@ def testDB():
         "landmark_id": landmark2.json()["id"],
         "location": "POINT(76.6957873 8.7638225)",
     }
-    POST(URL_BUS_STOP, header=accessToken, data=busStop1Data, status_code=HTTPStatus.CREATED)
-    POST(URL_BUS_STOP, header=accessToken, data=busStop2Data, status_code=HTTPStatus.CREATED)
+    POST(
+        URL_BUS_STOP,
+        header=accessToken,
+        data=busStop1Data,
+        status_code=HTTPStatus.CREATED,
+    )
+    POST(
+        URL_BUS_STOP,
+        header=accessToken,
+        data=busStop2Data,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Bus Stop created successfully")
+        print("* Created bus stops")
 
     # Create Route
-    # nowUTC = datetime.now(timezone.utc)
-    # startTime = nowUTC + timedelta(minutes=1)
-    # routeTime = time(startTime.hour, startTime.minute, startTime.second)
     routeData = {
         "company_id": company.json()["id"],
         "name": "Varkala -> Edava",
-        # "start_time": routeTime.isoformat(),
-        # "start_time": time().isoformat(),
-        # "start_time": datetime.now(timezone.utc).time().isoformat()
-        # "start_time": datetime.now().time().isoformat()
-        "start_time": (datetime.now() + timedelta(minutes=5)).time().isoformat()
+        "start_time": (datetime.now() + timedelta(minutes=5)).time().isoformat(),
     }
-    route = POST(URL_ROUTE, header=accessToken, data=routeData, status_code=HTTPStatus.CREATED)
+    route = POST(
+        URL_ROUTE, header=accessToken, data=routeData, status_code=HTTPStatus.CREATED
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Route created successfully")
+        print("* Created route")
 
     #  Create Landmarks in Route
     landmark1InRouteData = {
@@ -408,10 +455,20 @@ def testDB():
         "arrival_delta": 30,
         "departure_delta": 30,
     }
-    POST(URL_LANDMARK_IN_ROUTE, header=accessToken, data=landmark1InRouteData, status_code=HTTPStatus.CREATED)
-    POST(URL_LANDMARK_IN_ROUTE, header=accessToken, data=landmark2InRouteData, status_code=HTTPStatus.CREATED)
+    POST(
+        URL_LANDMARK_IN_ROUTE,
+        header=accessToken,
+        data=landmark1InRouteData,
+        status_code=HTTPStatus.CREATED,
+    )
+    POST(
+        URL_LANDMARK_IN_ROUTE,
+        header=accessToken,
+        data=landmark2InRouteData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Landmark in Route created successfully")
+        print("* Created landmarks in route")
 
     # Create Buses
     bus1Data = {
@@ -428,31 +485,37 @@ def testDB():
         "capacity": 10,
         "manufactured_on": "2024-03-25T11:24:33.649Z",
     }
-    bus1 = POST(URL_BUS, header=accessToken, data=bus1Data, status_code=HTTPStatus.CREATED)
-    bus2 = POST(URL_BUS, header=accessToken, data=bus2Data, status_code=HTTPStatus.CREATED)
+    bus1 = POST(
+        URL_BUS, header=accessToken, data=bus1Data, status_code=HTTPStatus.CREATED
+    )
+    bus2 = POST(
+        URL_BUS, header=accessToken, data=bus2Data, status_code=HTTPStatus.CREATED
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Bus created successfully")
+        print("* Created buses")
 
     # Create Fare
     fareData = {
         "name": "Test fare",
-        "attributes":{
+        "attributes": {
             "df_version": 1,
             "ticket_types": [
                 {"id": 1, "name": "Adult"},
                 {"id": 2, "name": "Child"},
-                {"id": 3, "name": "Student"}
+                {"id": 3, "name": "Student"},
             ],
             "currency_type": "INR",
             "distance_unit": "m",
-            "extra": {}
+            "extra": {},
         },
         "function": """function getFare(ticket_type, distance, extra) {\n    const base_fare_distance = 2.5;\n    const base_fare = 10;\n    const rate_per_km = 1;\n\n    distance = distance / 1000;\n    if (ticket_type == \"Student\") {\n        if (distance <= 2.5) {\n            return 1;\n        } else if (distance <= 7.5) {\n            return 2;\n        } else if (distance <= 17.5) {\n            return 3;\n        } else if (distance <= 27.5) {\n            return 4;\n        } else {\n            return 5;\n        }\n    }\n\n    if (ticket_type == \"Adult\") {\n        if (distance <= base_fare_distance) {\n            return base_fare;\n        } else {\n            return base_fare + ((distance - base_fare_distance) * rate_per_km);\n        }\n    }\n\n    if (ticket_type == \"Child\") {\n        if (distance <= base_fare_distance) {\n            return base_fare / 2;\n        } else {\n            return (base_fare + ((distance - base_fare_distance) * rate_per_km)) / 2;\n        }\n    }\n    return -1;\n}""",
-        "scope": 1
+        "scope": 1,
     }
-    fare = POST(URL_FARE, header=accessToken, json=fareData, status_code=HTTPStatus.CREATED)
+    fare = POST(
+        URL_FARE, header=accessToken, json=fareData, status_code=HTTPStatus.CREATED
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Fare created successfully")
+        print("* Created fare")
 
     # Create Schedule
     scheduleData = {
@@ -471,9 +534,14 @@ def testDB():
             Day.SUNDAY,
         ],
     }
-    POST(URL_SCHEDULE, header=accessToken, json=scheduleData, status_code=HTTPStatus.CREATED)
+    POST(
+        URL_SCHEDULE,
+        header=accessToken,
+        json=scheduleData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Schedule created successfully")
+        print("* Created schedule")
 
     # Create Service
     serviceData = {
@@ -481,12 +549,16 @@ def testDB():
         "route": route.json()["id"],
         "fare": fare.json()["id"],
         "bus_id": bus2.json()["id"],
-        # "starting_at": (nowUTC + timedelta()).date().isoformat(),
-        "starting_at": date.today().isoformat()
+        "starting_at": date.today().isoformat(),
     }
-    service = POST(URL_SERVICE, header=accessToken, data=serviceData, status_code=HTTPStatus.CREATED)
+    service = POST(
+        URL_SERVICE,
+        header=accessToken,
+        data=serviceData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Service created successfully")
+        print("* Created service")
 
     # Create Duty
     dutyData = {
@@ -496,7 +568,7 @@ def testDB():
     }
     POST(URL_DUTY, header=accessToken, data=dutyData, status_code=HTTPStatus.CREATED)
     if response.status_code == HTTPStatus.CREATED:
-        print("* Duty created successfully")
+        print("* Assigned duty")
 
     # Create Business
     businessData = {
@@ -507,9 +579,14 @@ def testDB():
         "email_id": "example@test.com",
         "location": "POINT(76.68899711264336 8.761725176790257)",
     }
-    business = POST(URL_BUSINESS, header=accessToken, data=businessData, status_code=HTTPStatus.CREATED)
+    business = POST(
+        URL_BUSINESS,
+        header=accessToken,
+        data=businessData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Business created successfully")
+        print("* Created business")
 
     # Create Vendor Account
     vendorAdminData = {
@@ -524,10 +601,20 @@ def testDB():
         "password": "password",
         "full_name": "Guest Vendor",
     }
-    vendorAdmin = POST(URL_VENDOR_ACCOUNT, header=accessToken, data=vendorAdminData, status_code=HTTPStatus.CREATED)
-    vendorGuest = POST(URL_VENDOR_ACCOUNT, header=accessToken, data=vendorGuestData, status_code=HTTPStatus.CREATED)
+    vendorAdmin = POST(
+        URL_VENDOR_ACCOUNT,
+        header=accessToken,
+        data=vendorAdminData,
+        status_code=HTTPStatus.CREATED,
+    )
+    vendorGuest = POST(
+        URL_VENDOR_ACCOUNT,
+        header=accessToken,
+        data=vendorGuestData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Vendor created successfully")
+        print("* Created vendor accounts")
 
     # Create Vendor Role
     vendorAdminRoleData = {
@@ -554,10 +641,20 @@ def testDB():
         "update_role": False,
         "delete_role": False,
     }
-    vendorAdminRole = POST(URL_VENDOR_ROLE, header=accessToken, data=vendorAdminRoleData, status_code=HTTPStatus.CREATED)
-    vendorGuestRole = POST(URL_VENDOR_ROLE, header=accessToken, data=vendorGuestRoleData, status_code=HTTPStatus.CREATED)
+    vendorAdminRole = POST(
+        URL_VENDOR_ROLE,
+        header=accessToken,
+        data=vendorAdminRoleData,
+        status_code=HTTPStatus.CREATED,
+    )
+    vendorGuestRole = POST(
+        URL_VENDOR_ROLE,
+        header=accessToken,
+        data=vendorGuestRoleData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Vendor Role created successfully")
+        print("* Created vendor Roles")
 
     # Vendor Role Map
     vendorAdminMapData = {
@@ -570,12 +667,20 @@ def testDB():
         "role_id": vendorGuestRole.json()["id"],
         "business_id": business.json()["id"],
     }
-    POST(URL_VENDOR_ROLE_MAP, header=accessToken, data=vendorAdminMapData, status_code=HTTPStatus.CREATED)
-    POST(URL_VENDOR_ROLE_MAP, header=accessToken, data=vendorGuestMapData, status_code=HTTPStatus.CREATED)
+    POST(
+        URL_VENDOR_ROLE_MAP,
+        header=accessToken,
+        data=vendorAdminMapData,
+        status_code=HTTPStatus.CREATED,
+    )
+    POST(
+        URL_VENDOR_ROLE_MAP,
+        header=accessToken,
+        data=vendorGuestMapData,
+        status_code=HTTPStatus.CREATED,
+    )
     if response.status_code == HTTPStatus.CREATED:
-        print("* Vendor Role Mapping created successfully")
-
-
+        print("* Created vendor Role Mappings")
 
 
 # Setup database
