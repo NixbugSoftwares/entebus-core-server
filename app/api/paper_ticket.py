@@ -239,32 +239,31 @@ async def create_paper_ticket(
         if duty is None:
             raise exceptions.UnknownValue(PaperTicket.duty_id)
 
-        pickupLandmark = (
-            session.query(LandmarkInRoute)
-            .filter(
-                LandmarkInRoute.route_id == service.route["id"],
-                LandmarkInRoute.landmark_id == fParam.pickup_point,
-            )
-            .first()
+        pickupLandmark = next(
+            (
+                landmark
+                for landmark in service.route["landmark"]
+                if landmark["landmark_id"] == fParam.pickup_point
+            ),
+            None,
         )
         if pickupLandmark is None:
             raise exceptions.UnknownValue(PaperTicket.pickup_point)
-
-        droppingLandmark = (
-            session.query(LandmarkInRoute)
-            .filter(
-                LandmarkInRoute.route_id == service.route["id"],
-                LandmarkInRoute.landmark_id == fParam.dropping_point,
-            )
-            .first()
+        dropLandmark = next(
+            (
+                landmark
+                for landmark in service.route["landmark"]
+                if landmark["landmark_id"] == fParam.dropping_point
+            ),
+            None,
         )
-        if droppingLandmark is None:
+        if dropLandmark is None:
             raise exceptions.UnknownValue(PaperTicket.dropping_point)
 
         distance = (
-            droppingLandmark.distance_from_start - pickupLandmark.distance_from_start
+            dropLandmark["distance_from_start"] - pickupLandmark["distance_from_start"]
         )
-        if droppingLandmark.distance_from_start < pickupLandmark.distance_from_start:
+        if distance < 0:
             raise exceptions.UnknownValue(PaperTicket.dropping_point)
 
         fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
