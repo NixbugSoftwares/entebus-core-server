@@ -30,6 +30,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_COMPANY
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -278,7 +279,7 @@ def searchCompany(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=CompanySchema,
     status_code=status.HTTP_201_CREATED,
@@ -353,7 +354,7 @@ async def create_company(
 
 
 @route_executive.patch(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=CompanySchema,
     responses=makeExceptionResponses(
@@ -410,7 +411,7 @@ async def update_company(
 
 
 @route_executive.delete(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -448,7 +449,7 @@ async def delete_company(
 
 
 @route_executive.get(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchema],
     responses=makeExceptionResponses(
@@ -480,7 +481,7 @@ async def fetch_company(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchemaForVE],
     responses=makeExceptionResponses(
@@ -516,7 +517,7 @@ async def fetch_company(
 
 ## API endpoints [Operator]
 @route_operator.patch(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=CompanySchema,
     responses=makeExceptionResponses(
@@ -570,7 +571,7 @@ async def update_company(
 
 
 @route_operator.get(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchema],
     responses=makeExceptionResponses(
@@ -603,7 +604,7 @@ async def fetch_company(bearer=Depends(bearer_operator)):
 
 ## API endpoints [Public]
 @route_public.get(
-    "/company",
+    URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchemaForVE],
     responses=makeExceptionResponses(

@@ -16,6 +16,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_OPERATOR_ROLE
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -340,7 +341,7 @@ def searchRole(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     response_model=OperatorRoleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -409,7 +410,7 @@ async def create_role(
 
 
 @route_executive.patch(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     response_model=OperatorRoleSchema,
     responses=makeExceptionResponses(
@@ -459,7 +460,7 @@ async def update_role(
 
 
 @route_executive.delete(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -497,7 +498,7 @@ async def delete_role(
 
 
 @route_executive.get(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     response_model=List[OperatorRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -524,7 +525,7 @@ async def fetch_role(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Role"],
     response_model=OperatorRoleSchema,
     status_code=status.HTTP_201_CREATED,
@@ -593,7 +594,7 @@ async def create_role(
 
 
 @route_operator.patch(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Role"],
     response_model=OperatorRoleSchema,
     responses=makeExceptionResponses(
@@ -644,7 +645,7 @@ async def update_role(
 
 
 @route_operator.delete(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -687,7 +688,7 @@ async def delete_role(
 
 
 @route_operator.get(
-    "/company/role",
+    URL_OPERATOR_ROLE,
     tags=["Role"],
     response_model=List[OperatorRoleSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

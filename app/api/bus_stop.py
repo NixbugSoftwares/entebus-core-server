@@ -15,6 +15,7 @@ from app.src.db import BusStop, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.urls import URL_BUS_STOP
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -152,7 +153,7 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=BusStopSchema,
     status_code=status.HTTP_201_CREATED,
@@ -218,7 +219,7 @@ async def create_bus_stop(
 
 
 @route_executive.patch(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=BusStopSchema,
     responses=makeExceptionResponses(
@@ -289,7 +290,7 @@ async def update_bus_stop(
 
 
 @route_executive.delete(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -329,7 +330,7 @@ async def delete_bus_stop(
 
 
 @route_executive.get(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
     responses=makeExceptionResponses(
@@ -361,7 +362,7 @@ async def fetch_bus_stop(
 
 # ## API endpoints [Vendor]
 @route_vendor.get(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
     responses=makeExceptionResponses(
@@ -393,7 +394,7 @@ async def fetch_bus_stop(
 
 # ## API endpoints [Operator]
 @route_operator.get(
-    "/landmark/bus_stop",
+    URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
     responses=makeExceptionResponses(

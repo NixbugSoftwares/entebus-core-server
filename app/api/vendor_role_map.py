@@ -17,6 +17,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.urls import URL_VENDOR_ROLE_MAP
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -153,7 +154,7 @@ def searchRoleMap(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     response_model=VendorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
@@ -206,7 +207,7 @@ async def create_role_map(
 
 
 @route_executive.patch(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     response_model=VendorRoleMapSchema,
     responses=makeExceptionResponses(
@@ -261,7 +262,7 @@ async def update_role_map(
 
 
 @route_executive.delete(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -301,7 +302,7 @@ async def delete_role_map(
 
 
 @route_executive.get(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     response_model=List[VendorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -328,7 +329,7 @@ async def fetch_role_map(
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=VendorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
@@ -391,7 +392,7 @@ async def create_role_map(
 
 
 @route_vendor.patch(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=VendorRoleMapSchema,
     responses=makeExceptionResponses(
@@ -449,7 +450,7 @@ async def update_role_map(
 
 
 @route_vendor.delete(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -492,7 +493,7 @@ async def delete_role_map(
 
 
 @route_vendor.get(
-    "/business/account/role",
+    URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[VendorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

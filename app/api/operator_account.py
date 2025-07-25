@@ -25,6 +25,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_OPERATOR_ACCOUNT
 
 route_operator = APIRouter()
 route_executive = APIRouter()
@@ -216,7 +217,7 @@ def searchOperator(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Operator Account"],
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
@@ -266,7 +267,7 @@ async def create_operator(
 
 
 @route_executive.patch(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Operator Account"],
     response_model=OperatorSchema,
     responses=makeExceptionResponses(
@@ -313,7 +314,7 @@ async def update_operator(
 
 
 @route_executive.delete(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Operator Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -351,7 +352,7 @@ async def delete_operator(
 
 
 @route_executive.get(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Operator Account"],
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -381,7 +382,7 @@ async def fetch_operator(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Account"],
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
@@ -433,7 +434,7 @@ async def create_operator(
 
 
 @route_operator.patch(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Account"],
     response_model=OperatorSchema,
     responses=makeExceptionResponses(
@@ -494,7 +495,7 @@ async def update_operator(
 
 
 @route_operator.delete(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -543,7 +544,7 @@ async def delete_operator(
 
 
 @route_operator.get(
-    "/company/account",
+    URL_OPERATOR_ACCOUNT ,
     tags=["Account"],
     response_model=List[OperatorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

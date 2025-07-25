@@ -13,6 +13,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.urls import URL_EXECUTIVE_ACCOUNT
 
 route_executive = APIRouter()
 
@@ -117,7 +118,7 @@ class QueryParams(BaseModel):
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/entebus/account",
+    URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     response_model=ExecutiveSchema,
     status_code=status.HTTP_201_CREATED,
@@ -166,7 +167,7 @@ async def create_executive(
 
 
 @route_executive.patch(
-    "/entebus/account",
+    URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     response_model=ExecutiveSchema,
     responses=makeExceptionResponses(
@@ -240,7 +241,7 @@ async def update_executive(
 
 
 @route_executive.delete(
-    "/entebus/account",
+    URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -284,7 +285,7 @@ async def delete_executive(
 
 
 @route_executive.get(
-    "/entebus/account",
+    URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     response_model=List[ExecutiveSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

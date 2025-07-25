@@ -19,6 +19,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_VENDOR_ACCOUNT
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
@@ -210,7 +211,7 @@ def searchVendor(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
@@ -260,7 +261,7 @@ async def create_vendor(
 
 
 @route_executive.patch(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     response_model=VendorSchema,
     responses=makeExceptionResponses(
@@ -307,7 +308,7 @@ async def update_vendor(
 
 
 @route_executive.delete(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -345,7 +346,7 @@ async def delete_vendor(
 
 
 @route_executive.get(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -375,7 +376,7 @@ async def fetch_vendor(
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Account"],
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
@@ -426,7 +427,7 @@ async def create_vendor(
 
 
 @route_vendor.patch(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Account"],
     response_model=VendorSchema,
     responses=makeExceptionResponses(
@@ -487,7 +488,7 @@ async def update_vendor(
 
 
 @route_vendor.delete(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -536,7 +537,7 @@ async def delete_vendor(
 
 
 @route_vendor.get(
-    "/business/account",
+    URL_VENDOR_ACCOUNT,
     tags=["Account"],
     response_model=List[VendorSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
