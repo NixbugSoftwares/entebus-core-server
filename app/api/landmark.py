@@ -17,6 +17,7 @@ from app.src import exceptions, validators, getters
 from app.src.enums import LandmarkType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, getArea, makeExceptionResponses, updateIfChanged
+from app.src.urls import URL_LANDMARK
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -180,7 +181,7 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     response_model=LandmarkSchema,
     status_code=status.HTTP_201_CREATED,
@@ -232,7 +233,7 @@ async def create_landmark(
 
 
 @route_executive.patch(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     response_model=LandmarkSchema,
     responses=makeExceptionResponses(
@@ -303,7 +304,7 @@ async def update_landmark(
 
 
 @route_executive.delete(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -341,7 +342,7 @@ async def delete_landmark(
 
 
 @route_executive.get(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
     responses=makeExceptionResponses(
@@ -373,7 +374,7 @@ async def fetch_landmark(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
     responses=makeExceptionResponses(
@@ -404,7 +405,7 @@ async def fetch_landmark(
 
 ## API endpoints [Operator]
 @route_operator.get(
-    "/landmark",
+    URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
     responses=makeExceptionResponses(

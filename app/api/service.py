@@ -36,6 +36,7 @@ from app.src.functions import (
     promoteToParent,
 )
 from app.src.digital_ticket import v1
+from app.src.urls import URL_SERVICE
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -322,7 +323,7 @@ def searchService(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
     status_code=status.HTTP_201_CREATED,
@@ -421,7 +422,7 @@ async def create_service(
 
 
 @route_executive.patch(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
     responses=makeExceptionResponses(
@@ -477,7 +478,7 @@ async def update_service(
 
 
 @route_executive.delete(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -525,7 +526,7 @@ async def delete_service(
 
 
 @route_executive.get(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -551,7 +552,7 @@ async def fetch_service(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchemaForVE],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -582,7 +583,7 @@ async def fetch_route(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
     status_code=status.HTTP_201_CREATED,
@@ -684,7 +685,7 @@ async def create_service(
 
 
 @route_operator.patch(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
     responses=makeExceptionResponses(
@@ -745,7 +746,7 @@ async def update_service(
 
 
 @route_operator.delete(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -799,7 +800,7 @@ async def delete_service(
 
 
 @route_operator.get(
-    "/company/service",
+    URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

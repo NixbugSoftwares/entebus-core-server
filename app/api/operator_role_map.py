@@ -17,6 +17,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.urls import URL_OPERATOR_ROLE_MAP
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -157,7 +158,7 @@ def searchRoleMap(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     response_model=OperatorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
@@ -216,7 +217,7 @@ async def create_role_map(
 
 
 @route_executive.patch(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     response_model=OperatorRoleMapSchema,
     responses=makeExceptionResponses(
@@ -273,7 +274,7 @@ async def update_role_map(
 
 
 @route_executive.delete(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -315,7 +316,7 @@ async def delete_role_map(
 
 
 @route_executive.get(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     response_model=List[OperatorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -342,7 +343,7 @@ async def fetch_role_map(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=OperatorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
@@ -405,7 +406,7 @@ async def create_role_map(
 
 
 @route_operator.patch(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=OperatorRoleMapSchema,
     responses=makeExceptionResponses(
@@ -463,7 +464,7 @@ async def update_role_map(
 
 
 @route_operator.delete(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -506,7 +507,7 @@ async def delete_role_map(
 
 
 @route_operator.get(
-    "/company/account/role",
+    URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[OperatorRoleMapSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

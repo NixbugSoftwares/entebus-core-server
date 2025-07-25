@@ -12,6 +12,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
+from app.src.urls import URL_PAPER_TICKET
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -158,7 +159,7 @@ def searchPaperTicket(
 
 ## API endpoints [Executive]
 @route_executive.get(
-    "/company/service/ticket/paper",
+    URL_PAPER_TICKET,
     tags=["Paper Ticket"],
     response_model=List[PaperTicketSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -186,7 +187,7 @@ async def fetch_paper_ticket(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/service/ticket/paper",
+    URL_PAPER_TICKET,
     tags=["Paper Ticket"],
     response_model=PaperTicketSchema,
     status_code=status.HTTP_201_CREATED,
@@ -314,7 +315,7 @@ async def create_paper_ticket(
 
 
 @route_operator.get(
-    "/company/service/ticket/paper",
+    URL_PAPER_TICKET,
     tags=["Paper Ticket"],
     response_model=List[PaperTicketSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

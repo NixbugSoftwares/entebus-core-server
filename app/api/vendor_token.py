@@ -14,6 +14,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType, BusinessStatus
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.urls import URL_VENDOR_TOKEN
 
 route_vendor = APIRouter()
 route_executive = APIRouter()
@@ -151,7 +152,7 @@ def searchVendorToken(
 
 ## API endpoints [Executive]
 @route_executive.get(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Vendor Token"],
     response_model=List[MaskedVendorTokenSchema],
     responses=makeExceptionResponses(
@@ -182,7 +183,7 @@ async def fetch_tokens(
 
 
 @route_executive.delete(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Vendor Token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -227,7 +228,7 @@ async def delete_token(
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Token"],
     response_model=VendorTokenSchema,
     status_code=status.HTTP_201_CREATED,
@@ -313,7 +314,7 @@ async def create_token(
 
 
 @route_vendor.patch(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Token"],
     response_model=VendorTokenSchema,
     responses=makeExceptionResponses(
@@ -368,7 +369,7 @@ async def refresh_token(
 
 
 @route_vendor.delete(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -426,7 +427,7 @@ async def delete_token(
 
 
 @route_vendor.get(
-    "/business/account/token",
+    URL_VENDOR_TOKEN ,
     tags=["Token"],
     response_model=List[MaskedVendorTokenSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

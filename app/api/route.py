@@ -20,6 +20,7 @@ from app.src.functions import (
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+from app.src.urls import URL_ROUTE
 
 
 ## Output Schema
@@ -147,7 +148,7 @@ def searchRoute(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
@@ -188,7 +189,7 @@ async def create_route(
 
 
 @route_executive.patch(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
@@ -232,7 +233,7 @@ async def update_route(
 
 
 @route_executive.delete(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -268,7 +269,7 @@ async def delete_route(
 
 
 @route_executive.get(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -294,7 +295,7 @@ async def fetch_route(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -318,7 +319,7 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
@@ -359,7 +360,7 @@ async def create_route(
 
 
 @route_operator.patch(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
     responses=makeExceptionResponses(
@@ -408,7 +409,7 @@ async def update_route(
 
 
 @route_operator.delete(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -450,7 +451,7 @@ async def delete_route(
 
 
 @route_operator.get(
-    "/company/route",
+    URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),

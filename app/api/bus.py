@@ -18,6 +18,7 @@ from app.src.functions import (
     updateIfChanged,
     promoteToParent,
 )
+from app.src.urls import URL_BUS
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -243,7 +244,7 @@ def searchBus(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
@@ -292,7 +293,7 @@ async def create_bus(
 
 
 @route_executive.patch(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
     responses=makeExceptionResponses(
@@ -338,7 +339,7 @@ async def update_bus(
 
 
 @route_executive.delete(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -376,7 +377,7 @@ async def delete_bus(
 
 
 @route_executive.get(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     response_model=List[BusSchema],
@@ -403,7 +404,7 @@ async def fetch_buses(
 
 ## API endpoints [Vendor]
 @route_vendor.get(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=List[BusSchemaForVE],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
@@ -434,7 +435,7 @@ async def fetch_tokens(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
@@ -485,7 +486,7 @@ async def create_bus(
 
 
 @route_operator.patch(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
     responses=makeExceptionResponses(
@@ -537,7 +538,7 @@ async def update_bus(
 
 
 @route_operator.delete(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
@@ -580,7 +581,7 @@ async def delete_bus(
 
 
 @route_operator.get(
-    "/company/bus",
+    URL_BUS,
     tags=["Bus"],
     response_model=List[BusSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
