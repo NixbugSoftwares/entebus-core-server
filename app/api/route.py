@@ -29,6 +29,7 @@ class RouteSchema(BaseModel):
     company_id: int
     name: str
     start_time: time
+    status: int
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -68,6 +69,7 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
+    status: int | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -109,6 +111,8 @@ def searchRoute(
         query = query.filter(Route.company_id == qParam.company_id)
     if qParam.name is not None:
         query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
+    if qParam.status is not None:
+        query = query.filter(Route.status == qParam.status)
     # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)

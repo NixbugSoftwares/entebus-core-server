@@ -252,11 +252,14 @@ async def create_landmark_in_route(
         redisClient.set(route,(jsonable_encoder(route)))
         lock = acquireLock(route, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
-        routeData = validators.landmarkInRoute(route.id, session)
-        if routeData:
-            route.status = RouteStatus.VALID
-
         session.add(landmarkInRoute)
+
+        isValid = validators.landmarkInRoute(route.id, session)
+        if isValid:
+            route.status = RouteStatus.VALID
+        else:
+            route.status = RouteStatus.INVALID
+
         session.commit()
         session.refresh(landmarkInRoute)
 
