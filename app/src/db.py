@@ -43,6 +43,7 @@ from app.src.enums import (
     TriggeringMode,
     ServiceStatus,
     DutyStatus,
+    RouteStatus,
 )
 
 
@@ -1805,6 +1806,7 @@ class Route(ORMbase):
     )
     name = Column(String(4096), nullable=False)
     start_time = Column(Time(timezone=True), nullable=False)
+    status = Column(Integer, nullable=False, default=RouteStatus.INVALID)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
