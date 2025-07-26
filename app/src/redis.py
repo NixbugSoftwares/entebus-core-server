@@ -20,15 +20,18 @@ def acquireLock(
     blockingTimeOut=MUTEX_LOCK_MAX_WAIT_TIME,
 ):
     # Acquire a mutex lock for a table or specific row using Redis, returning the lock object if acquired.
-    if pk is None:
-        lockName = f"lock:{tableName}"
-    else:
-        lockName = f"lock:{tableName}:{pk}"
-    lock = redisClient.lock(lockName, timeout=timeOut)
-    isLocked = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
-    if isLocked:
-        return lock
-    else:
+    try:
+        if pk is None:
+            lockName = f"lock:{tableName}"
+        else:
+            lockName = f"lock:{tableName}:{pk}"
+        lock = redisClient.lock(lockName, timeout=timeOut)
+        isLocked = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
+        if isLocked:
+            return lock
+        else:
+            raise exceptions.LockAcquireFailed()
+    except Exception:
         raise exceptions.LockAcquireFailed()
 
 
