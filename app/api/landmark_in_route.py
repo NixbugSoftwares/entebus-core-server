@@ -249,7 +249,6 @@ async def create_landmark_in_route(
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
-        redisClient.set(route,(jsonable_encoder(route)))
         lock = acquireLock(route, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
@@ -462,6 +461,7 @@ async def create_landmark_in_route(
         )
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
+        lock = acquireLock(route, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
 
         session.add(landmarkInRoute)
@@ -474,6 +474,7 @@ async def create_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
