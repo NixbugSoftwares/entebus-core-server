@@ -30,7 +30,7 @@ def acquireLock(
         if isLocked:
             return lock
         else:
-            raise exceptions.LockAcquireFailed()
+            raise exceptions.LockAcquireTimeout()
     except Exception:
         raise exceptions.LockAcquireFailed()
 
