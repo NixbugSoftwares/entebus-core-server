@@ -11,14 +11,14 @@ from app.src.db import Landmark, LandmarkInRoute, Route, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import RouteStatus
+from app.src.urls import URL_LANDMARK_IN_ROUTE
+from app.src.redis import acquireLock, releaseLock
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
-from app.src.urls import URL_LANDMARK_IN_ROUTE
-from app.src.redis import acquireLock, releaseLock, redisClient
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -311,6 +311,11 @@ async def update_landmark_in_route(
         if landmarkInRoute is None:
             raise exceptions.InvalidIdentifier()
 
+        route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+        )
+        lock = acquireLock(route, landmarkInRoute.route_id)
+
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
         if haveUpdates:
@@ -324,6 +329,7 @@ async def update_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
@@ -357,6 +363,11 @@ async def delete_landmark_in_route(
             .filter(LandmarkInRoute.id == fParam.id)
             .first()
         )
+        route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+        )
+        lock = acquireLock(route, landmarkInRoute.route_id)
+
         if landmarkInRoute is not None:
             session.delete(landmarkInRoute)
             session.commit()
@@ -365,6 +376,7 @@ async def delete_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
@@ -517,6 +529,10 @@ async def update_landmark_in_route(
         )
         if landmarkInRoute is None:
             raise exceptions.InvalidIdentifier()
+        route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+        )
+        lock = acquireLock(route, landmarkInRoute.route_id)
 
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
@@ -531,6 +547,7 @@ async def update_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
@@ -565,6 +582,10 @@ async def delete_landmark_in_route(
             .filter(LandmarkInRoute.company_id == token.company_id)
             .first()
         )
+        route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+        )
+        lock = acquireLock(route, landmarkInRoute.route_id)
         if landmarkInRoute is not None:
             session.delete(landmarkInRoute)
             session.commit()
@@ -573,6 +594,7 @@ async def delete_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
