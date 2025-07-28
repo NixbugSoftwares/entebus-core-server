@@ -22,6 +22,7 @@ from app.src.db import (
 from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
+from app.src.redis import acquireLock, releaseLock
 from app.src.enums import (
     TicketingMode,
     ServiceStatus,
@@ -392,6 +393,8 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
+        lock = acquireLock(route, fParam.route)
+
         serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
@@ -418,6 +421,7 @@ async def create_service(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
@@ -655,6 +659,8 @@ async def create_service(
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
 
+        lock = acquireLock(route, fParam.route)
+
         serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
@@ -681,6 +687,7 @@ async def create_service(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
