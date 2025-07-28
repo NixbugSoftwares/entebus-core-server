@@ -395,7 +395,7 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        lock = acquireLock(route, fParam.route)
+        lock = acquireLock(Route.__tablename__, fParam.route)
 
         serviceData = createService(session, route, bus, fare, company, fParam)
 
@@ -631,6 +631,7 @@ async def create_service(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -660,7 +661,7 @@ async def create_service(
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
 
-        lock = acquireLock(route, fParam.route)
+        routeLock = acquireLock(Route.__tablename__, fParam.route)
 
         serviceData = createService(session, route, bus, fare, company, fParam)
 
@@ -688,7 +689,7 @@ async def create_service(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 

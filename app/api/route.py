@@ -163,6 +163,7 @@ def searchRoute(
     description="""
     Create a new route for a specified company.  
     Requires executive role with `create_route` permission.  
+    By default the status of the route is INVALID.      
     Accepts route name and start time.
     """,
 )
@@ -255,6 +256,7 @@ async def delete_route(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -262,8 +264,8 @@ async def delete_route(
         validators.executivePermission(role, ExecutiveRole.delete_route)
 
         route = session.query(Route).filter(Route.id == fParam.id).first()
-        lock = acquireLock(route, fParam.id)
         if route is not None:
+            routeLock = acquireLock(Route.__tablename__, fParam.id)
             session.delete(route)
             session.commit()
             logEvent(token, request_info, jsonable_encoder(route))
@@ -271,7 +273,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -336,6 +338,7 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
     description="""
     Create a new route for the operator's own company.  
     Requires operator role with `create_route` permission.  
+    By default the status of the route is INVALID.  
     The company ID is derived from the token, not user input.
     """,
 )
@@ -445,7 +448,7 @@ async def delete_route(
             .filter(Route.company_id == token.company_id)
             .first()
         )
-        lock = acquireLock(route, fParam.id)
+        lock = acquireLock(Route.__tablename__, fParam.id)
         if route is not None:
             session.delete(route)
             session.commit()

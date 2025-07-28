@@ -231,6 +231,7 @@ def searchLandmarkInRoute(
     Create a new landmark assignment within a route for a company.  
     Requires `create_route` or `update_route` permission.  
     Validates route and landmark existence before creation.        
+    When creating a new landmark in a route, the route will be validated and status of the route will be updated to VALID.  
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -239,6 +240,7 @@ async def create_landmark_in_route(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -249,7 +251,7 @@ async def create_landmark_in_route(
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
-        lock = acquireLock(route, fParam.route_id)
+        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
@@ -268,7 +270,7 @@ async def create_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -288,6 +290,7 @@ async def create_landmark_in_route(
     Update properties of a landmark within a route.  
     Requires `create_route` or `update_route` permission.  
     Only updates fields that are explicitly provided.   
+    When updating a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -296,6 +299,7 @@ async def update_landmark_in_route(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -314,7 +318,7 @@ async def update_landmark_in_route(
         route = (
             session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
         )
-        lock = acquireLock(route, landmarkInRoute.route_id)
+        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
 
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
@@ -334,7 +338,7 @@ async def update_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -348,6 +352,7 @@ async def update_landmark_in_route(
     description="""
     Delete a specific landmark assigned to a route by ID.  
     Requires `create_route` or `update_route` permission.  
+    When deleting a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
     Deletes the record if it exists.
     """,
 )
@@ -356,6 +361,7 @@ async def delete_landmark_in_route(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -368,27 +374,27 @@ async def delete_landmark_in_route(
             .filter(LandmarkInRoute.id == fParam.id)
             .first()
         )
-        route = (
-            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
-        )
-        lock = acquireLock(route, landmarkInRoute.route_id)
 
         if landmarkInRoute is not None:
+            route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+            )
+            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)
             session.flush()
-        isValid = validators.landmarkInRoute(route.id, session)
-        if isValid:
-            route.status = RouteStatus.VALID
-        else:
-            route.status = RouteStatus.INVALID
-        
-        session.commit()
-        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+            isValid = validators.landmarkInRoute(route.id, session)
+            if isValid:
+                route.status = RouteStatus.VALID
+            else:
+                route.status = RouteStatus.INVALID
+
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -462,6 +468,7 @@ async def fetch_landmarks_in_route(
     Requires `create_route` or `update_route` permission.  
     Validates that the route belongs to the operator's company.
     Validates landmark existence before creation.   
+    When creating a new landmark in a route, the route will be validated and status of the route will be updated to VALID. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -470,6 +477,7 @@ async def create_landmark_in_route(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -485,7 +493,7 @@ async def create_landmark_in_route(
         )
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
-        lock = acquireLock(route, fParam.route_id)
+        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
@@ -504,7 +512,7 @@ async def create_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -524,6 +532,7 @@ async def create_landmark_in_route(
     Update details of a landmark in a route within the operator's company.  
     Requires `create_route` or `update_route` permission.  
     Only updates fields that are explicitly provided.   
+    When updating a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -532,6 +541,7 @@ async def update_landmark_in_route(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -550,7 +560,7 @@ async def update_landmark_in_route(
         route = (
             session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
         )
-        lock = acquireLock(route, landmarkInRoute.route_id)
+        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
 
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
@@ -570,7 +580,7 @@ async def update_landmark_in_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
@@ -584,6 +594,7 @@ async def update_landmark_in_route(
     description="""
     Delete a landmark from a route, only if it belongs to the operator's company.  
     Requires `create_route` or `update_route` permission.  
+    When deleting a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
     Deletes if found and authorized.
     """,
 )
@@ -592,6 +603,7 @@ async def delete_landmark_in_route(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -605,27 +617,28 @@ async def delete_landmark_in_route(
             .filter(LandmarkInRoute.company_id == token.company_id)
             .first()
         )
-        route = (
-            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
-        )
-        lock = acquireLock(route, landmarkInRoute.route_id)
 
         if landmarkInRoute is not None:
+            route = (
+            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+            )
+            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)
             session.flush()
-        isValid = validators.landmarkInRoute(route.id, session)
-        if isValid:
-            route.status = RouteStatus.VALID
-        else:
-            route.status = RouteStatus.INVALID
 
-        session.commit()
-        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+            isValid = validators.landmarkInRoute(route.id, session)
+            if isValid:
+                route.status = RouteStatus.VALID
+            else:
+                route.status = RouteStatus.INVALID
+
+            session.commit()
+            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 
