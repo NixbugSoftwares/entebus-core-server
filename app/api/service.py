@@ -29,6 +29,7 @@ from app.src.enums import (
     FareScope,
     BusStatus,
     CompanyStatus,
+    RouteStatus,
 )
 from app.src.functions import (
     enumStr,
@@ -176,6 +177,8 @@ def createService(
         raise exceptions.InactiveResource(Bus)
     if company.status != CompanyStatus.VERIFIED:
         raise exceptions.InactiveResource(Company)
+    if route.status != RouteStatus.VALID:
+        raise exceptions.InactiveResource(Route)
 
     # Validate starting date
     if fParam.starting_at < date.today():
@@ -388,7 +391,6 @@ async def create_service(
             raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
         if route.company_id != company.id:
             raise exceptions.InvalidAssociation(Service.route, Service.company_id)
-        validators.landmarkInRoute(route.id, session)
         if fare.scope != FareScope.GLOBAL:
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
@@ -651,7 +653,6 @@ async def create_service(
         )
         if route is None:
             raise exceptions.UnknownValue(Service.route)
-        validators.landmarkInRoute(route.id, session)
         fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
         if fare and fare.scope != FareScope.GLOBAL:
             if fare.company_id != token.company_id:
