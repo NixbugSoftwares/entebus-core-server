@@ -319,6 +319,11 @@ async def update_landmark_in_route(
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
         if haveUpdates:
+            isValid = validators.landmarkInRoute(route.id, session)
+            if isValid:
+                route.status = RouteStatus.VALID
+            else:
+                route.status = RouteStatus.INVALID
             session.commit()
             session.refresh(landmarkInRoute)
 
@@ -370,8 +375,15 @@ async def delete_landmark_in_route(
 
         if landmarkInRoute is not None:
             session.delete(landmarkInRoute)
-            session.commit()
-            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+            session.flush()
+        isValid = validators.landmarkInRoute(route.id, session)
+        if isValid:
+            route.status = RouteStatus.VALID
+        else:
+            route.status = RouteStatus.INVALID
+        
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
@@ -475,8 +487,14 @@ async def create_landmark_in_route(
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         lock = acquireLock(route, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
-
         session.add(landmarkInRoute)
+
+        isValid = validators.landmarkInRoute(route.id, session)
+        if isValid:
+            route.status = RouteStatus.VALID
+        else:
+            route.status = RouteStatus.INVALID
+
         session.commit()
         session.refresh(landmarkInRoute)
 
@@ -537,6 +555,11 @@ async def update_landmark_in_route(
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
         if haveUpdates:
+            isValid = validators.landmarkInRoute(route.id, session)
+            if isValid:
+                route.status = RouteStatus.VALID
+            else:
+                route.status = RouteStatus.INVALID
             session.commit()
             session.refresh(landmarkInRoute)
 
@@ -586,10 +609,18 @@ async def delete_landmark_in_route(
             session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
         )
         lock = acquireLock(route, landmarkInRoute.route_id)
+
         if landmarkInRoute is not None:
             session.delete(landmarkInRoute)
-            session.commit()
-            logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
+            session.flush()
+        isValid = validators.landmarkInRoute(route.id, session)
+        if isValid:
+            route.status = RouteStatus.VALID
+        else:
+            route.status = RouteStatus.INVALID
+
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(landmarkInRoute))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)
