@@ -10,6 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
+from app.src.redis import acquireLock, releaseLock
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -261,6 +262,7 @@ async def delete_route(
         validators.executivePermission(role, ExecutiveRole.delete_route)
 
         route = session.query(Route).filter(Route.id == fParam.id).first()
+        lock = acquireLock(route, fParam.id)
         if route is not None:
             session.delete(route)
             session.commit()
@@ -269,6 +271,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
@@ -442,7 +445,7 @@ async def delete_route(
             .filter(Route.company_id == token.company_id)
             .first()
         )
-
+        lock = acquireLock(route, fParam.id)
         if route is not None:
             session.delete(route)
             session.commit()
@@ -451,6 +454,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(lock)
         session.close()
 
 
