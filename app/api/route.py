@@ -436,6 +436,7 @@ async def delete_route(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -448,7 +449,7 @@ async def delete_route(
             .filter(Route.company_id == token.company_id)
             .first()
         )
-        lock = acquireLock(Route.__tablename__, fParam.id)
+        routeLock = acquireLock(Route.__tablename__, fParam.id)
         if route is not None:
             session.delete(route)
             session.commit()
@@ -457,7 +458,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
-        releaseLock(lock)
+        releaseLock(routeLock)
         session.close()
 
 

@@ -231,7 +231,7 @@ def searchLandmarkInRoute(
     Create a new landmark assignment within a route for a company.  
     Requires `create_route` or `update_route` permission.  
     Validates route and landmark existence before creation.        
-    When creating a new landmark in a route, the route will be validated and status of the route will be updated to VALID.  
+    When creating a new landmark in a route, the route will be validated and status of the route will be updated.  
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -290,7 +290,7 @@ async def create_landmark_in_route(
     Update properties of a landmark within a route.  
     Requires `create_route` or `update_route` permission.  
     Only updates fields that are explicitly provided.   
-    When updating a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
+    When updating a landmark in a route, the route will be validated and status of the route will be updated. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -352,7 +352,7 @@ async def update_landmark_in_route(
     description="""
     Delete a specific landmark assigned to a route by ID.  
     Requires `create_route` or `update_route` permission.  
-    When deleting a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
+    When deleting a landmark in a route, the route will be validated and status of the route will be updated. 
     Deletes the record if it exists.
     """,
 )
@@ -377,7 +377,9 @@ async def delete_landmark_in_route(
 
         if landmarkInRoute is not None:
             route = (
-            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+                session.query(Route)
+                .filter(Route.id == landmarkInRoute.route_id)
+                .first()
             )
             routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)
@@ -468,7 +470,7 @@ async def fetch_landmarks_in_route(
     Requires `create_route` or `update_route` permission.  
     Validates that the route belongs to the operator's company.
     Validates landmark existence before creation.   
-    When creating a new landmark in a route, the route will be validated and status of the route will be updated to VALID. 
+    When creating a new landmark in a route, the route will be validated and status of the route will be updated. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -532,7 +534,7 @@ async def create_landmark_in_route(
     Update details of a landmark in a route within the operator's company.  
     Requires `create_route` or `update_route` permission.  
     Only updates fields that are explicitly provided.   
-    When updating a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
+    When updating a landmark in a route, the route will be validated and status of the route will be updated. 
     Validates departure_delta is greater than arrival_delta.
     """,
 )
@@ -594,7 +596,7 @@ async def update_landmark_in_route(
     description="""
     Delete a landmark from a route, only if it belongs to the operator's company.  
     Requires `create_route` or `update_route` permission.  
-    When deleting a landmark in a route, the route will be validated and status of the route will be updated to VALID. 
+    When deleting a landmark in a route, the route will be validated and status of the route will be updated. 
     Deletes if found and authorized.
     """,
 )
@@ -620,7 +622,9 @@ async def delete_landmark_in_route(
 
         if landmarkInRoute is not None:
             route = (
-            session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
+                session.query(Route)
+                .filter(Route.id == landmarkInRoute.route_id)
+                .first()
             )
             routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)

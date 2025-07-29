@@ -1792,7 +1792,7 @@ class Route(ORMbase):
             Operational status of the route (VALID, INVALID).
             Must be non-null.
             Defaults to `RouteStatus.INVALID`.
-            
+
         updated_on (DateTime):
             Timestamp automatically updated when the route record is modified.
             Useful for audit logs, syncing, or change tracking.

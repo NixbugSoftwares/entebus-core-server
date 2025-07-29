@@ -25,7 +25,6 @@ def acquireLock(
             lockName = f"lock:{tableName}"
         else:
             lockName = f"lock:{tableName}:{pk}"
-        print(lockName,"-------------lock name---")
         lock = redisClient.lock(lockName, timeout=timeOut)
         isLocked = lock.acquire(blocking=True, blocking_timeout=blockingTimeOut)
         if isLocked:
@@ -38,11 +37,9 @@ def acquireLock(
         raise exceptions.LockAcquireFailed()
 
 
-def releaseLock(lock):
+def releaseLock(lock: Lock):
     # Release a previously acquired Redis lock.
     if lock is None:
-        print("lock is None")
-        return 
-    else:
+        return
+    elif lock.locked():
         lock.release()
-        print("lock released")
