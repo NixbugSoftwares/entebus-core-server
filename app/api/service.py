@@ -375,6 +375,7 @@ async def create_service(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_service)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.route)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
             raise exceptions.UnknownValue(Service.company_id)
@@ -396,7 +397,6 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        routeLock = acquireLock(Route.__tablename__, fParam.route)
 
         serviceData = createService(session, route, bus, fare, company, fParam)
 
@@ -639,6 +639,7 @@ async def create_service(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_service)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.route)
         bus = (
             session.query(Bus)
             .filter(Bus.id == fParam.bus_id)
@@ -665,7 +666,6 @@ async def create_service(
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
 
-        routeLock = acquireLock(Route.__tablename__, fParam.route)
 
         serviceData = createService(session, route, bus, fare, company, fParam)
 
