@@ -656,7 +656,10 @@ async def create_service(
         if route is None:
             raise exceptions.UnknownValue(Service.route)
         fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
-        if fare and fare.scope != FareScope.GLOBAL:
+        if fare is None:
+            raise exceptions.UnknownValue(Service.fare)
+
+        if fare.scope != FareScope.GLOBAL:
             if fare.company_id != token.company_id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
