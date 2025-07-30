@@ -248,10 +248,10 @@ async def create_landmark_in_route(
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
 
+        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
-        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
@@ -314,11 +314,11 @@ async def update_landmark_in_route(
         )
         if landmarkInRoute is None:
             raise exceptions.InvalidIdentifier()
+        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
 
         route = (
             session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
         )
-        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
 
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
@@ -487,6 +487,7 @@ async def create_landmark_in_route(
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
 
+        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         route = (
             session.query(Route)
             .filter(Route.id == fParam.route_id)
@@ -495,7 +496,6 @@ async def create_landmark_in_route(
         )
         if route is None:
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
-        routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
@@ -559,10 +559,10 @@ async def update_landmark_in_route(
         )
         if landmarkInRoute is None:
             raise exceptions.InvalidIdentifier()
+        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
         route = (
             session.query(Route).filter(Route.id == landmarkInRoute.route_id).first()
         )
-        routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
 
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
