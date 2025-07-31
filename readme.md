@@ -100,6 +100,6 @@ Once the server is running, you can run the tests against it using [entebus-api-
 
 You can build the docker image and run it locally using Docker engine. You can access the API from http://127.0.0.1:8080/docs. The second tag contains the builded date with commit id in the format YYYY-MM-DD-6725f7d (6725f7d can be replaced with the latest commit id).
 ```
-docker build -t entebus-api-server:latest -t entebus-api-server:2025-01-03-6725f7d .
-docker run -d --name entebus-api-server -p 8080:8080 entebus-api-server
+docker build -t entebus-core-server:latest -t entebus-core-server:2025-01-03-6725f7d .
+docker run -d --name entebus-core-server -p 8080:8080 entebus-core-server
 ```
