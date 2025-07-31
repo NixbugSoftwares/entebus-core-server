@@ -384,7 +384,6 @@ async def create_service(
             raise exceptions.UnknownValue(Service.bus_id)
         route = session.query(Route).filter(Route.id == fParam.route).first()
         if route is None:
-            releaseLock(routeLock)
             raise exceptions.UnknownValue(Service.route)
         fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
         if fare is None:
@@ -656,7 +655,6 @@ async def create_service(
             .first()
         )
         if route is None:
-            releaseLock(routeLock)
             raise exceptions.UnknownValue(Service.route)
         fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
         if fare is None:
