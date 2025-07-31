@@ -263,9 +263,11 @@ async def delete_route(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.delete_route)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = session.query(Route).filter(Route.id == fParam.id).first()
+        if route is None:
+            releaseLock(routeLock)
         if route is not None:
-            routeLock = acquireLock(Route.__tablename__, fParam.id)
             session.delete(route)
             session.commit()
             logEvent(token, request_info, jsonable_encoder(route))
@@ -443,13 +445,15 @@ async def delete_route(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.delete_route)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = (
             session.query(Route)
             .filter(Route.id == fParam.id)
             .filter(Route.company_id == token.company_id)
             .first()
         )
-        routeLock = acquireLock(Route.__tablename__, fParam.id)
+        if route is None:
+            releaseLock(routeLock)
         if route is not None:
             session.delete(route)
             session.commit()
