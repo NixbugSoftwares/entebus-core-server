@@ -377,12 +377,12 @@ async def delete_landmark_in_route(
         )
 
         if landmarkInRoute is not None:
+            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             route = (
                 session.query(Route)
                 .filter(Route.id == landmarkInRoute.route_id)
                 .first()
             )
-            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)
             session.flush()
             isValid = validators.landmarkInRoute(route.id, session)
@@ -623,12 +623,12 @@ async def delete_landmark_in_route(
         )
 
         if landmarkInRoute is not None:
+            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             route = (
                 session.query(Route)
                 .filter(Route.id == landmarkInRoute.route_id)
                 .first()
             )
-            routeLock = acquireLock(Route.__tablename__, landmarkInRoute.route_id)
             session.delete(landmarkInRoute)
             session.flush()
 
