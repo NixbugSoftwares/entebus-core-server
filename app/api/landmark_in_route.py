@@ -251,6 +251,7 @@ async def create_landmark_in_route(
         routeLock = acquireLock(Route.__tablename__, fParam.route_id)
         route = session.query(Route).filter(Route.id == fParam.route_id).first()
         if route is None:
+            releaseLock(routeLock)
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
@@ -495,6 +496,7 @@ async def create_landmark_in_route(
             .first()
         )
         if route is None:
+            releaseLock(routeLock)
             raise exceptions.UnknownValue(LandmarkInRoute.route_id)
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
