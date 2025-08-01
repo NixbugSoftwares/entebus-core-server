@@ -10,6 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Route
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
+from app.src.redis import acquireLock, releaseLock
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -29,6 +30,7 @@ class RouteSchema(BaseModel):
     company_id: int
     name: str
     start_time: time
+    status: int
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -68,6 +70,7 @@ class OrderBy(IntEnum):
 
 class QueryParamsForOP(BaseModel):
     name: str | None = Field(Query(default=None))
+    status: int | None = Field(Query(default=None))
     # id based
     id: int | None = Field(Query(default=None))
     id_ge: int | None = Field(Query(default=None))
@@ -109,6 +112,8 @@ def searchRoute(
         query = query.filter(Route.company_id == qParam.company_id)
     if qParam.name is not None:
         query = query.filter(Route.name.ilike(f"%{qParam.name}%"))
+    if qParam.status is not None:
+        query = query.filter(Route.status == qParam.status)
     # id based
     if qParam.id is not None:
         query = query.filter(Route.id == qParam.id)
@@ -158,6 +163,7 @@ def searchRoute(
     description="""
     Create a new route for a specified company.  
     Requires executive role with `create_route` permission.  
+    By default the status of the route is INVALID.      
     Accepts route name and start time.
     """,
 )
@@ -250,13 +256,17 @@ async def delete_route(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.delete_route)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = session.query(Route).filter(Route.id == fParam.id).first()
+        if route is None:
+            releaseLock(routeLock)
         if route is not None:
             session.delete(route)
             session.commit()
@@ -265,6 +275,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(routeLock)
         session.close()
 
 
@@ -329,6 +340,7 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
     description="""
     Create a new route for the operator's own company.  
     Requires operator role with `create_route` permission.  
+    By default the status of the route is INVALID.  
     The company ID is derived from the token, not user input.
     """,
 )
@@ -426,19 +438,22 @@ async def delete_route(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    routeLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.delete_route)
 
+        routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = (
             session.query(Route)
             .filter(Route.id == fParam.id)
             .filter(Route.company_id == token.company_id)
             .first()
         )
-
+        if route is None:
+            releaseLock(routeLock)
         if route is not None:
             session.delete(route)
             session.commit()
@@ -447,6 +462,7 @@ async def delete_route(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(routeLock)
         session.close()
 
 

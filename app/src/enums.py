@@ -118,3 +118,8 @@ class DutyStatus(IntEnum):
     STARTED = 2
     TERMINATED = 3
     ENDED = 4
+
+
+class RouteStatus(IntEnum):
+    VALID = 1
+    INVALID = 2

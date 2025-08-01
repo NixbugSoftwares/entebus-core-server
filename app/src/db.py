@@ -43,6 +43,7 @@ from app.src.enums import (
     TriggeringMode,
     ServiceStatus,
     DutyStatus,
+    RouteStatus,
 )
 
 
@@ -1787,6 +1788,11 @@ class Route(ORMbase):
             The time of day when the route operation starts.
             Must be non-null. Used for scheduling and time-based operations.
 
+        status (Integer):
+            Operational status of the route (VALID, INVALID).
+            Must be non-null.
+            Defaults to `RouteStatus.INVALID`.
+
         updated_on (DateTime):
             Timestamp automatically updated when the route record is modified.
             Useful for audit logs, syncing, or change tracking.
@@ -1805,6 +1811,7 @@ class Route(ORMbase):
     )
     name = Column(String(4096), nullable=False)
     start_time = Column(Time(timezone=True), nullable=False)
+    status = Column(Integer, nullable=False, default=RouteStatus.INVALID)
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

@@ -138,7 +138,7 @@ def stateTransition(transitions: dict, old_state, new_state, state: Column) -> b
         raise exceptions.InvalidStateTransition(state.name)
 
 
-def landmarkInRoute(route: int, session: Session):
+def landmarkInRoute(route: int, session: Session) -> bool:
     landmarkInRoute = (
         session.query(LandmarkInRoute)
         .filter(LandmarkInRoute.route_id == route)
@@ -149,16 +149,19 @@ def landmarkInRoute(route: int, session: Session):
         len(landmarkInRoute) < MIN_LANDMARK_IN_ROUTE
         or landmarkInRoute[0].distance_from_start != 0
     ):
-        raise exceptions.InvalidRoute()
+        return False
     if (
         landmarkInRoute[0].arrival_delta
         or landmarkInRoute[0].departure_delta
         or landmarkInRoute[-1].arrival_delta != landmarkInRoute[-1].departure_delta
     ):
-        raise exceptions.InvalidRoute()
-    for index, route in enumerate(landmarkInRoute[1:-1]):
-        if route.arrival_delta < landmarkInRoute[index].departure_delta:
-            raise exceptions.InvalidRoute()
+        return False
+
+    for i in range(1, len(landmarkInRoute)):
+        if landmarkInRoute[i].arrival_delta < landmarkInRoute[i - 1].departure_delta:
+            return False
+
+    return True
 
 
 def fareFunction(function, attributes) -> str:
