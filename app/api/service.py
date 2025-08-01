@@ -397,7 +397,6 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-
         serviceData = createService(session, route, bus, fare, company, fParam)
 
         service = Service(
@@ -665,7 +664,6 @@ async def create_service(
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
-
 
         serviceData = createService(session, route, bus, fare, company, fParam)
 
