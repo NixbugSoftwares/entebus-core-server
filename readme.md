@@ -94,6 +94,12 @@ The preferred server to run the FastAPI application is uvicorn. You can access t
 uvicorn app.main:app --port 8080 --reload
 ```
 
+Once the server is running, you can populate test data using the API endpoints from a new terminal window.
+```
+# Populating Test Data
+python3 -m app.setup -test
+```
+
 Once the server is running, you can run the tests against it using [entebus-api-test](https://github.com/NixbugSoftwares/entebus-api-test). For running the test the Postgres DB must be running and the tables should be created and initialized with sample data.
 
 **Docker Image**
