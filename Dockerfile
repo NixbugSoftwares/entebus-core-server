@@ -1,18 +1,41 @@
-FROM python:alpine
+# Build dependencies
+FROM python:alpine AS builder
 
+# Install build dependencies
 RUN apk add --no-cache \
     build-base \
-    libpq-dev
+    libpq-dev \
+    libffi-dev \
+    openssl-dev \
+    proj-dev \
+    geos-dev \
+    rust \
+    cargo
 
-# Copy requirements and install it
+# Set work directory
 WORKDIR /code
-COPY ./requirements.txt /code/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --prefix=/code/deps --no-cache-dir -r requirements.txt
 
-# Copy app and run it
+# Final slim image
+FROM python:alpine
+RUN apk add --no-cache \
+    libpq \
+    libffi \
+    openssl \
+    proj \
+    geos
+
+# Only copy installed packages from builder
+COPY --from=builder /code/deps /usr/local
+
+# Copy app source code
 COPY ./app /code/app
 WORKDIR /code/app
+
+# Expose the port
 EXPOSE 8080
 
 ENV PYTHONPATH=/code
