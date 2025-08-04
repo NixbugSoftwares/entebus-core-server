@@ -121,5 +121,6 @@ docker push docker.nixbug.com/entebus/entebus-core-server:develop-latest
 docker push docker.nixbug.com/entebus/entebus-core-server:develop-052bd99
 
 # Pull the docker image from nexus repository
-docker push docker.nixbug.com/entebus/entebus-core-server:develop-latest
+docker pull docker.nixbug.com/entebus/entebus-core-server:develop-latest
 ```
+
