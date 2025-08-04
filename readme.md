@@ -104,8 +104,23 @@ Once the server is running, you can run the tests against it using [entebus-api-
 
 **Docker Image**
 
-You can build the docker image and run it locally using Docker engine. You can access the API from http://127.0.0.1:8080/docs. The second tag contains the builded date with commit id in the format YYYY-MM-DD-6725f7d (6725f7d can be replaced with the latest commit id).
+You can build the docker image and run it locally using Docker engine. Once running, the API will be available at http://127.0.0.1:8080/docs. The image is tagged using the format: `<branch-name>-<commit-id>` (for latest image you may add optional tag with `latest` instead of the commit ID).
 ```
-docker build -t entebus-core-server:latest -t entebus-core-server:2025-01-03-6725f7d .
-docker run -d --name entebus-core-server -p 8080:8080 entebus-core-server
+# Building the docker image
+docker build -t docker.nixbug.com/entebus/entebus-core-server:develop-052bd99 \
+    -t docker.nixbug.com/entebus/entebus-core-server:develop-latest .
+
+# Running the docker image
+docker run -d --name entebus-core-server -p 8080:8080 docker.nixbug.com/entebus/entebus-core-server:develop-latest
+
+# Login to remote docker repository (only needed once)
+docker login
+
+# Push the docker image to nexus repository
+docker push docker.nixbug.com/entebus/entebus-core-server:develop-latest
+docker push docker.nixbug.com/entebus/entebus-core-server:develop-052bd99
+
+# Pull the docker image from nexus repository
+docker pull docker.nixbug.com/entebus/entebus-core-server:develop-latest
 ```
+
