@@ -194,6 +194,7 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
             exceptions.InvalidSRID4326,
             exceptions.InvalidAABB,
             exceptions.InvalidBoundaryArea,
+            exceptions.OverlappingLandmarkBoundary,
         ]
     ),
     description="""
@@ -213,7 +214,12 @@ async def create_landmark(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_landmark)
 
-        validateBoundary(fParam)
+        boundaryGeom=validateBoundary(fParam)
+        landmarks = session.query(Landmark).all()
+        for landmark in landmarks:
+            landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
+            if boundaryGeom.intersects(landmarkGeom):
+                raise exceptions.OverlappingLandmarkBoundary()
         landmark = Landmark(
             name=fParam.name,
             boundary=fParam.boundary,
@@ -247,6 +253,7 @@ async def create_landmark(
             exceptions.InvalidAABB,
             exceptions.InvalidBoundaryArea,
             exceptions.BusStopOutsideLandmark,
+            exceptions.OverlappingLandmarkBoundary,
         ]
     ),
     description="""
@@ -275,6 +282,16 @@ async def update_landmark(
             boundaryGeom = validateBoundary(fParam)
             currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
             if currentBoundary != fParam.boundary:
+                # Check for overlapping with other landmarks
+                landmarks = (
+                    session.query(Landmark)
+                    .filter(Landmark.id != fParam.id)
+                    .all()
+                )
+                for landmark in landmarks:
+                    landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
+                    if boundaryGeom.intersects(landmarkGeom):
+                        raise exceptions.OverlappingLandmarkBoundary()
                 # Verify that all bus stops are inside the new boundary
                 busStops = (
                     session.query(BusStop)
