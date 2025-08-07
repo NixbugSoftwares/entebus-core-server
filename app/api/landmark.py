@@ -11,7 +11,7 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.constants import MAX_LANDMARK_AREA, MIN_LANDMARK_AREA
+from app.src.constants import MAX_LANDMARK_AREA, MIN_LANDMARK_AREA, EPSG_4326
 from app.src.db import BusStop, Landmark, ExecutiveRole, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.enums import LandmarkType
@@ -104,7 +104,7 @@ class QueryParams(BaseModel):
 
 
 ## Function
-def validateBoundary(fParam: CreateForm | UpdateForm, landmarks: Landmark) -> Polygon:
+def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
     # Validate the WKT polygon input string
     boundaryGeom = validators.WKTstring(fParam.boundary, Polygon)
     validators.SRID4326(boundaryGeom)
@@ -114,11 +114,6 @@ def validateBoundary(fParam: CreateForm | UpdateForm, landmarks: Landmark) -> Po
     areaInSQmeters = getArea(boundaryGeom)
     if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
         raise exceptions.InvalidBoundaryArea()
-    # Check for overlapping with other landmarks
-    for landmark in landmarks:
-        landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
-        if boundaryGeom.intersects(landmarkGeom):
-            raise exceptions.OverlappingLandmarkBoundary()
     fParam.boundary = wkt.dumps(boundaryGeom)
     return boundaryGeom
 
@@ -219,8 +214,19 @@ async def create_landmark(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_landmark)
 
-        landmarks = session.query(Landmark).all()
-        validateBoundary(fParam, landmarks)
+        # Check for overlapping with other landmarks
+        boundaryGeom = validateBoundary(fParam)
+        overlapping = (
+            session.query(Landmark)
+            .filter(
+                func.ST_Intersects(
+                    Landmark.boundary, func.ST_GeomFromText(boundaryGeom.wkt, EPSG_4326)
+                )
+            )
+            .first()
+        )
+        if overlapping:
+            raise exceptions.OverlappingLandmarkBoundary()
         landmark = Landmark(
             name=fParam.name,
             boundary=fParam.boundary,
@@ -280,10 +286,23 @@ async def update_landmark(
 
         updateIfChanged(landmark, fParam, [Landmark.name.key, Landmark.type.key])
         if fParam.boundary is not None:
-            landmarks = session.query(Landmark).filter(Landmark.id != fParam.id).all()
-            boundaryGeom = validateBoundary(fParam, landmarks)
+            boundaryGeom = validateBoundary(fParam)
             currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
             if currentBoundary != fParam.boundary:
+                # Check for overlapping with other landmarks
+                overlapping = (
+                    session.query(Landmark)
+                    .filter(
+                        Landmark.id != fParam.id,
+                        func.ST_Intersects(
+                            Landmark.boundary,
+                            func.ST_GeomFromText(boundaryGeom.wkt, EPSG_4326),
+                        ),
+                    )
+                    .first()
+                )
+                if overlapping:
+                    raise exceptions.OverlappingLandmarkBoundary()
                 # Verify that all bus stops are inside the new boundary
                 busStops = (
                     session.query(BusStop)
