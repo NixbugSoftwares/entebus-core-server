@@ -104,7 +104,7 @@ class QueryParams(BaseModel):
 
 
 ## Function
-def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
+def validateBoundary(fParam: CreateForm | UpdateForm, landmarks: Landmark) -> Polygon:
     # Validate the WKT polygon input string
     boundaryGeom = validators.WKTstring(fParam.boundary, Polygon)
     validators.SRID4326(boundaryGeom)
@@ -114,6 +114,11 @@ def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
     areaInSQmeters = getArea(boundaryGeom)
     if not (MIN_LANDMARK_AREA < areaInSQmeters < MAX_LANDMARK_AREA):
         raise exceptions.InvalidBoundaryArea()
+    # Check for overlapping with other landmarks
+    for landmark in landmarks:
+        landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
+        if boundaryGeom.intersects(landmarkGeom):
+            raise exceptions.OverlappingLandmarkBoundary()
     fParam.boundary = wkt.dumps(boundaryGeom)
     return boundaryGeom
 
@@ -214,12 +219,8 @@ async def create_landmark(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_landmark)
 
-        boundaryGeom=validateBoundary(fParam)
         landmarks = session.query(Landmark).all()
-        for landmark in landmarks:
-            landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
-            if boundaryGeom.intersects(landmarkGeom):
-                raise exceptions.OverlappingLandmarkBoundary()
+        validateBoundary(fParam, landmarks)
         landmark = Landmark(
             name=fParam.name,
             boundary=fParam.boundary,
@@ -279,19 +280,10 @@ async def update_landmark(
 
         updateIfChanged(landmark, fParam, [Landmark.name.key, Landmark.type.key])
         if fParam.boundary is not None:
-            boundaryGeom = validateBoundary(fParam)
+            landmarks = session.query(Landmark).filter(Landmark.id != fParam.id).all()
+            boundaryGeom = validateBoundary(fParam, landmarks)
             currentBoundary = (wkb.loads(bytes(landmark.boundary.data))).wkt
             if currentBoundary != fParam.boundary:
-                # Check for overlapping with other landmarks
-                landmarks = (
-                    session.query(Landmark)
-                    .filter(Landmark.id != fParam.id)
-                    .all()
-                )
-                for landmark in landmarks:
-                    landmarkGeom = wkb.loads(bytes(landmark.boundary.data))
-                    if boundaryGeom.intersects(landmarkGeom):
-                        raise exceptions.OverlappingLandmarkBoundary()
                 # Verify that all bus stops are inside the new boundary
                 busStops = (
                     session.query(BusStop)
