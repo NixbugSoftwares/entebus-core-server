@@ -18,6 +18,7 @@ from app.src.enums import LandmarkType
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, getArea, makeExceptionResponses, updateIfChanged
 from app.src.urls import URL_LANDMARK
+from app.src.redis import acquireLock, releaseLock
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -208,12 +209,14 @@ async def create_landmark(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    landmarkLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_landmark)
 
+        landmarkLock = acquireLock(Landmark.__tablename__)
         # Check for overlapping with other landmarks
         boundaryGeom = validateBoundary(fParam)
         overlapping = (
@@ -243,6 +246,7 @@ async def create_landmark(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(landmarkLock)
         session.close()
 
 
@@ -274,12 +278,14 @@ async def update_landmark(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    landmarkLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.update_landmark)
 
+        landmarkLock = acquireLock(Landmark.__tablename__)
         landmark = session.query(Landmark).filter(Landmark.id == fParam.id).first()
         if landmark is None:
             raise exceptions.InvalidIdentifier()
@@ -329,6 +335,7 @@ async def update_landmark(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(landmarkLock)
         session.close()
 
 
