@@ -105,7 +105,7 @@ class QueryParams(BaseModel):
 
 
 ## Function
-def validateBoundary(fParam: CreateForm | UpdateForm) -> Polygon:
+def validateBoundary(session: Session, fParam: CreateForm | UpdateForm) -> Polygon:
     # Validate the WKT polygon input string
     boundaryGeom = validators.WKTstring(fParam.boundary, Polygon)
     validators.SRID4326(boundaryGeom)
