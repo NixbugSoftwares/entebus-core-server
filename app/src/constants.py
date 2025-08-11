@@ -76,3 +76,6 @@ MAX_MEMORY_SIZE = 10 * 1024 * 1024  # Maximum memory size in bytes (10 MB)
 # Redis mutex lock constants
 MUTEX_LOCK_TIMEOUT = 10  # Timeout in seconds
 MUTEX_LOCK_MAX_WAIT_TIME = 60  # Blocking time in seconds
+
+# Fare constants
+DYNAMIC_FARE_VERSION = 1
