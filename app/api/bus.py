@@ -165,7 +165,10 @@ def updateBus(bus: Bus, fParam: UpdateForm):
             Bus.status.key,
         ],
     )
-    if fParam.manufactured_on is not None and bus.manufactured_on != fParam.manufactured_on:
+    if (
+        fParam.manufactured_on is not None
+        and bus.manufactured_on != fParam.manufactured_on
+    ):
         if fParam.manufactured_on > datetime.now(timezone.utc):
             raise exceptions.InvalidValue(Bus.manufactured_on)
         bus.manufactured_on = fParam.manufactured_on
@@ -184,7 +187,9 @@ def searchBus(
     if qParam.status is not None:
         query = query.filter(Bus.status == qParam.status)
     if qParam.registration_number is not None:
-        query = query.filter(Bus.registration_number.ilike(f"%{qParam.registration_number}%"))
+        query = query.filter(
+            Bus.registration_number.ilike(f"%{qParam.registration_number}%")
+        )
     # id based
     if qParam.id is not None:
         query = query.filter(Bus.id == qParam.id)
