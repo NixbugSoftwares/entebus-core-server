@@ -14,6 +14,7 @@ from app.src.db import (
     VendorRole,
     VendorToken,
     LandmarkInRoute,
+    Fare,
 )
 from app.src.constants import MIN_LANDMARK_IN_ROUTE
 from app.src import exceptions
@@ -181,3 +182,6 @@ def fareFunction(function, attributes) -> str:
     totalFareFor0m = fareFunction.evaluate(newTicketTypeName, 0)
     if totalFareFor0m != -1.0:
         raise exceptions.InvalidFareFunction()
+    dfVersion = attributes["df_version"]
+    if dfVersion != 1:
+        raise exceptions.InvalidValue(Fare.attributes)
