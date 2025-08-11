@@ -78,4 +78,4 @@ MUTEX_LOCK_TIMEOUT = 10  # Timeout in seconds
 MUTEX_LOCK_MAX_WAIT_TIME = 60  # Blocking time in seconds
 
 # Fare constants
-DYNAMIC_FARE_VERSION = 1
+DYNAMIC_FARE_VERSION = 1  # Current dynamic fare version
