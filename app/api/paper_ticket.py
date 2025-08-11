@@ -7,12 +7,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm.session import Session
 
 from app.api.bearer import bearer_executive, bearer_operator
-from app.src.db import LandmarkInRoute, PaperTicket, Service, Duty, sessionMaker
+from app.src.db import PaperTicket, Service, Duty, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
 from app.src.urls import URL_PAPER_TICKET
+from app.src.enums import ServiceStatus
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -228,6 +229,8 @@ async def create_paper_ticket(
         )
         if service is None:
             raise exceptions.UnknownValue(PaperTicket.service_id)
+        if service.status != ServiceStatus.STARTED:
+            raise exceptions.InactiveResource(Service)
 
         duty = (
             session.query(Duty)
