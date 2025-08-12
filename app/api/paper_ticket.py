@@ -13,7 +13,7 @@ from app.src.loggers import logEvent
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
 from app.src.urls import URL_PAPER_TICKET
-from app.src.enums import ServiceStatus
+from app.src.enums import DutyStatus
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -229,8 +229,6 @@ async def create_paper_ticket(
         )
         if service is None:
             raise exceptions.UnknownValue(PaperTicket.service_id)
-        if service.status != ServiceStatus.STARTED:
-            raise exceptions.InactiveResource(Service)
 
         duty = (
             session.query(Duty)
@@ -241,6 +239,9 @@ async def create_paper_ticket(
         )
         if duty is None:
             raise exceptions.UnknownValue(PaperTicket.duty_id)
+        if duty.status != DutyStatus.STARTED:
+            raise exceptions.InactiveResource(Duty)
+
 
         pickupLandmark = next(
             (
