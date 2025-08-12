@@ -122,10 +122,11 @@ class QueryParamsForEX(QueryParamsForOP):
 # Functions
 def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     dutyStatusTransition = {
-        DutyStatus.ASSIGNED: [DutyStatus.STARTED, DutyStatus.TERMINATED],
+        DutyStatus.ASSIGNED: [DutyStatus.STARTED, DutyStatus.NOT_USED],
         DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
         DutyStatus.TERMINATED: [DutyStatus.STARTED],
         DutyStatus.ENDED: [DutyStatus.STARTED],
+        DutyStatus.NOT_USED: [],
     }
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
@@ -302,7 +303,7 @@ async def create_duty(
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
         ASSIGNED → STARTED
-        ASSIGNED → TERMINATED
+        ASSIGNED → NOT_USED
     """,
 )
 async def update_duty(
@@ -319,6 +320,8 @@ async def update_duty(
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        if fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]:
+                raise exceptions.NoPermission()
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
@@ -526,7 +529,7 @@ async def create_duty(
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
         ASSIGNED → STARTED
-        ASSIGNED → TERMINATED
+        ASSIGNED → NOT_USED
     """,
 )
 async def update_duty(

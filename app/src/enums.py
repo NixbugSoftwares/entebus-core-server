@@ -118,6 +118,7 @@ class DutyStatus(IntEnum):
     STARTED = 2
     TERMINATED = 3
     ENDED = 4
+    NOT_USED = 5
 
 
 class RouteStatus(IntEnum):
