@@ -153,6 +153,7 @@ class QueryParamsForOP(QueryParams):
     status_list: List[ServiceStatus] | None = Field(
         Query(default=None, description=enumStr(ServiceStatus))
     )
+    id_excluding: List[int] | None = Field(Query(default=None))
 
 
 class QueryParamsForEX(QueryParamsForOP):
@@ -287,6 +288,8 @@ def searchService(
         query = query.filter(Service.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Service.id.in_(qParam.id_list))
+    if qParam.id_excluding is not None:
+        query = query.filter(Service.id.notin_(qParam.id_excluding))
     # status based
     if qParam.status is not None:
         query = query.filter(Service.status == qParam.status)
