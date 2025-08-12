@@ -263,3 +263,9 @@ class LockAcquireTimeout(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "LockAcquireTimeout"}
     detail = "Lock acquisition timed out"
+
+
+class InvalidFareVersion(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidFareVersion"}
+    detail = "Invalid dynamic fare version"

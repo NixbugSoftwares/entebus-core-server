@@ -185,4 +185,4 @@ def fareFunction(function, attributes) -> str:
 
     dfVersion = attributes["df_version"]
     if dfVersion != DYNAMIC_FARE_VERSION:
-        raise exceptions.InvalidValue(Fare.attributes)
+        raise exceptions.InvalidFareVersion()

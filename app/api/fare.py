@@ -200,6 +200,7 @@ def searchFare(
             exceptions.InvalidFareFunction,
             exceptions.JSMemoryLimitExceeded,
             exceptions.JSTimeLimitExceeded,
+            exceptions.InvalidFareVersion,
         ]
     ),
     description="""
@@ -213,6 +214,9 @@ def searchFare(
     The getFare function must return -1 if there is some logical or runtime error occurred during the function call.   
     The max size of fare function is 10 MB. 
     The fare function should not take more than 1 seconds to execute.   
+    The dynamic fare version is automatically set to 1.     
+    The currency is automatically set to INR.   
+    The distance unit must ne in meters.    
     Log the fare creation activity with the associated token.
     """,
 )
@@ -266,6 +270,7 @@ async def create_fare(
             exceptions.InvalidFareFunction,
             exceptions.JSMemoryLimitExceeded,
             exceptions.JSTimeLimitExceeded,
+            exceptions.InvalidFareVersion,
         ]
     ),
     description="""
@@ -280,6 +285,9 @@ async def create_fare(
     The max size of fare function is 10 MB. 
     The fare function should not take more than 1 seconds to execute.   
     The version is automatically incremented, when the fare is modified.    
+    The dynamic fare version is currently set to 1.     
+    The currency is automatically set to INR.   
+    The distance unit must ne in meters.    
     Logs the fare updating activity with the associated token.
     """,
 )
@@ -419,6 +427,7 @@ async def fetch_route(
             exceptions.NoPermission,
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
+            exceptions.InvalidFareVersion,
         ]
     ),
     description="""
@@ -430,6 +439,9 @@ async def fetch_route(
     The DF function is validated against the attributes.    
     The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
     The getFare function must return -1 if there is some logical or runtime error occurred during the function call.          
+    The dynamic fare version is currently set to 1.     
+    The currency is automatically set to INR.   
+    The distance unit must ne in meters.    
     Logs the fare account creation activity with the associated token.
     """,
 )
@@ -477,6 +489,7 @@ async def create_fare(
             exceptions.InvalidIdentifier,
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction,
+            exceptions.InvalidFareVersion,
         ]
     ),
     description="""
@@ -489,6 +502,9 @@ async def create_fare(
     The name of the JS function must be `getFare` and this function will accept exactly three arguments which are ticket_type, distance and extra.  
     The getFare function must return -1 if there is some logical or runtime error occurred during the function call.   
     The version is automatically incremented, when the fare is modified.    
+    The dynamic fare version is currently set to 1.     
+    The currency is automatically set to INR.   
+    The distance unit must ne in meters.    
     Logs the fare updating activity using the operator's token and request metadata.
     """,
 )
