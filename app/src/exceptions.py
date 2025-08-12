@@ -263,3 +263,14 @@ class LockAcquireTimeout(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "LockAcquireTimeout"}
     detail = "Lock acquisition timed out"
+
+
+class DuplicateDuty(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "DuplicateDuty"}
+
+    def __init__(self, column_name_1: str, column_name_2: str):
+        detail = (
+            f"The {column_name_1} already has a assigned duty for the {column_name_2}"
+        )
+        super().__init__(detail=detail)

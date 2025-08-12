@@ -217,6 +217,7 @@ def searchDuty(
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Service),
+            exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
         ]
     ),
     description="""
@@ -226,6 +227,7 @@ def searchDuty(
     In this operator and service must be associated with the company_id.    
     The operator must be in active status.  
     The duty is created in the Assigned status by default.      
+    Assigning multiple duties to the same operator under the same service is restricted.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -261,6 +263,16 @@ async def create_duty(
             raise exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id)
         if service.company_id != company.id:
             raise exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id)
+
+        duties = (
+            session.query(Duty)
+            .filter(Duty.operator_id == fParam.operator_id)
+            .filter(Duty.service_id == fParam.service_id)
+            .filter(Duty.status == DutyStatus.ASSIGNED)
+            .first()
+        )
+        if duties is not None:
+            raise exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id)
 
         duty = Duty(
             company_id=fParam.company_id,
@@ -321,7 +333,7 @@ async def update_duty(
         if duty is None:
             raise exceptions.InvalidIdentifier()
         if fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]:
-                raise exceptions.NoPermission()
+            raise exceptions.NoPermission()
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
@@ -420,6 +432,7 @@ async def get_duties(
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Duty),
+            exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
         ]
     ),
     description="""
@@ -437,6 +450,7 @@ async def get_duties(
     For self assigned duty the service status will be set to STARTED by default.    
     For self assigned duty the service started_on will be set to current time.      
     For non self assigned duty the status will be set to ASSIGNED by default, not user input .   
+    Assigning multiple duties to the same operator under the same service is restricted.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -472,6 +486,16 @@ async def create_duty(
             raise exceptions.InactiveResource(Operator)
         if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
             raise exceptions.InactiveResource(Service)
+
+        duties = (
+            session.query(Duty)
+            .filter(Duty.operator_id == fParam.operator_id)
+            .filter(Duty.service_id == fParam.service_id)
+            .filter(Duty.status == DutyStatus.ASSIGNED)
+            .first()
+        )
+        if duties is not None:
+            raise exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id)
 
         bufferTime = service.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
         currentTime = datetime.now(timezone.utc)
