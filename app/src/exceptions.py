@@ -270,7 +270,5 @@ class DuplicateDuty(APIException):
     headers = {"X-Error": "DuplicateDuty"}
 
     def __init__(self, column_name_1: str, column_name_2: str):
-        detail = (
-            f"The {column_name_1} already has a assigned duty for the {column_name_2}"
-        )
+        detail = f"The {column_name_1.key} already has a assigned duty for this {column_name_2.key}"
         super().__init__(detail=detail)

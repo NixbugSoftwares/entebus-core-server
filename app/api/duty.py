@@ -337,9 +337,9 @@ async def update_duty(
                 duty.status == DutyStatus.ASSIGNED
                 and fParam.status == DutyStatus.STARTED
             ):
-                raise exceptions.NoPermission()
+                raise exceptions.InvalidStateTransition(Duty.status.name)
             if duty.status == DutyStatus.STARTED and fParam.status == DutyStatus.ENDED:
-                raise exceptions.NoPermission()
+                raise exceptions.InvalidStateTransition(Duty.status.name)
             if fParam.status == DutyStatus.TERMINATED:
                 validators.executivePermission(role, ExecutiveRole.update_service)
 
