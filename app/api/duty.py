@@ -309,12 +309,12 @@ async def create_duty(
     Requires executive role with `update_duty` permission.   
     When status is updated to STARTED, the started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
+    Required special sudo permission `update_service` to update a duty with status TERMINATED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
-        STARTED ↔ ENDED
-        ASSIGNED → STARTED
+        ENDED → STARTED
         ASSIGNED → NOT_USED
     """,
 )
@@ -555,6 +555,7 @@ async def create_duty(
     When status is updated to STARTED, the duty started_on and service started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
     Duty assigned operator can only update the status to STARTED or ENDED.  
+    Required special sudo permission `update_service` to update a duty with status TERMINATED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
@@ -589,7 +590,7 @@ async def update_duty(
         ):
             raise exceptions.NoPermission()
         if fParam.status == DutyStatus.TERMINATED:
-            validators.executivePermission(role, ExecutiveRole.update_service)
+            validators.operatorPermission(role, OperatorRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
