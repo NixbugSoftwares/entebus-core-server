@@ -242,7 +242,6 @@ async def create_paper_ticket(
         if duty.status != DutyStatus.STARTED:
             raise exceptions.InactiveResource(Duty)
 
-
         pickupLandmark = next(
             (
                 landmark
