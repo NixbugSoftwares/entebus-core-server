@@ -332,8 +332,16 @@ async def update_duty(
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
-        if fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]:
-            raise exceptions.NoPermission()
+        if fParam.status:
+            if (
+                duty.status == DutyStatus.ASSIGNED
+                and fParam.status == DutyStatus.STARTED
+            ):
+                raise exceptions.NoPermission()
+            if duty.status == DutyStatus.STARTED and fParam.status == DutyStatus.ENDED:
+                raise exceptions.NoPermission()
+            if fParam.status == DutyStatus.TERMINATED:
+                validators.executivePermission(role, ExecutiveRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
@@ -580,6 +588,8 @@ async def update_duty(
             and token.operator_id != duty.operator_id
         ):
             raise exceptions.NoPermission()
+        if fParam.status == DutyStatus.TERMINATED:
+            validators.executivePermission(role, ExecutiveRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
