@@ -14,6 +14,7 @@ from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
 from app.src.urls import URL_PAPER_TICKET
 from app.src.enums import DutyStatus
+from app.src.redis import acquireLock, releaseLock
 
 route_executive = APIRouter()
 route_operator = APIRouter()
@@ -217,10 +218,14 @@ async def create_paper_ticket(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
 
+        serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
+        dutyLock = acquireLock(Duty.__tablename__, fParam.duty_id)
         service = (
             session.query(Service)
             .filter(Service.id == fParam.service_id)
@@ -313,6 +318,8 @@ async def create_paper_ticket(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
+        releaseLock(dutyLock)
         session.close()
 
 
