@@ -226,7 +226,7 @@ def searchDuty(
     In this operator and service must be associated with the company_id.    
     The operator must be in active status.  
     The duty is created in the Assigned status by default.      
-    The maximum number of duties per service is 50.    
+    Sets the maximum number of duties per service with MAX_DUTY_PER_SERVICE.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -437,7 +437,7 @@ async def get_duties(
     Duty can not be created if the service is not in CREATED or STARTED status.       
     The operator must be in active status.     
     The duty is created in the Assigned status by default.  
-    The maximum number of duties per service is 50.      
+    Sets the maximum number of duties per service with MAX_DUTY_PER_SERVICE.     
     If the logged in operator_id is same as incoming operator_id and current time is after the buffer time then the duty is self assigned.    
     Sets buffer time with SERVICE_START_BUFFER_TIME (in minutes).
     For self assigned duty the status will be set to STARTED by default, not user input.    
