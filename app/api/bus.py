@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
@@ -158,7 +158,6 @@ def updateBus(bus: Bus, fParam: UpdateForm):
         [
             Bus.name.key,
             Bus.capacity.key,
-            Bus.manufactured_on.key,
             Bus.insurance_upto.key,
             Bus.pollution_upto.key,
             Bus.fitness_upto.key,
@@ -166,6 +165,13 @@ def updateBus(bus: Bus, fParam: UpdateForm):
             Bus.status.key,
         ],
     )
+    if (
+        fParam.manufactured_on is not None
+        and bus.manufactured_on != fParam.manufactured_on
+    ):
+        if fParam.manufactured_on > datetime.now(timezone.utc):
+            raise exceptions.InvalidValue(Bus.manufactured_on)
+        bus.manufactured_on = fParam.manufactured_on
 
 
 def searchBus(
@@ -180,6 +186,10 @@ def searchBus(
         query = query.filter(Bus.name.ilike(f"%{qParam.name}%"))
     if qParam.status is not None:
         query = query.filter(Bus.status == qParam.status)
+    if qParam.registration_number is not None:
+        query = query.filter(
+            Bus.registration_number.ilike(f"%{qParam.registration_number}%")
+        )
     # id based
     if qParam.id is not None:
         query = query.filter(Bus.id == qParam.id)
@@ -267,6 +277,9 @@ async def create_bus(
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_bus)
+
+        if fParam.manufactured_on > datetime.now(timezone.utc):
+            raise exceptions.InvalidValue(Bus.manufactured_on)
         bus = Bus(
             company_id=fParam.company_id,
             name=fParam.name,
@@ -460,6 +473,8 @@ async def create_bus(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_bus)
 
+        if fParam.manufactured_on > datetime.now(timezone.utc):
+            raise exceptions.InvalidValue(Bus.manufactured_on)
         bus = Bus(
             company_id=token.company_id,
             registration_number=fParam.registration_number,

@@ -47,7 +47,7 @@ MAX_VENDOR_TOKENS = 1  # Maximum tokens per vendor
 # Regex constants
 REGEX_USERNAME = "^[a-zA-Z][a-zA-Z0-9-.@_]*$"
 REGEX_PASSWORD = "^[a-zA-Z0-9-+,.@_$%&*#!^=/?]*$"
-REGEX_REGISTRATION_NUMBER = "^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$"
+REGEX_REGISTRATION_NUMBER = "^[A-Z]{2}[0-9]{2}[A-Z]{0,2}[0-9]{1,4}$"
 
 # Geometry type constants
 MAX_LANDMARK_AREA = 5 * 1000 * 1000  # 5 Square Kilometer in Square Meter
@@ -64,6 +64,7 @@ MAX_ROUTE_DELTA = 10000 * 1000  # Maximum length between two landmarks in a rout
 SERVICE_START_BUFFER_TIME = (
     60 * 60
 )  # Minimum lead time to create a duty before service (in minutes)
+MAX_DUTY_PER_SERVICE = 50  # Maximum number of duties per service
 
 # Timezone constants
 TMZ_PRIMARY = ZoneInfo("UTC")
@@ -76,3 +77,6 @@ MAX_MEMORY_SIZE = 10 * 1024 * 1024  # Maximum memory size in bytes (10 MB)
 # Redis mutex lock constants
 MUTEX_LOCK_TIMEOUT = 10  # Timeout in seconds
 MUTEX_LOCK_MAX_WAIT_TIME = 60  # Blocking time in seconds
+
+# Fare constants
+DYNAMIC_FARE_VERSION = 1  # Current dynamic fare version
