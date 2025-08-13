@@ -121,18 +121,8 @@ class QueryParamsForEX(QueryParamsForOP):
 
 # Functions
 def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
-    dutyStatusTransition = {
-        DutyStatus.ASSIGNED: [DutyStatus.STARTED, DutyStatus.NOT_USED],
-        DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
-        DutyStatus.TERMINATED: [DutyStatus.STARTED],
-        DutyStatus.ENDED: [DutyStatus.STARTED],
-        DutyStatus.NOT_USED: [],
-    }
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
-        validators.stateTransition(
-            dutyStatusTransition, duty.status, fParam.status, Duty.status
-        )
         if fParam.status == DutyStatus.STARTED:
             duty.started_on = datetime.now(timezone.utc)
             service.status = ServiceStatus.STARTED
@@ -256,7 +246,6 @@ async def create_duty(
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
 
-        # Check if the service has already reached the maximum number of duties
         duties = (
             session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
         )
@@ -319,12 +308,12 @@ async def create_duty(
     When status is updated to STARTED, the started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
     Required special sudo permission `update_service` to update a duty with status TERMINATED.     
+    The status NOT_USED is not accepted by user input, when service status is transited to ENDED or TERMINATED unused duties status will be set to NOT_USED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
         ENDED → STARTED
-        ASSIGNED → NOT_USED
     """,
 )
 async def update_duty(
@@ -341,14 +330,18 @@ async def update_duty(
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
-        if fParam.status:
-            if (
-                duty.status == DutyStatus.ASSIGNED
-                and fParam.status == DutyStatus.STARTED
-            ):
-                raise exceptions.InvalidStateTransition(Duty.status.name)
-            if duty.status == DutyStatus.STARTED and fParam.status == DutyStatus.ENDED:
-                raise exceptions.InvalidStateTransition(Duty.status.name)
+
+        dutyStatusTransition = {
+            DutyStatus.ASSIGNED: [],
+            DutyStatus.STARTED: [DutyStatus.TERMINATED],
+            DutyStatus.TERMINATED: [DutyStatus.STARTED],
+            DutyStatus.ENDED: [DutyStatus.STARTED],
+            DutyStatus.NOT_USED: [],
+        }
+        if fParam.status is not None and fParam.status != duty.status:
+            validators.stateTransition(
+                dutyStatusTransition, duty.status, fParam.status, Duty.status
+            )
             if fParam.status == DutyStatus.TERMINATED:
                 validators.executivePermission(role, ExecutiveRole.update_service)
 
@@ -501,7 +494,6 @@ async def create_duty(
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
 
-        # Check if the service has already reached the maximum number of duties
         duties = (
             session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
         )
@@ -572,15 +564,15 @@ async def create_duty(
     Requires operator role with `update_duty` permission.       
     When status is updated to STARTED, the duty started_on and service started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
+    The status NOT_USED is not accepted by user input, when service status is transited to ENDED or TERMINATED unused duties status will be set to NOT_USED.     
     Duty assigned operator can only update the status to STARTED or ENDED.  
     Required special sudo permission `update_service` to update a duty with status TERMINATED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
+        ASSIGNED → STARTED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
-        ASSIGNED → STARTED
-        ASSIGNED → NOT_USED
     """,
 )
 async def update_duty(
@@ -602,13 +594,26 @@ async def update_duty(
         )
         if duty is None:
             raise exceptions.InvalidIdentifier()
+
+        dutyStatusTransition = {
+            DutyStatus.ASSIGNED: [DutyStatus.STARTED],
+            DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
+            DutyStatus.TERMINATED: [DutyStatus.STARTED],
+            DutyStatus.ENDED: [DutyStatus.STARTED],
+            DutyStatus.NOT_USED: [],
+        }
+        if fParam.status is not None and fParam.status != duty.status:
+            validators.stateTransition(
+                dutyStatusTransition, duty.status, fParam.status, Duty.status
+            )
+            if fParam.status == DutyStatus.TERMINATED:
+                validators.operatorPermission(role, OperatorRole.update_service)
+
         if (
             fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]
             and token.operator_id != duty.operator_id
         ):
             raise exceptions.NoPermission()
-        if fParam.status == DutyStatus.TERMINATED:
-            validators.operatorPermission(role, OperatorRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
