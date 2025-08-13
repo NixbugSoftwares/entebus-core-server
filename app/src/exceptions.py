@@ -278,3 +278,12 @@ class InvalidFareVersion(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidFareVersion"}
     detail = "Invalid dynamic fare version"
+
+
+class DuplicateDuty(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "DuplicateDuty"}
+
+    def __init__(self, column_name_1: str, column_name_2: str):
+        detail = f"The {column_name_1.key} already has a assigned duty for this {column_name_2.key}"
+        super().__init__(detail=detail)

@@ -22,6 +22,7 @@ from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.urls import URL_DUTY
+from app.src.redis import acquireLock, releaseLock
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -121,17 +122,8 @@ class QueryParamsForEX(QueryParamsForOP):
 
 # Functions
 def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
-    dutyStatusTransition = {
-        DutyStatus.ASSIGNED: [DutyStatus.STARTED, DutyStatus.TERMINATED],
-        DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
-        DutyStatus.TERMINATED: [DutyStatus.STARTED],
-        DutyStatus.ENDED: [DutyStatus.STARTED],
-    }
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
-        validators.stateTransition(
-            dutyStatusTransition, duty.status, fParam.status, Duty.status
-        )
         if fParam.status == DutyStatus.STARTED:
             duty.started_on = datetime.now(timezone.utc)
             service.status = ServiceStatus.STARTED
@@ -217,6 +209,7 @@ def searchDuty(
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Service),
             exceptions.ExceededMaxLimit(Duty),
+            exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
         ]
     ),
     description="""
@@ -227,6 +220,7 @@ def searchDuty(
     The operator must be in active status.  
     The duty is created in the Assigned status by default.      
     Sets the maximum number of duties per service with MAX_DUTY_PER_SERVICE.    
+    Assigning multiple duties to the same operator under the same service is restricted.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -235,12 +229,14 @@ async def create_duty(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_duty)
 
+        serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
             raise exceptions.UnknownValue(Duty.company_id)
@@ -253,7 +249,6 @@ async def create_duty(
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
 
-        # Check if the service has already reached the maximum number of duties
         duties = (
             session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
         )
@@ -270,6 +265,16 @@ async def create_duty(
         if service.company_id != company.id:
             raise exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id)
 
+        duties = (
+            session.query(Duty)
+            .filter(Duty.operator_id == fParam.operator_id)
+            .filter(Duty.service_id == fParam.service_id)
+            .filter(Duty.status == DutyStatus.ASSIGNED)
+            .first()
+        )
+        if duties is not None:
+            raise exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id)
+
         duty = Duty(
             company_id=fParam.company_id,
             operator_id=fParam.operator_id,
@@ -285,6 +290,7 @@ async def create_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
         session.close()
 
 
@@ -305,13 +311,13 @@ async def create_duty(
     Requires executive role with `update_duty` permission.   
     When status is updated to STARTED, the started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
+    Required special sudo permission `update_service` to update a duty with status TERMINATED.     
+    The status NOT_USED is not accepted by user input, when service status is transited to ENDED or TERMINATED unused duties status will be set to NOT_USED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
         STARTED ↔ TERMINATED
-        STARTED ↔ ENDED
-        ASSIGNED → STARTED
-        ASSIGNED → TERMINATED
+        ENDED → STARTED
     """,
 )
 async def update_duty(
@@ -319,6 +325,8 @@ async def update_duty(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -328,6 +336,23 @@ async def update_duty(
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        serviceLock = acquireLock(Service.__tablename__, duty.service_id)
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
+        session.refresh(duty)
+
+        dutyStatusTransition = {
+            DutyStatus.ASSIGNED: [],
+            DutyStatus.STARTED: [DutyStatus.TERMINATED],
+            DutyStatus.TERMINATED: [DutyStatus.STARTED],
+            DutyStatus.ENDED: [DutyStatus.STARTED],
+            DutyStatus.NOT_USED: [],
+        }
+        if fParam.status is not None and fParam.status != duty.status:
+            validators.stateTransition(
+                dutyStatusTransition, duty.status, fParam.status, Duty.status
+            )
+            if fParam.status == DutyStatus.TERMINATED:
+                validators.executivePermission(role, ExecutiveRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
@@ -342,6 +367,8 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
+        releaseLock(dutyLock)
         session.close()
 
 
@@ -427,6 +454,7 @@ async def get_duties(
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Duty),
             exceptions.ExceededMaxLimit(Duty),
+            exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
         ]
     ),
     description="""
@@ -445,6 +473,7 @@ async def get_duties(
     For self assigned duty the service status will be set to STARTED by default.    
     For self assigned duty the service started_on will be set to current time.      
     For non self assigned duty the status will be set to ASSIGNED by default, not user input .   
+    Assigning multiple duties to the same operator under the same service is restricted.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -453,12 +482,14 @@ async def create_duty(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_duty)
 
+        serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
         operator = (
             session.query(Operator)
             .filter(Operator.id == fParam.operator_id)
@@ -476,7 +507,6 @@ async def create_duty(
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
 
-        # Check if the service has already reached the maximum number of duties
         duties = (
             session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
         )
@@ -487,6 +517,16 @@ async def create_duty(
             raise exceptions.InactiveResource(Operator)
         if service.status not in [ServiceStatus.CREATED, ServiceStatus.STARTED]:
             raise exceptions.InactiveResource(Service)
+
+        duties = (
+            session.query(Duty)
+            .filter(Duty.operator_id == fParam.operator_id)
+            .filter(Duty.service_id == fParam.service_id)
+            .filter(Duty.status == DutyStatus.ASSIGNED)
+            .first()
+        )
+        if duties is not None:
+            raise exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id)
 
         bufferTime = service.starting_at - timedelta(seconds=SERVICE_START_BUFFER_TIME)
         currentTime = datetime.now(timezone.utc)
@@ -517,6 +557,7 @@ async def create_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
         session.close()
 
 
@@ -537,14 +578,15 @@ async def create_duty(
     Requires operator role with `update_duty` permission.       
     When status is updated to STARTED, the duty started_on and service started_on field is set to current time and service status is set to STARTED.    
     When status is updated to TERMINATED or ENDED, the finished_on field is set to current time.    
+    The status NOT_USED is not accepted by user input, when service status is transited to ENDED or TERMINATED unused duties status will be set to NOT_USED.     
     Duty assigned operator can only update the status to STARTED or ENDED.  
+    Required special sudo permission `update_service` to update a duty with status TERMINATED.     
     Log the duty update activity with the associated token.      
 
     Allowed status transitions:
+        ASSIGNED → STARTED
         STARTED ↔ TERMINATED
         STARTED ↔ ENDED
-        ASSIGNED → STARTED
-        ASSIGNED → TERMINATED
     """,
 )
 async def update_duty(
@@ -552,6 +594,8 @@ async def update_duty(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -566,6 +610,24 @@ async def update_duty(
         )
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        serviceLock = acquireLock(Service.__tablename__, duty.service_id)
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
+        session.refresh(duty)
+
+        dutyStatusTransition = {
+            DutyStatus.ASSIGNED: [DutyStatus.STARTED],
+            DutyStatus.STARTED: [DutyStatus.TERMINATED, DutyStatus.ENDED],
+            DutyStatus.TERMINATED: [DutyStatus.STARTED],
+            DutyStatus.ENDED: [DutyStatus.STARTED],
+            DutyStatus.NOT_USED: [],
+        }
+        if fParam.status is not None and fParam.status != duty.status:
+            validators.stateTransition(
+                dutyStatusTransition, duty.status, fParam.status, Duty.status
+            )
+            if fParam.status == DutyStatus.TERMINATED:
+                validators.operatorPermission(role, OperatorRole.update_service)
+
         if (
             fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]
             and token.operator_id != duty.operator_id
@@ -585,6 +647,8 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
+        releaseLock(dutyLock)
         session.close()
 
 
