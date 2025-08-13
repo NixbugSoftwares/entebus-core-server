@@ -133,6 +133,15 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
             if service.started_on is None:
                 service.started_on = datetime.now(timezone.utc)
         if fParam.status in [DutyStatus.TERMINATED, DutyStatus.ENDED]:
+            paperTickets = (
+                session.query(PaperTicket)
+                .filter(PaperTicket.duty_id == fParam.id)
+                .all()
+            )
+            if paperTickets:
+                duty.collection = sum(
+                    [paperTicket.amount for paperTicket in paperTickets]
+                )
             duty.finished_on = datetime.now(timezone.utc)
         duty.status = fParam.status
 
