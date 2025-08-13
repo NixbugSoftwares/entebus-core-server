@@ -328,6 +328,7 @@ async def update_duty(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
     dutyLock = None
     try:
         session = sessionMaker()
@@ -335,10 +336,11 @@ async def update_duty(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.update_duty)
 
-        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        serviceLock = acquireLock(Service.__tablename__, duty.service_id)
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
 
         dutyStatusTransition = {
             DutyStatus.ASSIGNED: [],
@@ -367,6 +369,7 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
         releaseLock(dutyLock)
         session.close()
 
@@ -596,6 +599,7 @@ async def update_duty(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
     dutyLock = None
     try:
         session = sessionMaker()
@@ -603,7 +607,6 @@ async def update_duty(
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.update_duty)
 
-        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
         duty = (
             session.query(Duty)
             .filter(Duty.id == fParam.id)
@@ -612,6 +615,8 @@ async def update_duty(
         )
         if duty is None:
             raise exceptions.InvalidIdentifier()
+        serviceLock = acquireLock(Service.__tablename__, duty.service_id)
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
 
         dutyStatusTransition = {
             DutyStatus.ASSIGNED: [DutyStatus.STARTED],
@@ -646,6 +651,7 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
         releaseLock(dutyLock)
         session.close()
 
