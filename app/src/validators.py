@@ -14,8 +14,9 @@ from app.src.db import (
     VendorRole,
     VendorToken,
     LandmarkInRoute,
+    Fare,
 )
-from app.src.constants import MIN_LANDMARK_IN_ROUTE
+from app.src.constants import MIN_LANDMARK_IN_ROUTE, DYNAMIC_FARE_VERSION
 from app.src import exceptions
 from app.src.dynamic_fare import v1
 
@@ -165,6 +166,10 @@ def landmarkInRoute(route: int, session: Session) -> bool:
 
 
 def fareFunction(function, attributes) -> str:
+    dfVersion = attributes["df_version"]
+    if dfVersion != DYNAMIC_FARE_VERSION:
+        raise exceptions.InvalidFareVersion()
+
     fareFunction = v1.DynamicFare(function)
 
     ticketTypes = attributes["ticket_types"]

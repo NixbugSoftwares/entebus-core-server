@@ -272,3 +272,9 @@ class ExceededMaxLimit(APIException):
     def __init__(self, orm_class):
         detail = f"Maximum limit for {orm_class.__name__} is exceeded"
         super().__init__(detail=detail)
+
+
+class InvalidFareVersion(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidFareVersion"}
+    detail = "Invalid dynamic fare version"
