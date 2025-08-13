@@ -49,7 +49,8 @@ docker run --name minio \
     -e MINIO_ROOT_USER=minio \
     -e MINIO_ROOT_PASSWORD=password \
     -p 9000:9000 \
-    -d minio/minio server /data
+    -p 9001:9001 \
+    -d minio/minio server /data --console-address ":9001"
 ```
 
 **OpenObserve**
