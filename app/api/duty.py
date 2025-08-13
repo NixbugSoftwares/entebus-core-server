@@ -16,7 +16,7 @@ from app.src.db import (
     Duty,
     sessionMaker,
 )
-from app.src.constants import SERVICE_START_BUFFER_TIME
+from app.src.constants import SERVICE_START_BUFFER_TIME, MAX_DUTY_PER_SERVICE
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
@@ -216,6 +216,7 @@ def searchDuty(
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Service),
+            exceptions.ExceededMaxLimit(Duty),
         ]
     ),
     description="""
@@ -225,6 +226,7 @@ def searchDuty(
     In this operator and service must be associated with the company_id.    
     The operator must be in active status.  
     The duty is created in the Assigned status by default.      
+    Sets the maximum number of duties per service with MAX_DUTY_PER_SERVICE.    
     Log the duty creation activity with the associated token.
     """,
 )
@@ -250,6 +252,13 @@ async def create_duty(
         service = session.query(Service).filter(Service.id == fParam.service_id).first()
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
+
+        # Check if the service has already reached the maximum number of duties
+        duties = (
+            session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
+        )
+        if duties >= MAX_DUTY_PER_SERVICE:
+            raise exceptions.ExceededMaxLimit(Duty)
 
         if operator.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveResource(Operator)
@@ -417,6 +426,7 @@ async def get_duties(
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Duty),
+            exceptions.ExceededMaxLimit(Duty),
         ]
     ),
     description="""
@@ -426,7 +436,8 @@ async def get_duties(
     In this operator and service must be associated with the company_id.  
     Duty can not be created if the service is not in CREATED or STARTED status.       
     The operator must be in active status.     
-    The duty is created in the Assigned status by default.   
+    The duty is created in the Assigned status by default.  
+    Sets the maximum number of duties per service with MAX_DUTY_PER_SERVICE.     
     If the logged in operator_id is same as incoming operator_id and current time is after the buffer time then the duty is self assigned.    
     Sets buffer time with SERVICE_START_BUFFER_TIME (in minutes).
     For self assigned duty the status will be set to STARTED by default, not user input.    
@@ -464,6 +475,13 @@ async def create_duty(
         )
         if service is None:
             raise exceptions.UnknownValue(Duty.service_id)
+
+        # Check if the service has already reached the maximum number of duties
+        duties = (
+            session.query(Duty).filter(Duty.service_id == fParam.service_id).count()
+        )
+        if duties >= MAX_DUTY_PER_SERVICE:
+            raise exceptions.ExceededMaxLimit(Duty)
 
         if operator.status != AccountStatus.ACTIVE:
             raise exceptions.InactiveResource(Operator)
