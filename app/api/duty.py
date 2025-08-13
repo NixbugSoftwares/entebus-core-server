@@ -22,6 +22,7 @@ from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
 from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
 from app.src.urls import URL_DUTY
+from app.src.redis import acquireLock, releaseLock
 
 route_executive = APIRouter()
 route_vendor = APIRouter()
@@ -228,12 +229,16 @@ async def create_duty(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_duty)
 
+        serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
+        dutyLock = acquireLock(Duty.__tablename__)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
             raise exceptions.UnknownValue(Duty.company_id)
@@ -287,6 +292,8 @@ async def create_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
+        releaseLock(dutyLock)
         session.close()
 
 
@@ -321,12 +328,14 @@ async def update_duty(
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.update_duty)
 
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
             raise exceptions.InvalidIdentifier()
@@ -358,6 +367,7 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(dutyLock)
         session.close()
 
 
@@ -471,12 +481,16 @@ async def create_duty(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    serviceLock = None
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.create_duty)
 
+        serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
+        dutyLock = acquireLock(Duty.__tablename__)
         operator = (
             session.query(Operator)
             .filter(Operator.id == fParam.operator_id)
@@ -544,6 +558,8 @@ async def create_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(serviceLock)
+        releaseLock(dutyLock)
         session.close()
 
 
@@ -580,12 +596,14 @@ async def update_duty(
     bearer=Depends(bearer_operator),
     request_info=Depends(getters.requestInfo),
 ):
+    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         validators.operatorPermission(role, OperatorRole.update_duty)
 
+        dutyLock = acquireLock(Duty.__tablename__, fParam.id)
         duty = (
             session.query(Duty)
             .filter(Duty.id == fParam.id)
@@ -628,6 +646,7 @@ async def update_duty(
     except Exception as e:
         exceptions.handle(e)
     finally:
+        releaseLock(dutyLock)
         session.close()
 
 
