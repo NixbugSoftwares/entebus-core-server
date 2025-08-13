@@ -230,7 +230,6 @@ async def create_duty(
     request_info=Depends(getters.requestInfo),
 ):
     serviceLock = None
-    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
@@ -238,7 +237,6 @@ async def create_duty(
         validators.executivePermission(role, ExecutiveRole.create_duty)
 
         serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
-        dutyLock = acquireLock(Duty.__tablename__)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
             raise exceptions.UnknownValue(Duty.company_id)
@@ -293,7 +291,6 @@ async def create_duty(
         exceptions.handle(e)
     finally:
         releaseLock(serviceLock)
-        releaseLock(dutyLock)
         session.close()
 
 
@@ -341,6 +338,7 @@ async def update_duty(
             raise exceptions.InvalidIdentifier()
         serviceLock = acquireLock(Service.__tablename__, duty.service_id)
         dutyLock = acquireLock(Duty.__tablename__, fParam.id)
+        session.refresh(duty)
 
         dutyStatusTransition = {
             DutyStatus.ASSIGNED: [],
@@ -485,7 +483,6 @@ async def create_duty(
     request_info=Depends(getters.requestInfo),
 ):
     serviceLock = None
-    dutyLock = None
     try:
         session = sessionMaker()
         token = validators.operatorToken(bearer.credentials, session)
@@ -493,7 +490,6 @@ async def create_duty(
         validators.operatorPermission(role, OperatorRole.create_duty)
 
         serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
-        dutyLock = acquireLock(Duty.__tablename__)
         operator = (
             session.query(Operator)
             .filter(Operator.id == fParam.operator_id)
@@ -562,7 +558,6 @@ async def create_duty(
         exceptions.handle(e)
     finally:
         releaseLock(serviceLock)
-        releaseLock(dutyLock)
         session.close()
 
 
@@ -617,6 +612,7 @@ async def update_duty(
             raise exceptions.InvalidIdentifier()
         serviceLock = acquireLock(Service.__tablename__, duty.service_id)
         dutyLock = acquireLock(Duty.__tablename__, fParam.id)
+        session.refresh(duty)
 
         dutyStatusTransition = {
             DutyStatus.ASSIGNED: [DutyStatus.STARTED],
