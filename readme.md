@@ -115,7 +115,7 @@ docker build -t docker.nixbug.com/entebus/entebus-core-server:develop-052bd99 \
 docker run -d --name entebus-core-server -p 8080:8080 docker.nixbug.com/entebus/entebus-core-server:develop-latest
 
 # Login to remote docker repository (only needed once)
-docker login
+docker login docker.nixbug.com
 
 # Push the docker image to nexus repository
 docker push docker.nixbug.com/entebus/entebus-core-server:develop-latest
@@ -124,4 +124,5 @@ docker push docker.nixbug.com/entebus/entebus-core-server:develop-052bd99
 # Pull the docker image from nexus repository
 docker pull docker.nixbug.com/entebus/entebus-core-server:develop-latest
 ```
+
 
