@@ -127,8 +127,9 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
         if fParam.status == DutyStatus.STARTED:
+            if duty.started_on is None:
+                duty.started_on = datetime.now(timezone.utc)
             duty.collection = None
-            duty.started_on = datetime.now(timezone.utc)
             service.status = ServiceStatus.STARTED
             if service.started_on is None:
                 service.started_on = datetime.now(timezone.utc)
