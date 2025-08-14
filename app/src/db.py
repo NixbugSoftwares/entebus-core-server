@@ -2265,7 +2265,7 @@ class Duty(ORMbase):
 
         collection (Numeric):
             Total collection amount by an operator against a service.
-            Must be not null and precise up to two decimal places.
+            Can be null and precise up to two decimal places.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the duty record is modified.
@@ -2292,7 +2292,7 @@ class Duty(ORMbase):
     status = Column(Integer, nullable=False, default=DutyStatus.ASSIGNED)
     started_on = Column(DateTime(timezone=True))
     finished_on = Column(DateTime(timezone=True))
-    collection = Column(Numeric(10, 2), nullable=False, default=0)
+    collection = Column(Numeric(10, 2))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

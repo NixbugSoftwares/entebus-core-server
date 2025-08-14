@@ -39,7 +39,7 @@ class DutySchema(BaseModel):
     status: int
     started_on: Optional[datetime]
     finished_on: Optional[datetime]
-    collection: float
+    collection: Optional[float]
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -127,7 +127,7 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
         if fParam.status == DutyStatus.STARTED:
-            duty.collection = 0
+            duty.collection = None
             duty.started_on = datetime.now(timezone.utc)
             service.status = ServiceStatus.STARTED
             if service.started_on is None:
