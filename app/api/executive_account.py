@@ -1,19 +1,33 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Response, status, Form
+from fastapi import APIRouter, Depends, Query, Response, status, Form, UploadFile, File
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
+from io import BytesIO
 
 from app.api.bearer import bearer_executive
-from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
-from app.src.db import Executive, ExecutiveRole, ExecutiveToken, sessionMaker
+from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME, EXECUTIVE_PICTURES
+from app.src.db import (
+    Executive,
+    ExecutiveRole,
+    ExecutiveToken,
+    ExecutiveImage,
+    sessionMaker,
+)
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
-from app.src.urls import URL_EXECUTIVE_ACCOUNT
+from app.src.urls import URL_EXECUTIVE_ACCOUNT, URL_EXECUTIVE_PICTURE
+from app.src.minio import uploadFile
+from app.src.functions import (
+    enumStr,
+    makeExceptionResponses,
+    updateIfChanged,
+    splitMIME,
+    resizeImage,
+)
 
 route_executive = APIRouter()
 
@@ -28,6 +42,16 @@ class ExecutiveSchema(BaseModel):
     phone_number: Optional[str]
     email_id: Optional[str]
     status: int
+    updated_on: Optional[datetime]
+    created_on: datetime
+
+
+class ExecutiveImageSchema(BaseModel):
+    id: int
+    executive_id: int
+    file_name: str
+    file_type: str
+    file_size: int
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -71,6 +95,11 @@ class UpdateForm(BaseModel):
 
 class DeleteForm(BaseModel):
     id: int = Field(Form())
+
+
+class createFormForImage(BaseModel):
+    executive_id: int | None = Field(Form(default=None))
+    file: UploadFile = Field(File())
 
 
 ## Query Parameters
@@ -354,6 +383,61 @@ async def fetch_executive(
         # Pagination
         query = query.offset(qParam.offset).limit(qParam.limit)
         return query.all()
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_executive.post(
+    URL_EXECUTIVE_PICTURE,
+    tags=["Account Picture"],
+    response_model=ExecutiveImageSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Upload the executive's profile picture.  
+    Only authorized users with `update_executive` permission can upload a picture .    
+    Stores the image in MinIO and saves metadata in `executive_image` table.
+    """,
+)
+async def upload_executive_picture(
+    fParam: createFormForImage = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        validators.executivePermission(role, ExecutiveRole.update_executive)
+
+        fileBytes = await fParam.file.read()
+        mimeInfo = splitMIME(fParam.file.content_type)
+        imgFormat = mimeInfo["sub_type"]
+        resizedBytes = resizeImage(fileBytes, imgFormat)
+        uploadFile(
+            EXECUTIVE_PICTURES,
+            str(fParam.executive_id),
+            len(resizedBytes),
+            BytesIO(resizedBytes),
+        )
+
+        executiveImage = ExecutiveImage(
+            executive_id=token.executive_id,
+            file_name=fParam.file.filename,
+            file_type=fParam.file.content_type,
+            file_size=len(resizedBytes),
+        )
+        session.add(executiveImage)
+        session.commit()
+        session.refresh(executiveImage)
+
+        executiveImageData = jsonable_encoder(executiveImage)
+        logEvent(token, request_info, executiveImageData)
+        return executiveImageData
     except Exception as e:
         exceptions.handle(e)
     finally:

@@ -6,7 +6,13 @@ from datetime import date, datetime, timedelta
 from app.src import argon2
 from app.src.enums import CompanyStatus, Day
 from app.src.minio import createBucket, deleteBucket
-from app.src.constants import PROFILE_PICTURES, BUS_PICTURES, BUS_STOP_PICTURES
+from app.src.constants import (
+    EXECUTIVE_PICTURES,
+    OPERATOR_PICTURES,
+    VENDOR_PICTURES,
+    BUS_PICTURES,
+    BUS_STOP_PICTURES,
+)
 from app.src.urls import (
     URL_EXECUTIVE_TOKEN,
     URL_LANDMARK,
@@ -46,7 +52,9 @@ def removeTables():
     ORMbase.metadata.drop_all(engine)
     session.commit()
     print("* All tables deleted")
-    deleteBucket(PROFILE_PICTURES)
+    deleteBucket(EXECUTIVE_PICTURES)
+    deleteBucket(OPERATOR_PICTURES)
+    deleteBucket(VENDOR_PICTURES)
     deleteBucket(BUS_PICTURES)
     deleteBucket(BUS_STOP_PICTURES)
     print("* All buckets deleted")
@@ -58,7 +66,9 @@ def createTables():
     ORMbase.metadata.create_all(engine)
     session.commit()
     print("* All tables created")
-    createBucket(PROFILE_PICTURES)
+    createBucket(EXECUTIVE_PICTURES)
+    createBucket(OPERATOR_PICTURES)
+    createBucket(VENDOR_PICTURES)
     createBucket(BUS_PICTURES)
     createBucket(BUS_STOP_PICTURES)
     print("* All buckets created")
