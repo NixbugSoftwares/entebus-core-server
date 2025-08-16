@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Response, status, Form
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 
 from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import (
@@ -14,6 +15,7 @@ from app.src.db import (
     OperatorRole,
     Service,
     Duty,
+    PaperTicket,
     sessionMaker,
 )
 from app.src.constants import SERVICE_START_BUFFER_TIME, MAX_DUTY_PER_SERVICE
@@ -38,6 +40,7 @@ class DutySchema(BaseModel):
     status: int
     started_on: Optional[datetime]
     finished_on: Optional[datetime]
+    collection: Optional[float]
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -125,11 +128,18 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     service = session.query(Service).filter(Service.id == duty.service_id).first()
     if fParam.status is not None and fParam.status != duty.status:
         if fParam.status == DutyStatus.STARTED:
-            duty.started_on = datetime.now(timezone.utc)
+            if duty.started_on is None:
+                duty.started_on = datetime.now(timezone.utc)
+            duty.collection = None
             service.status = ServiceStatus.STARTED
             if service.started_on is None:
                 service.started_on = datetime.now(timezone.utc)
         if fParam.status in [DutyStatus.TERMINATED, DutyStatus.ENDED]:
+            duty.collection = (
+                session.query(func.sum(PaperTicket.amount))
+                .filter(PaperTicket.duty_id == fParam.id)
+                .scalar()
+            ) or 0
             duty.finished_on = datetime.now(timezone.utc)
         duty.status = fParam.status
 
