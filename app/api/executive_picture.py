@@ -10,7 +10,7 @@ from functools import lru_cache
 
 from app.api.bearer import bearer_executive
 from app.src.constants import EXECUTIVE_PICTURES
-from app.src.db import ExecutiveRole, ExecutiveImage, sessionMaker
+from app.src.db import ExecutiveImage, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.urls import URL_EXECUTIVE_PICTURE
@@ -83,6 +83,20 @@ class QueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+# Function
+@lru_cache()
+def get_resized_image(file_bytes: bytes, format: str, resolution: str | None):
+    """Resize image and cache results"""
+    if resolution:
+        try:
+            width, height = map(int, resolution.lower().split("x"))
+        except ValueError:
+            raise exceptions.InvalidAABB()
+    else:
+        width, height = None, None
+    return resizeImage(file_bytes, format, width=width, height=height)
+
+
 ## API endpoints [Executive]
 @route_executive.post(
     URL_EXECUTIVE_PICTURE,
@@ -93,9 +107,10 @@ class QueryParams(BaseModel):
         [exceptions.InvalidToken, exceptions.NoPermission]
     ),
     description="""
-    Upload the executive's profile picture.  
-    Only authorized users with `update_executive` permission can upload a picture .    
-    Stores the image in MinIO and saves metadata in `executive_image` table.
+    Upload the executive's profile picture. 
+    Executives can update their own profile picture.     
+    Authorized users with `update_executive` permission can update any executive profile picture.      
+    Stores the image in MinIO and saves metadata in executive_image table.
     """,
 )
 async def upload_executive_picture(
@@ -107,7 +122,13 @@ async def upload_executive_picture(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_executive)
+
+        if fParam.executive_id is None:
+            fParam.executive_id = token.executive_id
+        isSelfUpdate = fParam.executive_id == token.executive_id
+        hasUpdatePermission = bool(role and role.update_executive)
+        if not isSelfUpdate and not hasUpdatePermission:
+            raise exceptions.NoPermission()
 
         fileBytes = await fParam.file.read()
         mimeInfo = splitMIME(fParam.file.content_type)
@@ -142,7 +163,16 @@ async def upload_executive_picture(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
     response_model=ExecutiveImageSchema,
-    description="Replace an executive's profile picture",
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    ),
+    description="""
+    Update an existing executive profile picture.   
+    Executives can update their own profile picture.     
+    Authorized users with `update_executive` permission can update any executive profile picture.   
+    Stores the image in MinIO and saves metadata in executive_image table.      
+    Modifications are only saved if changes are detected.
+    """,
 )
 async def update_executive_picture(
     fParam: UpdateForm = Depends(),
@@ -153,7 +183,13 @@ async def update_executive_picture(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_executive)
+
+        if fParam.id is None:
+            fParam.id = token.executive_id
+        isSelfUpdate = fParam.id == token.executive_id
+        hasUpdatePermission = bool(role and role.update_executive)
+        if not isSelfUpdate and not hasUpdatePermission:
+            raise exceptions.NoPermission()
 
         executiveImage = (
             session.query(ExecutiveImage).filter(ExecutiveImage.id == fParam.id).first()
@@ -196,7 +232,15 @@ async def update_executive_picture(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
     status_code=status.HTTP_204_NO_CONTENT,
-    description="Delete an executive's profile picture",
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.NoPermission]
+    ),
+    description="""
+    Delete an executive's profile picture.  
+    Executives can delete their own profile picture.     
+    Authorized users with `update_executive` permission can update any executive profile picture.   
+    Removes the image from MinIO and deletes metadata in executive_image table.     
+    """,
 )
 async def delete_executive_picture(
     fParam: DeleteForm = Depends(),
@@ -207,7 +251,13 @@ async def delete_executive_picture(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_executive)
+
+        if fParam.id is None:
+            fParam.id = token.executive_id
+        isSelfUpdate = fParam.id == token.executive_id
+        hasUpdatePermission = bool(role and role.update_executive)
+        if not isSelfUpdate and not hasUpdatePermission:
+            raise exceptions.NoPermission()
 
         executiveImage = (
             session.query(ExecutiveImage).filter(ExecutiveImage.id == fParam.id).first()
@@ -228,7 +278,15 @@ async def delete_executive_picture(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
     response_model=list[ExecutiveImageSchema],
-    description="Get metadata of all executive profile pictures",
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch metadata of all executive profile pictures with filtering, sorting, and pagination.   
+    Filter by file name file type, file size, id's and creation/update timestamps.   
+    Filter by ID ranges or lists.   
+    Sort by ID, creation date, or update date, file size in ascending or descending order.  
+    Paginate using offset and limit.    
+    Returns a list of executive profile pictures metadata, matching the criteria.
+    """,
 )
 async def fetch_executive_pictures(
     qParam: QueryParams = Depends(),
@@ -278,23 +336,15 @@ async def fetch_executive_pictures(
         session.close()
 
 
-@lru_cache()
-def get_resized_image(file_bytes: bytes, format: str, resolution: str | None):
-    """Resize image and cache results"""
-    if resolution:
-        try:
-            width, height = map(int, resolution.lower().split("x"))
-        except ValueError:
-            raise exceptions.InvalidAABB()
-    else:
-        width, height = None, None
-    return resizeImage(file_bytes, format, width=width, height=height)
-
-
 @route_executive.get(
     f"{URL_EXECUTIVE_PICTURE}" + "/{id}",
     tags=["Account Picture"],
-    description="Download executive profile picture in original or resized resolution",
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Download executive profile picture in original or resized resolution.   
+    Requires a valid executive token.   
+    Returns the image file in the specified resolution.
+    """,
 )
 async def download_executive_picture(
     id: int,
