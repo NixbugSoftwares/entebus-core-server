@@ -7,22 +7,13 @@ from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 from app.api.bearer import bearer_executive
-from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME, EXECUTIVE_PICTURES
-from app.src.db import (
-    Executive,
-    ExecutiveRole,
-    ExecutiveToken,
-    sessionMaker,
-)
+from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
+from app.src.db import Executive, ExecutiveRole, ExecutiveToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
+from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.urls import URL_EXECUTIVE_ACCOUNT
-from app.src.functions import (
-    enumStr,
-    makeExceptionResponses,
-    updateIfChanged,
-)
 
 route_executive = APIRouter()
 
