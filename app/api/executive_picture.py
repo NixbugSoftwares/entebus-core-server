@@ -31,17 +31,17 @@ class ExecutiveImageSchema(BaseModel):
     created_on: datetime
 
 
-class createImageForm(BaseModel):
+class createForm(BaseModel):
     executive_id: int | None = Field(Form(default=None))
     file: UploadFile = Field(File())
 
 
-class UpdateImageForm(BaseModel):
+class UpdateForm(BaseModel):
     id: int | None = Field(Form(default=None))
     file: UploadFile = Field(File())
 
 
-class DeleteImageForm(BaseModel):
+class DeleteForm(BaseModel):
     id: int | None = Field(Form(default=None))
 
 
@@ -57,7 +57,7 @@ class OrderBy(IntEnum):
     created_on = 3
 
 
-class ImageQueryParams(BaseModel):
+class QueryParams(BaseModel):
     executive_id: int | None = Field(Query(default=None))
     file_name: str | None = Field(Query(default=None))
     file_type: str | None = Field(Query(default=None))
@@ -83,6 +83,7 @@ class ImageQueryParams(BaseModel):
     limit: int = Field(Query(default=20, gt=0, le=100))
 
 
+## API endpoints [Executive]
 @route_executive.post(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
@@ -98,7 +99,7 @@ class ImageQueryParams(BaseModel):
     """,
 )
 async def upload_executive_picture(
-    fParam: createImageForm = Depends(),
+    fParam: createForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -144,7 +145,7 @@ async def upload_executive_picture(
     description="Replace an executive's profile picture",
 )
 async def update_executive_picture(
-    fParam: UpdateImageForm = Depends(),
+    fParam: UpdateForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -198,7 +199,7 @@ async def update_executive_picture(
     description="Delete an executive's profile picture",
 )
 async def delete_executive_picture(
-    fParam: DeleteImageForm = Depends(),
+    fParam: DeleteForm = Depends(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -230,7 +231,7 @@ async def delete_executive_picture(
     description="Get metadata of all executive profile pictures",
 )
 async def fetch_executive_pictures(
-    qParam: ImageQueryParams = Depends(),
+    qParam: QueryParams = Depends(),
     bearer=Depends(bearer_executive),
 ):
     try:
