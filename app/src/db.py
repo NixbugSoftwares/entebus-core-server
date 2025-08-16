@@ -2399,7 +2399,8 @@ class ExecutiveImage(ORMbase):
 
         executive_id (Integer):
             Foreign key referencing the executive to whom this image belongs.
-            Must be non-null. Deletion of the executive cascades to their images.
+            Must be non-null and unique. 
+            Deletion of the executive cascades to their images.
 
         file_name (String(128)):
             Original name of the uploaded image file, including extension.
@@ -2426,7 +2427,10 @@ class ExecutiveImage(ORMbase):
 
     id = Column(Integer, primary_key=True)
     executive_id = Column(
-        Integer, ForeignKey("executive.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("executive.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     # File metadata
     file_name = Column(String(128), nullable=False)
