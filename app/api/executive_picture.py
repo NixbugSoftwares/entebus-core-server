@@ -10,11 +10,7 @@ from functools import lru_cache
 
 from app.api.bearer import bearer_executive
 from app.src.constants import EXECUTIVE_PICTURES
-from app.src.db import (
-    ExecutiveRole,
-    ExecutiveImage,
-    sessionMaker,
-)
+from app.src.db import ExecutiveRole, ExecutiveImage, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.urls import URL_EXECUTIVE_PICTURE
