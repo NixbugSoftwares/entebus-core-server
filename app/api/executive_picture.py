@@ -55,6 +55,7 @@ class OrderBy(IntEnum):
     id = 1
     updated_on = 2
     created_on = 3
+    file_size = 4
 
 
 class QueryParams(BaseModel):
@@ -85,13 +86,13 @@ class QueryParams(BaseModel):
 
 # Function
 @lru_cache()
-def get_resized_image(file_bytes: bytes, format: str, resolution: str | None):
-    """Resize image and cache results"""
+def cachedImage(file_bytes: bytes, format: str, resolution: str | None):
+    # Resize image and cache results
     if resolution:
         try:
             width, height = map(int, resolution.lower().split("x"))
-        except ValueError:
-            raise exceptions.InvalidAABB()
+        except Exception:
+            raise exceptions.InvalidResolution()
     else:
         width, height = None, None
     return resizeImage(file_bytes, format, width=width, height=height)
@@ -365,9 +366,7 @@ async def download_executive_picture(
                 EXECUTIVE_PICTURES, str(executiveImage.executive_id)
             )
             mimeInfo = splitMIME(executiveImage.file_type)
-            resizedBytes = get_resized_image(
-                fileBytes, mimeInfo["sub_type"], resolution
-            )
+            resizedBytes = cachedImage(fileBytes, mimeInfo["sub_type"], resolution)
 
             return StreamingResponse(
                 BytesIO(resizedBytes),
