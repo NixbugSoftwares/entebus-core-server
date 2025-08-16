@@ -58,6 +58,13 @@ class OrderBy(IntEnum):
     file_size = 4
 
 
+class ImageQueryParams(BaseModel):
+    id: int
+    resolution: str | None = Field(
+        Query(default=None, description="Resolution in WIDTH x HEIGHT format (eg: 1920x1080)"),
+    )
+
+
 class QueryParams(BaseModel):
     executive_id: int | None = Field(Query(default=None))
     file_name: str | None = Field(Query(default=None))
@@ -368,10 +375,7 @@ async def fetch_executive_pictures(
     """,
 )
 async def download_executive_picture(
-    id: int,
-    resolution: str | None = Query(
-        None, description="Resolution in WIDTHxHEIGHT format"
-    ),
+    qParam: ImageQueryParams = Depends(),
     bearer=Depends(bearer_executive),
 ):
     try:
@@ -379,14 +383,16 @@ async def download_executive_picture(
         validators.executiveToken(bearer.credentials, session)
 
         executiveImage = (
-            session.query(ExecutiveImage).filter(ExecutiveImage.id == id).first()
+            session.query(ExecutiveImage).filter(ExecutiveImage.id == qParam.id).first()
         )
         if executiveImage is not None:
             fileBytes = downloadFile(
                 EXECUTIVE_PICTURES, str(executiveImage.executive_id)
             )
             mimeInfo = splitMIME(executiveImage.file_type)
-            resizedBytes = cachedImage(fileBytes, mimeInfo["sub_type"], resolution)
+            resizedBytes = cachedImage(
+                fileBytes, mimeInfo["sub_type"], qParam.resolution
+            )
 
             return StreamingResponse(
                 BytesIO(resizedBytes),
