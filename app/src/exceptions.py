@@ -293,3 +293,9 @@ class InvalidResolution(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidResolution"}
     detail = "Invalid resolution"
+
+
+class InvalidImage(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidImage"}
+    detail = "Invalid image"

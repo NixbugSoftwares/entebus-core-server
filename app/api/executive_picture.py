@@ -10,7 +10,7 @@ from functools import lru_cache
 
 from app.api.bearer import bearer_executive
 from app.src.constants import EXECUTIVE_PICTURES
-from app.src.db import ExecutiveImage, sessionMaker
+from app.src.db import ExecutiveImage, Executive, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.urls import URL_EXECUTIVE_PICTURE
@@ -38,7 +38,7 @@ class createForm(BaseModel):
 
 class UpdateForm(BaseModel):
     id: int | None = Field(Form(default=None))
-    file: UploadFile = Field(File())
+    file: UploadFile | None = Field(File(default=None))
 
 
 class DeleteForm(BaseModel):
@@ -131,8 +131,16 @@ async def upload_executive_picture(
         if not isSelfUpdate and not hasUpdatePermission:
             raise exceptions.NoPermission()
 
+        executive = (
+            session.query(Executive).filter(Executive.id == fParam.executive_id).first()
+        )
+        if executive is None:
+            raise exceptions.UnknownValue(ExecutiveImage.executive_id)
         fileBytes = await fParam.file.read()
         mimeInfo = splitMIME(fParam.file.content_type)
+        mimeType = mimeInfo["type"]
+        if mimeType != "image":
+            raise exceptions.InvalidImage()
         resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
         uploadFile(
             EXECUTIVE_PICTURES,
@@ -186,40 +194,44 @@ async def update_executive_picture(
         role = getters.executiveRole(token, session)
 
         if fParam.id is None:
-            fParam.id = token.executive_id
-        isSelfUpdate = fParam.id == token.executive_id
-        hasUpdatePermission = bool(role and role.update_executive)
-        if not isSelfUpdate and not hasUpdatePermission:
-            raise exceptions.NoPermission()
+            executiveImage = (
+                session.query(ExecutiveImage)
+                .filter(ExecutiveImage.executive_id == token.executive_id)
+                .first()
+            )
+            fParam.id = executiveImage.id
+        else:
+            executiveImage = session.get(ExecutiveImage, fParam.id)
+            if executiveImage is None:
+                raise exceptions.InvalidIdentifier()
 
-        executiveImage = (
-            session.query(ExecutiveImage).filter(ExecutiveImage.id == fParam.id).first()
-        )
-        if executiveImage is None:
-            raise exceptions.InvalidIdentifier()
+            isSelfUpdate = executiveImage.executive_id == token.executive_id
+            hasUpdatePermission = bool(role and role.update_executive)
+            if not (isSelfUpdate or hasUpdatePermission):
+                raise exceptions.NoPermission()
 
-        fileBytes = await fParam.file.read()
-        mimeInfo = splitMIME(fParam.file.content_type)
-        resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
+        if fParam.file is not None:
+            fileBytes = await fParam.file.read()
+            mimeInfo = splitMIME(fParam.file.content_type)
+            mimeType = mimeInfo["type"]
+            if mimeType != "image":
+                raise exceptions.InvalidImage()
+            resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
 
-        uploadFile(
-            EXECUTIVE_PICTURES,
-            str(executiveImage.executive_id),
-            len(resizedBytes),
-            BytesIO(resizedBytes),
-        )
+            uploadFile(
+                EXECUTIVE_PICTURES,
+                str(executiveImage.executive_id),
+                len(resizedBytes),
+                BytesIO(resizedBytes),
+            )
 
-        if fParam.file is not None and executiveImage.file_name != fParam.file.filename:
             executiveImage.file_name = fParam.file.filename
-        if (
-            fParam.file is not None
-            and executiveImage.file_type != fParam.file.content_type
-        ):
             executiveImage.file_type = fParam.file.content_type
-        if fParam.file is not None and executiveImage.file_size != len(resizedBytes):
             executiveImage.file_size = len(resizedBytes)
-        session.commit()
-        session.refresh(executiveImage)
+        haveUpdates = session.is_modified(executiveImage)
+        if haveUpdates:
+            session.commit()
+            session.refresh(executiveImage)
 
         logEvent(token, request_info, jsonable_encoder(executiveImage))
         return executiveImage
@@ -254,20 +266,28 @@ async def delete_executive_picture(
         role = getters.executiveRole(token, session)
 
         if fParam.id is None:
-            fParam.id = token.executive_id
-        isSelfUpdate = fParam.id == token.executive_id
-        hasUpdatePermission = bool(role and role.update_executive)
-        if not isSelfUpdate and not hasUpdatePermission:
-            raise exceptions.NoPermission()
+            executiveImage = (
+                session.query(ExecutiveImage)
+                .filter(ExecutiveImage.executive_id == token.executive_id)
+                .first()
+            )
+        else:
+            executiveImage = session.query(ExecutiveImage).get(fParam.id)
+            if executiveImage is not None:
+                isSelfUpdate = executiveImage.executive_id == token.executive_id
+                hasUpdatePermission = bool(role and role.update_executive)
+                if not isSelfUpdate and not hasUpdatePermission:
+                    raise exceptions.NoPermission()
+            else:
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-        executiveImage = (
-            session.query(ExecutiveImage).filter(ExecutiveImage.id == fParam.id).first()
-        )
-        if executiveImage is not None:
-            deleteFile(EXECUTIVE_PICTURES, str(executiveImage.executive_id))
-            session.delete(executiveImage)
-            session.commit()
-            logEvent(token, request_info, jsonable_encoder(executiveImage))
+        if executiveImage is None:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        deleteFile(EXECUTIVE_PICTURES, str(executiveImage.executive_id))
+        session.delete(executiveImage)
+        session.commit()
+        logEvent(token, request_info, jsonable_encoder(executiveImage))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         exceptions.handle(e)

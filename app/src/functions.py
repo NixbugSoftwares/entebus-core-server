@@ -144,6 +144,8 @@ def resizeImage(
     outputBuffer = BytesIO()
     newSize = (width, height)
     image.thumbnail(newSize)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
     image.save(outputBuffer, format)
     imageBytes = outputBuffer.getvalue()
     outputBuffer.close()
@@ -157,5 +159,4 @@ def splitMIME(mimeType: str) -> Dict:
     subType = subTypeWithParamElement[0]
     parameter = subTypeWithParamElement[1] if 1 < len(subTypeWithParamElement) else None
 
-    print(type, subType, parameter)
     return {"type": type, "sub_type": subType, "parameter": parameter}
