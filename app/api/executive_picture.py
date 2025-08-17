@@ -61,7 +61,10 @@ class OrderBy(IntEnum):
 class ImageQueryParams(BaseModel):
     id: int
     resolution: str | None = Field(
-        Query(default=None, description="Resolution in WIDTH x HEIGHT format (eg: 1920x1080)"),
+        Query(
+            default=None,
+            description="Resolution in WIDTH x HEIGHT format (eg: 1920x1080)",
+        ),
     )
 
 
