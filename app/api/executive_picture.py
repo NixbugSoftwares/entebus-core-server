@@ -107,7 +107,7 @@ def imageResolution(file_bytes: bytes, format: str, resolution: str | None):
     response_model=ExecutiveImageSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidImage]
     ),
     description="""
     Upload the executive's profile picture. 
