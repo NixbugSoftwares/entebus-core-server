@@ -264,16 +264,35 @@ def updateService(session: Session, service: Service, fParam: UpdateForm):
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
-        duties = session.query(Duty).filter(Duty.service_id == service.id).all()
-        if fParam.status in [ServiceStatus.ENDED, ServiceStatus.TERMINATED]:
-            for duty in duties:
-                if duty.status == DutyStatus.ASSIGNED:
-                    duty.status = DutyStatus.NOT_USED
-                if (
-                    fParam.status == ServiceStatus.ENDED
-                    and duty.status == DutyStatus.STARTED
-                ):
-                    raise exceptions.DataInUse(Service)
+        # duties = session.query(Duty).filter(Duty.service_id == service.id).all()
+        # if fParam.status in [ServiceStatus.ENDED, ServiceStatus.TERMINATED]:
+        #     for duty in duties:
+        #         if duty.status == DutyStatus.ASSIGNED:
+        #             duty.status = DutyStatus.NOT_USED
+        #         if (
+        #             fParam.status == ServiceStatus.ENDED
+        #             and duty.status == DutyStatus.STARTED
+        #         ):
+        #             raise exceptions.DataInUse(Service)
+        # service.status = fParam.status
+
+        if fParam.status in [ServiceStatus.ENDED]:
+            duties = (
+                session.query(Duty)
+                .filter(
+                    Duty.service_id == service.id, Duty.status == DutyStatus.STARTED
+                )
+                .count()
+            )
+            if duties > 0:
+                raise exceptions.DataInUse(Service)
+            session.query(Duty).filter(
+                Duty.service_id == service.id, Duty.status == DutyStatus.ASSIGNED
+            ).update({Duty.status: DutyStatus.NOT_USED})
+        if fParam.status in [ServiceStatus.Terminated]:
+            session.query(Duty).filter(
+                Duty.service_id == service.id, Duty.status == DutyStatus.ASSIGNED
+            ).update({Duty.status: DutyStatus.NOT_USED})
         service.status = fParam.status
 
 
