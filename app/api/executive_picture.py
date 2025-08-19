@@ -209,9 +209,9 @@ async def delete_executive_picture(
             else:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-        deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
         session.delete(executiveImage)
         session.commit()
+        deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
         logEvent(token, request_info, jsonable_encoder(executiveImage))
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
