@@ -6,11 +6,10 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from io import BytesIO
-from functools import lru_cache
 
 from app.api.bearer import bearer_executive
 from app.src.constants import EXECUTIVE_PICTURES
-from app.src.db import ExecutiveImage, Executive, sessionMaker
+from app.src.db import ExecutiveImage, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.urls import URL_EXECUTIVE_PICTURE
@@ -34,11 +33,6 @@ class ExecutiveImageSchema(BaseModel):
 class createForm(BaseModel):
     executive_id: int | None = Field(Form(default=None))
     file: UploadFile = Field(File())
-
-
-class UpdateForm(BaseModel):
-    id: int | None = Field(Form(default=None))
-    file: UploadFile | None = Field(File(default=None))
 
 
 class DeleteForm(BaseModel):
@@ -95,9 +89,7 @@ class QueryParams(BaseModel):
 
 
 # Function
-@lru_cache()
-def cachedImage(file_bytes: bytes, format: str, resolution: str | None):
-    # Resize image and cache results
+def imageResolution(file_bytes: bytes, format: str, resolution: str | None):
     if resolution:
         try:
             width, height = map(int, resolution.lower().split("x"))
@@ -141,23 +133,12 @@ async def upload_executive_picture(
         if not isSelfUpdate and not hasUpdatePermission:
             raise exceptions.NoPermission()
 
-        executive = (
-            session.query(Executive).filter(Executive.id == fParam.executive_id).first()
-        )
-        if executive is None:
-            raise exceptions.UnknownValue(ExecutiveImage.executive_id)
         fileBytes = await fParam.file.read()
         mimeInfo = splitMIME(fParam.file.content_type)
         mimeType = mimeInfo["type"]
         if mimeType != "image":
             raise exceptions.InvalidImage()
         resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
-        uploadFile(
-            EXECUTIVE_PICTURES,
-            str(fParam.executive_id),
-            len(resizedBytes),
-            BytesIO(resizedBytes),
-        )
 
         executiveImage = ExecutiveImage(
             executive_id=fParam.executive_id,
@@ -168,83 +149,16 @@ async def upload_executive_picture(
         session.add(executiveImage)
         session.commit()
         session.refresh(executiveImage)
+        uploadFile(
+            EXECUTIVE_PICTURES,
+            str(executiveImage.id),
+            len(resizedBytes),
+            BytesIO(resizedBytes),
+        )
 
         executiveImageData = jsonable_encoder(executiveImage)
         logEvent(token, request_info, executiveImageData)
         return executiveImageData
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-@route_executive.patch(
-    URL_EXECUTIVE_PICTURE,
-    tags=["Account Picture"],
-    response_model=ExecutiveImageSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
-    ),
-    description="""
-    Update an existing executive profile picture.   
-    Executives can update their own profile picture.     
-    Authorized users with `update_executive` permission can update any executive profile picture.   
-    Stores the image in MinIO and saves metadata in executive_image table.      
-    Modifications are only saved if changes are detected.
-    """,
-)
-async def update_executive_picture(
-    fParam: UpdateForm = Depends(),
-    bearer=Depends(bearer_executive),
-    request_info=Depends(getters.requestInfo),
-):
-    try:
-        session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
-        role = getters.executiveRole(token, session)
-
-        if fParam.id is None:
-            executiveImage = (
-                session.query(ExecutiveImage)
-                .filter(ExecutiveImage.executive_id == token.executive_id)
-                .first()
-            )
-            fParam.id = executiveImage.id
-        else:
-            executiveImage = session.get(ExecutiveImage, fParam.id)
-            if executiveImage is None:
-                raise exceptions.InvalidIdentifier()
-
-            isSelfUpdate = executiveImage.executive_id == token.executive_id
-            hasUpdatePermission = bool(role and role.update_executive)
-            if not (isSelfUpdate or hasUpdatePermission):
-                raise exceptions.NoPermission()
-
-        if fParam.file is not None:
-            fileBytes = await fParam.file.read()
-            mimeInfo = splitMIME(fParam.file.content_type)
-            mimeType = mimeInfo["type"]
-            if mimeType != "image":
-                raise exceptions.InvalidImage()
-            resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
-
-            uploadFile(
-                EXECUTIVE_PICTURES,
-                str(executiveImage.executive_id),
-                len(resizedBytes),
-                BytesIO(resizedBytes),
-            )
-
-            executiveImage.file_name = fParam.file.filename
-            executiveImage.file_type = fParam.file.content_type
-            executiveImage.file_size = len(resizedBytes)
-        haveUpdates = session.is_modified(executiveImage)
-        if haveUpdates:
-            session.commit()
-            session.refresh(executiveImage)
-
-        logEvent(token, request_info, jsonable_encoder(executiveImage))
-        return executiveImage
     except Exception as e:
         exceptions.handle(e)
     finally:
@@ -282,7 +196,11 @@ async def delete_executive_picture(
                 .first()
             )
         else:
-            executiveImage = session.query(ExecutiveImage).get(fParam.id)
+            executiveImage = (
+                session.query(ExecutiveImage)
+                .filter(ExecutiveImage.id == fParam.id)
+                .first()
+            )
             if executiveImage is not None:
                 isSelfUpdate = executiveImage.executive_id == token.executive_id
                 hasUpdatePermission = bool(role and role.update_executive)
@@ -291,10 +209,7 @@ async def delete_executive_picture(
             else:
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-        if executiveImage is None:
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        deleteFile(EXECUTIVE_PICTURES, str(executiveImage.executive_id))
+        deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
         session.delete(executiveImage)
         session.commit()
         logEvent(token, request_info, jsonable_encoder(executiveImage))
@@ -370,7 +285,9 @@ async def fetch_executive_pictures(
 @route_executive.get(
     f"{URL_EXECUTIVE_PICTURE}" + "/{id}",
     tags=["Account Picture"],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=makeExceptionResponses(
+        [exceptions.InvalidToken, exceptions.InvalidResolution]
+    ),
     description="""
     Download executive profile picture in original or resized resolution.   
     Requires a valid executive token.   
@@ -389,11 +306,9 @@ async def download_executive_picture(
             session.query(ExecutiveImage).filter(ExecutiveImage.id == qParam.id).first()
         )
         if executiveImage is not None:
-            fileBytes = downloadFile(
-                EXECUTIVE_PICTURES, str(executiveImage.executive_id)
-            )
+            fileBytes = downloadFile(EXECUTIVE_PICTURES, str(executiveImage.id))
             mimeInfo = splitMIME(executiveImage.file_type)
-            resizedBytes = cachedImage(
+            resizedBytes = imageResolution(
                 fileBytes, mimeInfo["sub_type"], qParam.resolution
             )
 
@@ -404,7 +319,7 @@ async def download_executive_picture(
                     "Content-Disposition": f"file_name={executiveImage.file_name}"
                 },
             )
-        return []
+        return None
     except Exception as e:
         exceptions.handle(e)
     finally:
