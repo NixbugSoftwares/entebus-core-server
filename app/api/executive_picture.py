@@ -316,7 +316,8 @@ async def download_executive_picture(
                 BytesIO(resizedBytes),
                 media_type=executiveImage.file_type,
                 headers={
-                    "Content-Disposition": f"file_name={executiveImage.file_name}"
+                    "Content-Disposition": f"file_name={executiveImage.file_name}",
+                    "Cache-Control": "public, max-age=31536000, immutable",
                 },
             )
         return None
