@@ -2399,7 +2399,7 @@ class ExecutiveImage(ORMbase):
 
         executive_id (Integer):
             Foreign key referencing the executive to whom this image belongs.
-            Must be non-null and unique. 
+            Must be non-null and unique.
             Deletion of the executive cascades to their images.
 
         file_name (String(128)):

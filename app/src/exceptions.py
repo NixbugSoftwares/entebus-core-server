@@ -292,10 +292,10 @@ class DuplicateDuty(APIException):
 class InvalidResolution(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidResolution"}
-    detail = "Invalid resolution"
+    detail = "Invalid resolution provided"
 
 
 class InvalidImage(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidImage"}
-    detail = "Invalid image"
+    detail = "Invalid image provided"
