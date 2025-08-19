@@ -199,7 +199,14 @@ def createService(
     if landmarksInRoute is None:
         raise exceptions.InvalidRoute()
     lastLandmark = landmarksInRoute[0]
-    starting_at = datetime.combine(fParam.starting_at, route.start_time)
+    UTCTime = datetime.combine(fParam.starting_at, route.start_time).replace(
+        tzinfo=TMZ_PRIMARY
+    )
+    ISTTime = UTCTime.astimezone(TMZ_SECONDARY).timetz()
+    ISTStartingAt = datetime.combine(fParam.starting_at, ISTTime).replace(
+        tzinfo=TMZ_SECONDARY
+    )
+    starting_at = ISTStartingAt.astimezone(TMZ_PRIMARY)
     ending_at = starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
     # Create service name
@@ -219,9 +226,7 @@ def createService(
     )
     if not firstLandmark or not lastLandmark:
         raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
-    UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
-    ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
-    startingAt = ISTtime.strftime("%Y-%m-%d %-I:%M %p")
+    startingAt = ISTStartingAt.strftime('%Y-%m-%d %-I:%M %p')
     name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
 
     # Generate route data
