@@ -185,9 +185,7 @@ def createService(
     ISTStartingAt = fParam.starting_at.astimezone(TMZ_SECONDARY)
     ISTDate = ISTStartingAt.date()
     currentDate = datetime.now(TMZ_SECONDARY).date()
-    if ISTDate < currentDate:
-        raise exceptions.InvalidValue(Service.starting_at)
-    if ISTDate != currentDate and ISTDate != currentDate + timedelta(days=1):
+    if ISTDate not in {currentDate, currentDate + timedelta(days=1)}:
         raise exceptions.InvalidValue(Service.starting_at)
 
     # Get starting_at and ending_at
