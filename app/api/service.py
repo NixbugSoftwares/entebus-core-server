@@ -355,8 +355,7 @@ def searchService(
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
-    The starting_at is derived from the route start_time, not user input.           
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.             
     The ending_at is derived from the route last landmarks arrival_delta, not user input.     
     The service can be generated only for today and tomorrow.   
     The started_on will be set to current time when the operator start the duty, not user input.    
@@ -618,8 +617,7 @@ async def fetch_route(
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
-    The starting_at is derived from the date provided + route start_time.       
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.          
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
     The service can be generated only for today and tomorrow.    
     The started_on will be set to current time when the operator start the duty, not user input.    
