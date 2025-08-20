@@ -78,7 +78,7 @@ class CreateFormForOP(BaseModel):
     ticket_mode: TicketingMode = Field(
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
-    starting_at: date = Field(Form())
+    starting_at: datetime = Field(Form())
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -184,11 +184,10 @@ def createService(
         raise exceptions.InactiveResource(Route)
 
     # Validate starting date
-    if fParam.starting_at < date.today():
-        raise exceptions.InvalidValue(Service.starting_at)
-    if fParam.starting_at != date.today() and fParam.starting_at != (
-        date.today() + timedelta(days=1)
-    ):
+    ISTStartingAt = fParam.starting_at.astimezone(TMZ_SECONDARY)
+    ISTDate = ISTStartingAt.date()
+    currentDate = datetime.now(TMZ_SECONDARY).date()
+    if ISTDate not in {currentDate, currentDate + timedelta(days=1)}:
         raise exceptions.InvalidValue(Service.starting_at)
 
     # Get starting_at and ending_at
@@ -201,10 +200,8 @@ def createService(
     if landmarksInRoute is None:
         raise exceptions.InvalidRoute()
     lastLandmark = landmarksInRoute[0]
-    starting_at = datetime.combine(fParam.starting_at, route.start_time)
-    ending_at = starting_at + timedelta(seconds=lastLandmark.arrival_delta)
+    ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
-    # Create service name
     firstLandmark = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
@@ -221,9 +218,9 @@ def createService(
     )
     if not firstLandmark or not lastLandmark:
         raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
-    UTCtime = starting_at.replace(tzinfo=TMZ_PRIMARY)
-    ISTtime = UTCtime.astimezone(TMZ_SECONDARY)
-    startingAt = ISTtime.strftime("%Y-%m-%d %-I:%M %p")
+
+    # Create service name using IST time for display
+    startingAt = ISTStartingAt.strftime("%Y-%m-%d %-I:%M %p")
     name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
 
     # Generate route data
@@ -242,7 +239,7 @@ def createService(
 
     return Service(
         name=name,
-        starting_at=starting_at,
+        starting_at=fParam.starting_at,
         ending_at=ending_at,
         route=routeData,
         fare=fareData,
@@ -375,8 +372,7 @@ def searchService(
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
-    The starting_at is derived from the route start_time, not user input.           
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.             
     The ending_at is derived from the route last landmarks arrival_delta, not user input.     
     The service can be generated only for today and tomorrow.   
     The started_on will be set to current time when the operator start the duty, not user input.    
@@ -641,8 +637,7 @@ async def fetch_route(
     The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
     For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
     The last landmark must have equal values for arrival_delta and departure_delta.    
-    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.    
-    The starting_at is derived from the date provided + route start_time.       
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.          
     The ending_at is derived from the route last landmarks arrival_delta, not user input.       
     The service can be generated only for today and tomorrow.    
     The started_on will be set to current time when the operator start the duty, not user input.    

@@ -1,7 +1,7 @@
 import argparse
 from http import HTTPStatus
 from requests import post
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from app.src import argon2
 from app.src.enums import CompanyStatus, Day
@@ -576,7 +576,7 @@ def testDB():
         "route": route.json()["id"],
         "fare": fare.json()["id"],
         "bus_id": bus2.json()["id"],
-        "starting_at": date.today().isoformat(),
+        "starting_at": (datetime.now() + timedelta(minutes=5)).isoformat(),
     }
     service = POST(
         (BASE_URL + URL_SERVICE),
