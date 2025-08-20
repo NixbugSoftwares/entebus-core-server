@@ -17,6 +17,7 @@ from app.src.db import (
     Bus,
     LandmarkInRoute,
     Landmark,
+    Duty,
     sessionMaker,
 )
 from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
@@ -30,6 +31,7 @@ from app.src.enums import (
     BusStatus,
     CompanyStatus,
     RouteStatus,
+    DutyStatus,
 )
 from app.src.functions import (
     enumStr,
@@ -249,7 +251,7 @@ def createService(
     )
 
 
-def updateService(service: Service, fParam: UpdateForm):
+def updateService(session: Session, service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
         ServiceStatus.CREATED: [],
         ServiceStatus.STARTED: [ServiceStatus.TERMINATED, ServiceStatus.ENDED],
@@ -262,6 +264,23 @@ def updateService(service: Service, fParam: UpdateForm):
         validators.stateTransition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
+        if fParam.status in [ServiceStatus.ENDED]:
+            duties = (
+                session.query(Duty)
+                .filter(
+                    Duty.service_id == service.id, Duty.status == DutyStatus.STARTED
+                )
+                .count()
+            )
+            if duties > 0:
+                raise exceptions.DataInUse(Service)
+            session.query(Duty).filter(
+                Duty.service_id == service.id, Duty.status == DutyStatus.ASSIGNED
+            ).update({Duty.status: DutyStatus.NOT_USED})
+        if fParam.status in [ServiceStatus.TERMINATED]:
+            session.query(Duty).filter(
+                Duty.service_id == service.id, Duty.status == DutyStatus.ASSIGNED
+            ).update({Duty.status: DutyStatus.NOT_USED})
         service.status = fParam.status
 
 
@@ -440,12 +459,15 @@ async def create_service(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.DataInUse(Service),
         ]
     ),
     description="""
     Update an existing service by ID.      
     Requires executive role with `update_service` permission.       
     The status=AUDITED and STARTED is not accepted by user input.   
+    When the service status is set to TERMINATED, all duties associated with the service that have the status ASSIGNED will be updated to NOT_USED.     
+    To set the service status to ENDED, ensure that none of the duties associated with the service have the status STARTED.    
     Log the service update activity with the associated token.      
 
     Allowed status transitions:
@@ -468,7 +490,7 @@ async def update_service(
         if service is None:
             raise exceptions.InvalidIdentifier()
 
-        updateService(service, fParam)
+        updateService(session, service, fParam)
         haveUpdates = session.is_modified(service)
         if haveUpdates:
             session.commit()
@@ -708,12 +730,15 @@ async def create_service(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.DataInUse(Service),
         ]
     ),
     description="""
     Update an existing service belonging to the operator's company.        
     Requires operator role with `update_service` permission.              
     The status=AUDITED and STARTED is not accepted by user input.   
+    When the service status is set to TERMINATED, all duties associated with the service that have the status ASSIGNED will be updated to NOT_USED.     
+    To set the service status to ENDED, ensure that none of the duties associated with the service have the status STARTED.         
     Log the service updating activity with the associated token.    
 
     Allowed status transitions:
@@ -741,7 +766,7 @@ async def update_service(
         if service is None:
             raise exceptions.InvalidIdentifier()
 
-        updateService(service, fParam)
+        updateService(session, service, fParam)
         haveUpdates = session.is_modified(service)
         if haveUpdates:
             session.commit()
