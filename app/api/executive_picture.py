@@ -52,8 +52,8 @@ class OrderBy(IntEnum):
 
 class ImageQueryParams(BaseModel):
     id: int
-    width: int | None = Field(Query(default=None, ge=20, le=48))
-    height: int | None = Field(Query(default=None, ge=20, le=48))
+    width: int | None = Field(Query(default=None, ge=2000, le=4800))
+    height: int | None = Field(Query(default=None, ge=2000, le=4800))
 
 
 class QueryParams(BaseModel):
