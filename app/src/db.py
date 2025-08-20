@@ -2414,10 +2414,6 @@ class ExecutiveImage(ORMbase):
             MIME type of the uploaded file (e.g., "image/jpeg", "image/png").
             Must be non-null.
 
-        updated_on (DateTime):
-            Timestamp automatically updated whenever the record is modified.
-            Useful for tracking changes or file replacements.
-
         created_on (DateTime):
             Timestamp indicating when the image record was initially created.
             Must be non-null. Defaults to the current time.
@@ -2437,5 +2433,4 @@ class ExecutiveImage(ORMbase):
     file_size = Column(Integer, nullable=False)
     file_type = Column(String(128), nullable=False)
     # Metadata
-    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

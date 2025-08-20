@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, Query, Response, status, Form, UploadFile, File
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
@@ -26,7 +26,6 @@ class ExecutiveImageSchema(BaseModel):
     file_name: str
     file_type: str
     file_size: int
-    updated_on: Optional[datetime]
     created_on: datetime
 
 
@@ -47,9 +46,8 @@ class OrderIn(IntEnum):
 
 class OrderBy(IntEnum):
     id = 1
-    updated_on = 2
-    created_on = 3
-    file_size = 4
+    created_on = 2
+    file_size = 3
 
 
 class ImageQueryParams(BaseModel):
@@ -74,9 +72,6 @@ class QueryParams(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
-    # updated_on based
-    updated_on_ge: datetime | None = Field(Query(default=None))
-    updated_on_le: datetime | None = Field(Query(default=None))
     # created_on based
     created_on_ge: datetime | None = Field(Query(default=None))
     created_on_le: datetime | None = Field(Query(default=None))
@@ -265,6 +260,11 @@ async def fetch_executive_pictures(
             query = query.filter(ExecutiveImage.file_size >= qParam.file_size_ge)
         if qParam.file_size_le is not None:
             query = query.filter(ExecutiveImage.file_size <= qParam.file_size_le)
+        # created_on based
+        if qParam.created_on_ge is not None:
+            query = query.filter(ExecutiveImage.created_on >= qParam.created_on_ge)
+        if qParam.created_on_le is not None:
+            query = query.filter(ExecutiveImage.created_on <= qParam.created_on_le)
 
         # Ordering
         orderingAttribute = getattr(ExecutiveImage, OrderBy(qParam.order_by).name)
