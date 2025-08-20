@@ -76,7 +76,7 @@ class CreateFormForOP(BaseModel):
     ticket_mode: TicketingMode = Field(
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
-    starting_at: date = Field(Form())
+    starting_at: datetime = Field(Form())
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -182,11 +182,12 @@ def createService(
         raise exceptions.InactiveResource(Route)
 
     # Validate starting date
-    if fParam.starting_at < date.today():
+    ISTStartingAt = fParam.starting_at.astimezone(TMZ_SECONDARY)
+    ISTDate = ISTStartingAt.date()
+    currentDate = datetime.now(TMZ_SECONDARY).date()
+    if ISTDate < currentDate:
         raise exceptions.InvalidValue(Service.starting_at)
-    if fParam.starting_at != date.today() and fParam.starting_at != (
-        date.today() + timedelta(days=1)
-    ):
+    if ISTDate != currentDate and ISTDate != currentDate + timedelta(days=1):
         raise exceptions.InvalidValue(Service.starting_at)
 
     # Get starting_at and ending_at
@@ -199,17 +200,8 @@ def createService(
     if landmarksInRoute is None:
         raise exceptions.InvalidRoute()
     lastLandmark = landmarksInRoute[0]
-    UTCTime = datetime.combine(fParam.starting_at, route.start_time).replace(
-        tzinfo=TMZ_PRIMARY
-    )
-    ISTTime = UTCTime.astimezone(TMZ_SECONDARY).timetz()
-    ISTStartingAt = datetime.combine(fParam.starting_at, ISTTime).replace(
-        tzinfo=TMZ_SECONDARY
-    )
-    starting_at = ISTStartingAt.astimezone(TMZ_PRIMARY)
-    ending_at = starting_at + timedelta(seconds=lastLandmark.arrival_delta)
+    ending_at = fParam.starting_at + timedelta(seconds=lastLandmark.arrival_delta)
 
-    # Create service name
     firstLandmark = (
         session.query(Landmark)
         .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
@@ -226,7 +218,9 @@ def createService(
     )
     if not firstLandmark or not lastLandmark:
         raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
-    startingAt = ISTStartingAt.strftime('%Y-%m-%d %-I:%M %p')
+
+    # Create service name using IST time for display
+    startingAt = ISTStartingAt.strftime("%Y-%m-%d %-I:%M %p")
     name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
 
     # Generate route data
@@ -245,7 +239,7 @@ def createService(
 
     return Service(
         name=name,
-        starting_at=starting_at,
+        starting_at=fParam.starting_at,
         ending_at=ending_at,
         route=routeData,
         fare=fareData,
