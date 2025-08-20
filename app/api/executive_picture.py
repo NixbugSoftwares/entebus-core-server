@@ -52,12 +52,8 @@ class OrderBy(IntEnum):
 
 class ImageQueryParams(BaseModel):
     id: int
-    resolution: str | None = Field(
-        Query(
-            default=None,
-            description="Resolution in WIDTH x HEIGHT format (eg: 1920x1080)",
-        ),
-    )
+    width: int | None = Field(Query(default=None, ge=20, le=48))
+    height: int | None = Field(Query(default=None, ge=20, le=48))
 
 
 class QueryParams(BaseModel):
@@ -81,18 +77,6 @@ class QueryParams(BaseModel):
     # Pagination
     offset: int = Field(Query(default=0, ge=0))
     limit: int = Field(Query(default=20, gt=0, le=100))
-
-
-# Function
-def imageResolution(file_bytes: bytes, format: str, resolution: str | None):
-    if resolution:
-        try:
-            width, height = map(int, resolution.lower().split("x"))
-        except Exception:
-            raise exceptions.InvalidResolution()
-    else:
-        width, height = None, None
-    return resizeImage(file_bytes, format, width=width, height=height)
 
 
 ## API endpoints [Executive]
@@ -308,8 +292,11 @@ async def download_executive_picture(
         if executiveImage is not None:
             fileBytes = downloadFile(EXECUTIVE_PICTURES, str(executiveImage.id))
             mimeInfo = splitMIME(executiveImage.file_type)
-            resizedBytes = imageResolution(
-                fileBytes, mimeInfo["sub_type"], qParam.resolution
+            resizedBytes = resizeImage(
+                fileBytes,
+                mimeInfo["sub_type"],
+                width=qParam.width,
+                height=qParam.height,
             )
 
             return StreamingResponse(
