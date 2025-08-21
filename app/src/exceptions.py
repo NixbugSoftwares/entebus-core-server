@@ -293,7 +293,7 @@ class DuplicateDuty(APIException):
 
 
 class RedisDBError(APIException):
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     headers = {"X-Error": "RedisAPIError"}
 
     def __init__(self, detail: str):
