@@ -92,7 +92,7 @@ class QueryParams(BaseModel):
     Upload the executive's profile picture. 
     Executives can update their own profile picture.     
     Authorized users with `update_executive` permission can update any executive profile picture.      
-    Stores the image in MinIO and saves metadata in executive_image table.
+    Stores the image in the `executive_pictures` bucket in MinIO and saves the metadata in the `executive_image` table.
     """,
 )
 async def upload_executive_picture(
@@ -117,13 +117,12 @@ async def upload_executive_picture(
         mimeType = mimeInfo["type"]
         if mimeType != "image":
             raise exceptions.InvalidImage()
-        resizedBytes = resizeImage(fileBytes, mimeInfo["sub_type"])
 
         executiveImage = ExecutiveImage(
             executive_id=fParam.executive_id,
             file_name=fParam.file.filename,
             file_type=fParam.file.content_type,
-            file_size=len(resizedBytes),
+            file_size=len(fileBytes),
         )
         session.add(executiveImage)
         session.commit()
@@ -131,8 +130,8 @@ async def upload_executive_picture(
         uploadFile(
             EXECUTIVE_PICTURES,
             str(executiveImage.id),
-            len(resizedBytes),
-            BytesIO(resizedBytes),
+            len(fileBytes),
+            BytesIO(fileBytes),
         )
 
         executiveImageData = jsonable_encoder(executiveImage)
@@ -155,7 +154,7 @@ async def upload_executive_picture(
     Delete an executive's profile picture.  
     Executives can delete their own profile picture.     
     Authorized users with `update_executive` permission can update any executive profile picture.   
-    Removes the image from MinIO and deletes metadata in executive_image table.     
+    Removes the image from `executive_pictures` bucket in MinIO and deletes metadata in executive_image table.     
     """,
 )
 async def delete_executive_picture(
@@ -275,7 +274,8 @@ async def fetch_executive_pictures(
     description="""
     Download executive profile picture in original or resized resolution.   
     Requires a valid executive token.   
-    Returns the image file in the specified resolution.
+    Return the image file from `executive_pictures` bucket in MinIO in original resolution or specified resolution.     
+    Returns the original image file.
     """,
 )
 async def download_executive_picture(
