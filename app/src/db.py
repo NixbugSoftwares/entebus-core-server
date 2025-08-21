@@ -2389,3 +2389,53 @@ class PaperTicket(ORMbase):
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class ExecutiveImage(ORMbase):
+    """
+    Represents an uploaded image associated with a specific executive.
+
+    Each record stores metadata about an image file uploaded for an executive,
+    allowing for management, retrieval, and replacement of profile or related images.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the executive image.
+
+        executive_id (Integer):
+            Foreign key referencing the executive to whom this image belongs.
+            Must be non-null and unique.
+            Deletion of the executive cascades to their images.
+
+        file_name (String(128)):
+            Original name of the uploaded image file, including extension.
+            Must be non-null.
+
+        file_size (Integer):
+            Size of the uploaded file in bytes.
+            Must be non-null.
+
+        file_type (String(128)):
+            MIME type of the uploaded file (e.g., "image/jpeg", "image/png").
+            Must be non-null.
+
+        created_on (DateTime):
+            Timestamp indicating when the image record was initially created.
+            Must be non-null. Defaults to the current time.
+    """
+
+    __tablename__ = "executive_image"
+
+    id = Column(Integer, primary_key=True)
+    executive_id = Column(
+        Integer,
+        ForeignKey("executive.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    # File metadata
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    # Metadata
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())

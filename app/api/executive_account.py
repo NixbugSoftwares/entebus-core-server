@@ -7,11 +7,18 @@ from pydantic import BaseModel, Field, EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 from app.api.bearer import bearer_executive
-from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME
-from app.src.db import Executive, ExecutiveRole, ExecutiveToken, sessionMaker
+from app.src.constants import REGEX_PASSWORD, REGEX_USERNAME, EXECUTIVE_PICTURES
+from app.src.db import (
+    Executive,
+    ExecutiveRole,
+    ExecutiveToken,
+    ExecutiveImage,
+    sessionMaker,
+)
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
+from app.src.minio import deleteFile
 from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
 from app.src.urls import URL_EXECUTIVE_ACCOUNT
 
@@ -252,6 +259,7 @@ async def update_executive(
     Only users with the `delete_executive` permission can delete executive accounts.    
     Self-deletion is not allowed for safety reasons.    
     If the specified executive exists, it will be deleted permanently.  
+    If the specified executive has a profile picture, it will be deleted permanently.   
     The deleted account details are logged for audit purposes.
     """,
 )
@@ -272,8 +280,14 @@ async def delete_executive(
 
         executive = session.query(Executive).filter(Executive.id == fParam.id).first()
         if executive is not None:
+            executiveImage = (
+                session.query(ExecutiveImage)
+                .filter(ExecutiveImage.executive_id == executive.id)
+                .first()
+            )
             session.delete(executive)
             session.commit()
+            deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
             logEvent(
                 token, request_info, jsonable_encoder(executive, exclude={"password"})
             )

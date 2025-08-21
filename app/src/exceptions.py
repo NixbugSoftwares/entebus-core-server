@@ -292,6 +292,12 @@ class DuplicateDuty(APIException):
         super().__init__(detail=detail)
 
 
+class InvalidImageFile(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    headers = {"X-Error": "InvalidImage"}
+    detail = "Invalid image provided"
+
+
 class RedisDBError(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     headers = {"X-Error": "RedisAPIError"}
