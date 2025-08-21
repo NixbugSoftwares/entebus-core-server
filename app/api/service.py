@@ -359,6 +359,7 @@ def searchService(
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
             exceptions.InvalidValue(Service.starting_at),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -623,6 +624,7 @@ async def fetch_route(
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
             exceptions.InvalidValue(Service.starting_at),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""

@@ -225,6 +225,7 @@ def searchLandmarkInRoute(
             exceptions.NoPermission,
             exceptions.UnknownValue(LandmarkInRoute.route_id),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -284,6 +285,7 @@ async def create_landmark_in_route(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -347,7 +349,11 @@ async def update_landmark_in_route(
     tags=["Landmark In Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.LockAcquireTimeout,
+        ]
     ),
     description="""
     Delete a specific landmark assigned to a route by ID.  
@@ -463,6 +469,7 @@ async def fetch_landmarks_in_route(
             exceptions.NoPermission,
             exceptions.UnknownValue(LandmarkInRoute.route_id),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -528,6 +535,7 @@ async def create_landmark_in_route(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -591,7 +599,11 @@ async def update_landmark_in_route(
     tags=["Landmark In Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.LockAcquireTimeout,
+        ]
     ),
     description="""
     Delete a landmark from a route, only if it belongs to the operator's company.  

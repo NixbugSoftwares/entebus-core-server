@@ -220,6 +220,7 @@ def searchDuty(
             exceptions.InactiveResource(Service),
             exceptions.ExceededMaxLimit(Duty),
             exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -314,6 +315,7 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -465,6 +467,7 @@ async def get_duties(
             exceptions.InactiveResource(Duty),
             exceptions.ExceededMaxLimit(Duty),
             exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -581,6 +584,7 @@ async def create_duty(
             exceptions.NoPermission,
             exceptions.InvalidIdentifier,
             exceptions.InvalidStateTransition("status"),
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
