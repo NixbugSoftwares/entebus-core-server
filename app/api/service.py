@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 from enum import IntEnum
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, Response, status, Form
@@ -20,7 +20,7 @@ from app.src.db import (
     Duty,
     sessionMaker,
 )
-from app.src.constants import TMZ_PRIMARY, TMZ_SECONDARY
+from app.src.constants import TMZ_SECONDARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.redis import acquireLock, releaseLock

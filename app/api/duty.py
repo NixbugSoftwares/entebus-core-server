@@ -83,7 +83,6 @@ class OrderBy(IntEnum):
 class QueryParamsForOP(BaseModel):
     # Filters
     operator_id: int | None = Field(Query(default=None))
-    service_id: int | None = Field(Query(default=None))
     status: DutyStatus | None = Field(
         Query(default=None, description=enumStr(DutyStatus))
     )
@@ -92,6 +91,9 @@ class QueryParamsForOP(BaseModel):
     id_ge: int | None = Field(Query(default=None))
     id_le: int | None = Field(Query(default=None))
     id_list: List[int] | None = Field(Query(default=None))
+    # service_id based
+    service_id: int | None = Field(Query(default=None))
+    service_id_list: List[int] | None = Field(Query(default=None))
     # started_on based
     started_on_ge: datetime | None = Field(Query(default=None))
     started_on_le: datetime | None = Field(Query(default=None))
@@ -154,8 +156,6 @@ def searchDuty(
         query = query.filter(Duty.operator_id == qParam.operator_id)
     if qParam.company_id is not None:
         query = query.filter(Duty.company_id == qParam.company_id)
-    if qParam.service_id is not None:
-        query = query.filter(Duty.service_id == qParam.service_id)
     if qParam.status is not None:
         query = query.filter(Duty.status == qParam.status)
     # id based filters
@@ -167,6 +167,11 @@ def searchDuty(
         query = query.filter(Duty.id <= qParam.id_le)
     if qParam.id_list is not None:
         query = query.filter(Duty.id.in_(qParam.id_list))
+    # service_id based
+    if qParam.service_id is not None:
+        query = query.filter(Duty.service_id == qParam.service_id)
+    if qParam.service_id_list is not None:
+        query = query.filter(Duty.service_id.in_(qParam.service_id_list))
     # status based
     if qParam.status is not None:
         query = query.filter(Duty.status == qParam.status)
