@@ -289,12 +289,6 @@ class DuplicateDuty(APIException):
         super().__init__(detail=detail)
 
 
-class InvalidResolution(APIException):
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-    headers = {"X-Error": "InvalidResolution"}
-    detail = "Invalid resolution provided"
-
-
 class InvalidImage(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidImage"}

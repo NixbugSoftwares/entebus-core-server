@@ -270,7 +270,7 @@ async def fetch_executive_pictures(
     f"{URL_EXECUTIVE_PICTURE}" + "/{id}",
     tags=["Account Picture"],
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.InvalidResolution]
+        [exceptions.InvalidToken, exceptions.InvalidIdentifier]
     ),
     description="""
     Download executive profile picture in original or resized resolution.   
@@ -307,7 +307,7 @@ async def download_executive_picture(
                     "Cache-Control": "public, max-age=31536000, immutable",
                 },
             )
-        return Response(status_code=status.HTTP_404_NOT_FOUND)
+        raise exceptions.InvalidIdentifier()
     except Exception as e:
         exceptions.handle(e)
     finally:
