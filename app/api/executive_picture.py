@@ -307,7 +307,7 @@ async def download_executive_picture(
                     "Cache-Control": "public, max-age=31536000, immutable",
                 },
             )
-        return None
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         exceptions.handle(e)
     finally:
