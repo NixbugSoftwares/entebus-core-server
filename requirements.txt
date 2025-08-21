@@ -17,3 +17,4 @@ requests
 pyproj
 redis
 py-mini-racer
+Pillow

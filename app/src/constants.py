@@ -34,7 +34,9 @@ MINIO_USERNAME = environ.get("MINIO_USERNAME", "minio")
 MINIO_PASSWORD = environ.get("MINIO_PASSWORD", "password")
 
 # MinIO buckets
-PROFILE_PICTURES = "profile-pictures"
+EXECUTIVE_PICTURES = "executive-pictures"
+OPERATOR_PICTURES = "operator-pictures"
+VENDOR_PICTURES = "vendor-pictures"
 BUS_PICTURES = "bus-pictures"
 BUS_STOP_PICTURES = "bus-stop-pictures"
 

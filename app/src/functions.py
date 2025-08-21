@@ -1,12 +1,13 @@
-from typing import List, Type, Union
+from typing import List, Type, Union, Dict, Optional
 from fastapi import Request
 from shapely import Polygon, wkt
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
-from typing import Optional
 from shapely.geometry import Polygon
 from shapely.ops import transform
 import pyproj
+from PIL import Image
+from io import BytesIO
 
 from app.src import schemas
 from app.src.exceptions import APIException
@@ -129,3 +130,33 @@ def promoteToParent(
         field: overrides.get(field, baseData.get(field, None)) for field in targetFields
     }
     return targetCls(**finalData)
+
+
+def resizeImage(
+    imageBytes: bytes, format: str, height: int = None, width: int = None
+) -> bytes:
+    image = Image.open(BytesIO(imageBytes))
+    if height is None:
+        height = image.height
+    if width is None:
+        width = image.width
+
+    outputBuffer = BytesIO()
+    newSize = (width, height)
+    image.thumbnail(newSize)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    image.save(outputBuffer, format)
+    imageBytes = outputBuffer.getvalue()
+    outputBuffer.close()
+    return imageBytes
+
+
+def splitMIME(mimeType: str) -> Dict:
+    mimeElements = mimeType.split("/")
+    type = mimeElements[0]
+    subTypeWithParamElement = mimeElements[1].split(";")
+    subType = subTypeWithParamElement[0]
+    parameter = subTypeWithParamElement[1] if 1 < len(subTypeWithParamElement) else None
+
+    return {"type": type, "sub_type": subType, "parameter": parameter}
