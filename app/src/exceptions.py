@@ -289,7 +289,7 @@ class DuplicateDuty(APIException):
         super().__init__(detail=detail)
 
 
-class InvalidImage(APIException):
+class InvalidImageFile(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidImage"}
     detail = "Invalid image provided"

@@ -86,7 +86,7 @@ class QueryParams(BaseModel):
     response_model=ExecutiveImageSchema,
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidImage]
+        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidImageFile]
     ),
     description="""
     Upload the executive's profile picture. 
@@ -116,7 +116,7 @@ async def upload_executive_picture(
         mimeInfo = splitMIME(fParam.file.content_type)
         mimeType = mimeInfo["type"]
         if mimeType != "image":
-            raise exceptions.InvalidImage()
+            raise exceptions.InvalidImageFile()
 
         executiveImage = ExecutiveImage(
             executive_id=fParam.executive_id,
