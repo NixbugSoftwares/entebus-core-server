@@ -4,6 +4,7 @@ from fastapi import status, HTTPException
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errorcodes import UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION
 from pydantic import ValidationError
+from redis.exceptions import RedisError
 
 
 # Function to format DB integrity log error
@@ -49,6 +50,8 @@ def handle(e: Exception):
         raise PydanticError(detail=e.errors())
     if isinstance(e, APIException):
         raise e
+    if isinstance(e, RedisError):
+        raise RedisDBError(detail=str(e))
     else:
         logException(e)
         raise e
@@ -286,4 +289,12 @@ class DuplicateDuty(APIException):
 
     def __init__(self, column_name_1: str, column_name_2: str):
         detail = f"The {column_name_1.key} already has a assigned duty for this {column_name_2.key}"
+        super().__init__(detail=detail)
+
+
+class RedisDBError(APIException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    headers = {"X-Error": "RedisAPIError"}
+
+    def __init__(self, detail: str):
         super().__init__(detail=detail)
