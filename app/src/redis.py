@@ -31,15 +31,13 @@ def acquireLock(
             return lock
         else:
             raise exceptions.LockAcquireTimeout()
-    except exceptions.LockAcquireTimeout:
-        raise exceptions.LockAcquireTimeout()
-    except Exception:
-        raise exceptions.LockAcquireFailed()
+    except Exception as e:
+        exceptions.handle(e)
 
 
 def releaseLock(lock: Lock):
     # Release a previously acquired Redis lock.
     if lock is None:
         return
-    elif lock.locked():
+    elif lock.locked() and lock.owned():
         lock.release()

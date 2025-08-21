@@ -201,6 +201,7 @@ async def fetch_paper_ticket(
             exceptions.InvalidFareFunction,
             exceptions.JSMemoryLimitExceeded,
             exceptions.JSTimeLimitExceeded,
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""

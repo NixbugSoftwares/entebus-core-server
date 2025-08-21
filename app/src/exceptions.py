@@ -4,6 +4,7 @@ from fastapi import status, HTTPException
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errorcodes import UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION
 from pydantic import ValidationError
+from redis.exceptions import RedisError
 
 
 # Function to format DB integrity log error
@@ -49,6 +50,8 @@ def handle(e: Exception):
         raise PydanticError(detail=e.errors())
     if isinstance(e, APIException):
         raise e
+    if isinstance(e, RedisError):
+        raise RedisDBError(detail=str(e))
     else:
         logException(e)
         raise e
@@ -253,12 +256,6 @@ class JSMemoryLimitExceeded(APIException):
     detail = "JavaScript execution exceeded the allowed memory limit"
 
 
-class LockAcquireFailed(APIException):
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-    headers = {"X-Error": "LockAcquireFailed"}
-    detail = "Unable to acquire lock"
-
-
 class LockAcquireTimeout(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "LockAcquireTimeout"}
@@ -293,3 +290,11 @@ class InvalidImageFile(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidImage"}
     detail = "Invalid image provided"
+
+
+class RedisDBError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    headers = {"X-Error": "RedisAPIError"}
+
+    def __init__(self, detail: str):
+        super().__init__(detail=detail)

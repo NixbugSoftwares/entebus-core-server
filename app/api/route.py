@@ -243,7 +243,11 @@ async def update_route(
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.LockAcquireTimeout,
+        ]
     ),
     description="""
     Delete an existing route by ID.  
@@ -425,7 +429,11 @@ async def update_route(
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
     responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.LockAcquireTimeout,
+        ]
     ),
     description="""
     Delete a route belonging to the operator's company.  

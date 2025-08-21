@@ -206,6 +206,7 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
             exceptions.InvalidAABB,
             exceptions.InvalidBoundaryArea,
             exceptions.OverlappingLandmarkBoundary,
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
@@ -263,6 +264,7 @@ async def create_landmark(
             exceptions.InvalidBoundaryArea,
             exceptions.BusStopOutsideLandmark,
             exceptions.OverlappingLandmarkBoundary,
+            exceptions.LockAcquireTimeout,
         ]
     ),
     description="""
