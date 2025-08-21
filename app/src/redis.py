@@ -31,8 +31,6 @@ def acquireLock(
             return lock
         else:
             raise exceptions.LockAcquireTimeout()
-    except exceptions.LockAcquireTimeout:
-        raise exceptions.LockAcquireTimeout()
     except Exception as e:
         exceptions.handle(e)
 
