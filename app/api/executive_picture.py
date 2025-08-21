@@ -92,7 +92,7 @@ class QueryParams(BaseModel):
     Upload the executive's profile picture. 
     Executives can update their own profile picture.     
     Authorized users with `update_executive` permission can update any executive profile picture.      
-    Stores the image in the `executive_pictures` bucket in MinIO and saves the metadata in the `executive_image` table.
+    Stores the image in the `executive_pictures` bucket in MinIO and saves the metadata in `executive_image` table.
     """,
 )
 async def upload_executive_picture(
@@ -154,7 +154,7 @@ async def upload_executive_picture(
     Delete an executive's profile picture.  
     Executives can delete their own profile picture.     
     Authorized users with `update_executive` permission can update any executive profile picture.   
-    Removes the image from `executive_pictures` bucket in MinIO and deletes metadata in executive_image table.     
+    Removes the image from `executive_pictures` bucket in MinIO and deletes metadata from executive_image table.     
     """,
 )
 async def delete_executive_picture(
