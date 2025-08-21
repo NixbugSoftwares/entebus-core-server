@@ -84,6 +84,7 @@ class QueryParamsForOP(BaseModel):
     # Filters
     operator_id: int | None = Field(Query(default=None))
     service_id: int | None = Field(Query(default=None))
+    service_id_list: List[int] | None = Field(Query(default=None))
     status: DutyStatus | None = Field(
         Query(default=None, description=enumStr(DutyStatus))
     )
@@ -156,6 +157,8 @@ def searchDuty(
         query = query.filter(Duty.company_id == qParam.company_id)
     if qParam.service_id is not None:
         query = query.filter(Duty.service_id == qParam.service_id)
+    if qParam.service_id_list is not None:
+        query = query.filter(Duty.service_id.in_(qParam.service_id_list))
     if qParam.status is not None:
         query = query.filter(Duty.status == qParam.status)
     # id based filters
