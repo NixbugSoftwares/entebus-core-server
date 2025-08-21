@@ -41,5 +41,5 @@ def releaseLock(lock: Lock):
     # Release a previously acquired Redis lock.
     if lock is None:
         return
-    elif lock.locked():
+    elif lock.locked() and lock.owned():
         lock.release()
