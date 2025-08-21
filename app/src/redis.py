@@ -33,8 +33,6 @@ def acquireLock(
             raise exceptions.LockAcquireTimeout()
     except exceptions.LockAcquireTimeout:
         raise exceptions.LockAcquireTimeout()
-    except Exception:
-        raise exceptions.LockAcquireFailed()
     except Exception as e:
         exceptions.handle(e)
 
