@@ -157,10 +157,18 @@ def landmarkInRoute(route: int, session: Session) -> bool:
         or landmarkInRoute[-1].arrival_delta != landmarkInRoute[-1].departure_delta
     ):
         return False
-
+    arrival_deltas = []
+    departure_deltas = []
     for i in range(1, len(landmarkInRoute)):
         if landmarkInRoute[i].arrival_delta < landmarkInRoute[i - 1].departure_delta:
             return False
+        
+        if landmarkInRoute[i].arrival_delta in arrival_deltas:
+            return False
+        if landmarkInRoute[i].departure_delta in departure_deltas:
+            return False
+        arrival_deltas.append(landmarkInRoute[i].arrival_delta)
+        departure_deltas.append(landmarkInRoute[i].departure_delta)
 
     return True
 
