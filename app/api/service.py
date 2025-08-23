@@ -55,6 +55,7 @@ class ServiceSchemaForVE(BaseModel):
     route: Dict[str, Any]
     fare: Dict[str, Any]
     bus_id: int
+    schedule_id: Optional[int]
     ticket_mode: int
     status: int
     starting_at: datetime
@@ -75,6 +76,7 @@ class CreateFormForOP(BaseModel):
     route: int = Field(Form())
     fare: int = Field(Form())
     bus_id: int = Field(Form())
+    schedule_id: Optional[int] = Field(Form(default=None))
     ticket_mode: TicketingMode = Field(
         Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
@@ -156,6 +158,7 @@ class QueryParamsForOP(QueryParams):
         Query(default=None, description=enumStr(ServiceStatus))
     )
     id_excluding: List[int] | None = Field(Query(default=None))
+    schedule_id: int | None = Field(Query(default=None))
 
 
 class QueryParamsForEX(QueryParamsForOP):
@@ -295,6 +298,8 @@ def searchService(
         query = query.filter(Service.company_id == qParam.company_id)
     if qParam.name is not None:
         query = query.filter(Service.name.ilike(f"%{qParam.name}%"))
+    if qParam.schedule_id is not None:
+        query = query.filter(Service.schedule_id == qParam.schedule_id)
     # id-based filters
     if qParam.id is not None:
         query = query.filter(Service.id == qParam.id)
