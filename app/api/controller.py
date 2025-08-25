@@ -26,6 +26,7 @@ from app.api import (
     vendor_role_map,
     paper_ticket,
     executive_picture,
+    trigger,
 )
 from app.src.enums import AppID
 
@@ -94,6 +95,8 @@ app_vendor.include_router(landmark_in_route.route_vendor)
 
 app_executive.include_router(schedule.route_executive)
 app_operator.include_router(schedule.route_operator)
+
+app_executive.include_router(trigger.route_executive)
 
 app_executive.include_router(service.route_executive)
 app_operator.include_router(service.route_operator)
