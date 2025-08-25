@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from enum import IntEnum
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query, Response, status, Form
+from typing import List, Literal, Optional, Dict, Any, Union
+from fastapi import APIRouter, Depends, Query, Response, status, Form, Body
 from sqlalchemy.orm.session import Session
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -18,6 +18,7 @@ from app.src.db import (
     LandmarkInRoute,
     Landmark,
     Duty,
+    Schedule,
     sessionMaker,
 )
 from app.src.constants import TMZ_SECONDARY
@@ -73,18 +74,23 @@ class ServiceSchema(ServiceSchemaForVE):
 
 ## Input Forms
 class CreateFormForOP(BaseModel):
-    route: int = Field(Form())
-    fare: int = Field(Form())
-    bus_id: int = Field(Form())
-    schedule_id: Optional[int] = Field(Form(default=None))
+    type: Literal["SERVICE"]
+    route: int = Field(Body())
+    fare: int = Field(Body())
+    bus_id: int = Field(Body())
     ticket_mode: TicketingMode = Field(
-        Form(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
+        Body(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
-    starting_at: datetime = Field(Form())
+    starting_at: datetime = Field(Body())
 
 
 class CreateFormForEX(CreateFormForOP):
-    company_id: int = Field(Form())
+    company_id: int = Field(Body())
+
+
+class CreateFormUsingScheduleID(BaseModel):
+    type: Literal["SCHEDULE"]
+    schedule_id: int = Field(Body())
 
 
 class UpdateForm(BaseModel):
@@ -100,6 +106,9 @@ class UpdateForm(BaseModel):
 
 class DeleteForm(BaseModel):
     id: int = Field(Form())
+
+
+# ServiceForm = Union[CreateFormForEX, CreateFormUsingScheduleID]
 
 
 ## Query Params
@@ -251,6 +260,84 @@ def createService(
     )
 
 
+def createServiceFromSchedule(session: Session, schedule: Schedule):
+    route = session.query(Route).filter(Route.id == schedule.route_id).first()
+    bus = session.query(Bus).filter(Bus.id == schedule.bus_id).first()
+    fare = session.query(Fare).filter(Fare.id == schedule.fare_id).first()
+    company = session.query(Company).filter(Company.id == schedule.company_id).first()
+    # Verify status
+    if bus.status != BusStatus.ACTIVE:
+        raise exceptions.InactiveResource(Bus)
+    if company.status != CompanyStatus.VERIFIED:
+        raise exceptions.InactiveResource(Company)
+    if route.status != RouteStatus.VALID:
+        raise exceptions.InactiveResource(Route)
+
+    # Validate starting date
+    ISTStartingAt = schedule.next_trigger_on.astimezone(TMZ_SECONDARY)
+    ISTDate = ISTStartingAt.date()
+    currentDate = datetime.now(TMZ_SECONDARY).date()
+    if ISTDate not in {currentDate, currentDate + timedelta(days=1)}:
+        raise exceptions.InvalidValue(Service.starting_at)
+
+    # Get starting_at and ending_at
+    landmarksInRoute = (
+        session.query(LandmarkInRoute)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.desc())
+        .all()
+    )
+    if landmarksInRoute is None:
+        raise exceptions.InvalidRoute()
+    lastLandmark = landmarksInRoute[0]
+    ending_at = schedule.next_trigger_on + timedelta(seconds=lastLandmark.arrival_delta)
+
+    firstLandmark = (
+        session.query(Landmark)
+        .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.asc())
+        .first()
+    )
+    lastLandmark = (
+        session.query(Landmark)
+        .join(LandmarkInRoute, Landmark.id == LandmarkInRoute.landmark_id)
+        .filter(LandmarkInRoute.route_id == route.id)
+        .order_by(LandmarkInRoute.distance_from_start.desc())
+        .first()
+    )
+    if not firstLandmark or not lastLandmark:
+        raise exceptions.InvalidAssociation(LandmarkInRoute.landmark_id, Service.route)
+
+    # Create service name using IST time for display
+    startingAt = ISTStartingAt.strftime("%Y-%m-%d %-I:%M %p")
+    name = f"{startingAt} {firstLandmark.name} -> {lastLandmark.name} ({bus.registration_number})"
+
+    # Generate route data
+    routeData = jsonable_encoder(route)
+    routeData["landmark"] = []
+    for landmark in landmarksInRoute:
+        routeData["landmark"].append(jsonable_encoder(landmark))
+
+    # Generate fare data
+    fareData = jsonable_encoder(fare)
+
+    # Generate keys
+    ticketCreator = v1.TicketCreator()
+    privateKey = ticketCreator.getPEMprivateKeyString()
+    publicKey = ticketCreator.getPEMpublicKeyString()
+
+    return Service(
+        name=name,
+        starting_at=schedule.next_trigger_on,
+        ending_at=ending_at,
+        route=routeData,
+        fare=fareData,
+        private_key=privateKey,
+        public_key=publicKey,
+    )
+
+
 def updateService(session: Session, service: Service, fParam: UpdateForm):
     serviceStatusTransition = {
         ServiceStatus.CREATED: [],
@@ -388,7 +475,8 @@ def searchService(
     """,
 )
 async def create_service(
-    fParam: CreateFormForEX = Depends(),
+    # fParam: ServiceForm = Body(discriminator="type"),
+    fParam: Union[CreateFormForEX, CreateFormUsingScheduleID] = Body(),
     bearer=Depends(bearer_executive),
     request_info=Depends(getters.requestInfo),
 ):
@@ -399,42 +487,70 @@ async def create_service(
         role = getters.executiveRole(token, session)
         validators.executivePermission(role, ExecutiveRole.create_service)
 
+        if fParam.type == "SCHEDULE":
+            if fParam.schedule_id is None:
+                raise exceptions.UnknownValue(Service.schedule_id)
+            schedule = (
+                session.query(Schedule)
+                .filter(Schedule.id == fParam.schedule_id)
+                .first()
+            )
+            if schedule is None:
+                raise exceptions.UnknownValue(Service.schedule_id)
+            scheduleData = createServiceFromSchedule(session, schedule)
+            service = Service(
+                company_id=schedule.company_id,
+                ticket_mode=schedule.ticketing_mode,
+                bus_id=schedule.bus_id,
+                name=scheduleData.name,
+                route=scheduleData.route,
+                fare=scheduleData.fare,
+                starting_at=scheduleData.starting_at,
+                ending_at=scheduleData.ending_at,
+                private_key=scheduleData.private_key,
+                public_key=scheduleData.private_key,
+            )
+
         routeLock = acquireLock(Route.__tablename__, fParam.route)
-        company = session.query(Company).filter(Company.id == fParam.company_id).first()
-        if company is None:
-            raise exceptions.UnknownValue(Service.company_id)
-        bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
-        if bus is None:
-            raise exceptions.UnknownValue(Service.bus_id)
-        route = session.query(Route).filter(Route.id == fParam.route).first()
-        if route is None:
-            raise exceptions.UnknownValue(Service.route)
-        fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
-        if fare is None:
-            raise exceptions.UnknownValue(Service.fare)
+        if fParam.type == "SERVICE":
+            company = (
+                session.query(Company).filter(Company.id == fParam.company_id).first()
+            )
+            if company is None:
+                raise exceptions.UnknownValue(Service.company_id)
+            bus = session.query(Bus).filter(Bus.id == fParam.bus_id).first()
+            if bus is None:
+                raise exceptions.UnknownValue(Service.bus_id)
+            route = session.query(Route).filter(Route.id == fParam.route).first()
+            if route is None:
+                raise exceptions.UnknownValue(Service.route)
+            fare = session.query(Fare).filter(Fare.id == fParam.fare).first()
+            if fare is None:
+                raise exceptions.UnknownValue(Service.fare)
 
-        if bus.company_id != company.id:
-            raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
-        if route.company_id != company.id:
-            raise exceptions.InvalidAssociation(Service.route, Service.company_id)
-        if fare.scope != FareScope.GLOBAL:
-            if fare.company_id != company.id:
-                raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
+            if bus.company_id != company.id:
+                raise exceptions.InvalidAssociation(Service.bus_id, Service.company_id)
+            if route.company_id != company.id:
+                raise exceptions.InvalidAssociation(Service.route, Service.company_id)
+            if fare.scope != FareScope.GLOBAL:
+                if fare.company_id != company.id:
+                    raise exceptions.InvalidAssociation(
+                        Service.fare, Service.company_id
+                    )
+            serviceData = createService(session, route, bus, fare, company, fParam)
 
-        serviceData = createService(session, route, bus, fare, company, fParam)
-
-        service = Service(
-            company_id=fParam.company_id,
-            ticket_mode=fParam.ticket_mode,
-            bus_id=fParam.bus_id,
-            name=serviceData.name,
-            route=serviceData.route,
-            fare=serviceData.fare,
-            starting_at=serviceData.starting_at,
-            ending_at=serviceData.ending_at,
-            private_key=serviceData.private_key,
-            public_key=serviceData.public_key,
-        )
+            service = Service(
+                company_id=fParam.company_id,
+                ticket_mode=fParam.ticket_mode,
+                bus_id=fParam.bus_id,
+                name=serviceData.name,
+                route=serviceData.route,
+                fare=serviceData.fare,
+                starting_at=serviceData.starting_at,
+                ending_at=serviceData.ending_at,
+                private_key=serviceData.private_key,
+                public_key=serviceData.public_key,
+            )
         session.add(service)
         session.commit()
         session.refresh(service)
