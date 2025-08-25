@@ -626,6 +626,125 @@ async def fetch_service(
         session.close()
 
 
+@route_executive.post(
+    URL_SCHEDULE_TRIGGER,
+    tags=["Scheduled Trigger"],
+    response_model=ServiceSchema,
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.NoPermission,
+            exceptions.UnknownValue(Service.schedule_id),
+            exceptions.InactiveResource(Bus),
+            exceptions.InvalidRoute(),
+            exceptions.InvalidValue(Service.starting_at),
+            exceptions.LockAcquireTimeout,
+        ]
+    ),
+    description="""
+    Create a new service for a specified company.           
+    Requires executive role with `create_service` permission.
+    The bus must be in ACTIVE status. 
+    The company must be in VERIFIED status.    
+    The route must have at least two landmarks associated with it.        
+    The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
+    For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
+    The last landmark must have equal values for arrival_delta and departure_delta.    
+    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.             
+    The ending_at is derived from the route last landmarks arrival_delta, not user input.     
+    The service can be generated only for today and tomorrow.   
+    The started_on will be set to current time when the operator start the duty, not user input.    
+    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
+    The service is created in the CREATED status by default.        
+    Log the service creation activity with the associated token.
+    """,
+)
+async def create_scheduled_trigger(
+    fParam: CreateFormUsingScheduleID = Depends(),
+    bearer=Depends(bearer_executive),
+    request_info=Depends(getters.requestInfo),
+):
+    routeLock = None
+    try:
+        session = sessionMaker()
+        token = validators.executiveToken(bearer.credentials, session)
+        role = getters.executiveRole(token, session)
+        if not (role.create_schedule | role.update_schedule):
+            raise exceptions.NoPermission()
+
+        schedule = (
+            session.query(Schedule).filter(Schedule.id == fParam.schedule_id).first()
+        )
+        if schedule is None:
+            raise exceptions.UnknownValue(Service.schedule_id)
+        routeLock = acquireLock(Route.__tablename__, schedule.route_id)
+        session.refresh(schedule)
+
+        route = session.query(Route).filter(Route.id == schedule.route_id).first()
+        bus = session.query(Bus).filter(Bus.id == schedule.bus_id).first()
+        fare = session.query(Fare).filter(Fare.id == schedule.fare_id).first()
+        company = (
+            session.query(Company).filter(Company.id == schedule.company_id).first()
+        )
+
+        triggerData = createService(session, route, bus, fare, company, fParam)
+
+        service = Service(
+            company_id=schedule.company_id,
+            ticket_mode=schedule.ticketing_mode,
+            bus_id=schedule.bus_id,
+            schedule_id=fParam.schedule_id,
+            name=triggerData.name,
+            route=triggerData.route,
+            fare=triggerData.fare,
+            starting_at=fParam.starting_at,
+            ending_at=triggerData.ending_at,
+            private_key=triggerData.private_key,
+            public_key=triggerData.public_key,
+        )
+        session.add(service)
+        session.commit()
+        session.refresh(service)
+
+        serviceData = jsonable_encoder(service, exclude={"private_key"})
+        serviceLogData = serviceData.copy()
+        serviceLogData.pop("public_key")
+        logEvent(token, request_info, serviceLogData)
+        return serviceData
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        releaseLock(routeLock)
+        session.close()
+
+
+@route_executive.get(
+    URL_SCHEDULE_TRIGGER,
+    tags=["Scheduled Trigger"],
+    response_model=List[ServiceSchema],
+    status_code=status.HTTP_201_CREATED,
+    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    description="""
+    Fetch a list of all services across companies.     
+    Only available to users with a valid executive token.       
+    Supports filtering, sorting, and pagination.
+    """,
+)
+async def fetch_scheduled_trigger(
+    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
+):
+    try:
+        session = sessionMaker()
+        validators.executiveToken(bearer.credentials, session)
+
+        return searchTriggerSchedules(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
 ## API endpoints [Vendor]
 @route_vendor.get(
     URL_SERVICE,
@@ -909,130 +1028,9 @@ async def fetch_service(
         session.close()
 
 
-## API endpoints [Executive]
-@route_executive.post(
-    URL_SCHEDULE_TRIGGER,
-    tags=["Trigger Schedule"],
-    response_model=ServiceSchema,
-    status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.UnknownValue(Service.schedule_id),
-            exceptions.InactiveResource(Bus),
-            exceptions.InvalidRoute(),
-            exceptions.InvalidValue(Service.starting_at),
-            exceptions.LockAcquireTimeout,
-        ]
-    ),
-    description="""
-    Create a new service for a specified company.           
-    Requires executive role with `create_service` permission.
-    The bus must be in ACTIVE status. 
-    The company must be in VERIFIED status.    
-    The route must have at least two landmarks associated with it.        
-    The first landmark must have a distance_from_start of 0, and both arrival_delta and departure_delta must also be 0.     
-    For all intermediate landmarks (between the first and the last), the departure_delta must be greater than the arrival_delta.    
-    The last landmark must have equal values for arrival_delta and departure_delta.    
-    The service name is derived from the names of the route start_time + the first and last landmarks + the bus registration number, not from user input.             
-    The ending_at is derived from the route last landmarks arrival_delta, not user input.     
-    The service can be generated only for today and tomorrow.   
-    The started_on will be set to current time when the operator start the duty, not user input.    
-    The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
-    The service is created in the CREATED status by default.        
-    Log the service creation activity with the associated token.
-    """,
-)
-async def create_scheduled_trigger(
-    fParam: CreateFormUsingScheduleID = Depends(),
-    bearer=Depends(bearer_executive),
-    request_info=Depends(getters.requestInfo),
-):
-    routeLock = None
-    try:
-        session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
-        role = getters.executiveRole(token, session)
-        if not (role.create_schedule | role.update_schedule):
-            raise exceptions.NoPermission()
-
-        schedule = (
-            session.query(Schedule).filter(Schedule.id == fParam.schedule_id).first()
-        )
-        if schedule is None:
-            raise exceptions.UnknownValue(Service.schedule_id)
-        routeLock = acquireLock(Route.__tablename__, schedule.route_id)
-        session.refresh(schedule)
-
-        route = session.query(Route).filter(Route.id == schedule.route_id).first()
-        bus = session.query(Bus).filter(Bus.id == schedule.bus_id).first()
-        fare = session.query(Fare).filter(Fare.id == schedule.fare_id).first()
-        company = (
-            session.query(Company).filter(Company.id == schedule.company_id).first()
-        )
-
-        triggerData = createService(session, route, bus, fare, company, fParam)
-
-        service = Service(
-            company_id=schedule.company_id,
-            ticket_mode=schedule.ticketing_mode,
-            bus_id=schedule.bus_id,
-            schedule_id=fParam.schedule_id,
-            name=triggerData.name,
-            route=triggerData.route,
-            fare=triggerData.fare,
-            starting_at=fParam.starting_at,
-            ending_at=triggerData.ending_at,
-            private_key=triggerData.private_key,
-            public_key=triggerData.public_key,
-        )
-        session.add(service)
-        session.commit()
-        session.refresh(service)
-
-        serviceData = jsonable_encoder(service, exclude={"private_key"})
-        serviceLogData = serviceData.copy()
-        serviceLogData.pop("public_key")
-        logEvent(token, request_info, serviceLogData)
-        return serviceData
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        releaseLock(routeLock)
-        session.close()
-
-
-@route_executive.get(
-    URL_SCHEDULE_TRIGGER,
-    tags=["Trigger Schedule"],
-    response_model=List[ServiceSchema],
-    status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
-    description="""
-    Fetch a list of all services across companies.     
-    Only available to users with a valid executive token.       
-    Supports filtering, sorting, and pagination.
-    """,
-)
-async def fetch_scheduled_trigger(
-    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
-):
-    try:
-        session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
-
-        return searchTriggerSchedules(session, qParam)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
-## API endpoints [Operator]
 @route_operator.get(
     URL_SCHEDULE_TRIGGER,
-    tags=["Trigger Schedule"],
+    tags=["Scheduled Trigger"],
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
