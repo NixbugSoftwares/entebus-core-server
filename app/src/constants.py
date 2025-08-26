@@ -67,6 +67,9 @@ SERVICE_START_BUFFER_TIME = (
     60 * 60
 )  # Minimum lead time to create a duty before service (in minutes)
 MAX_DUTY_PER_SERVICE = 50  # Maximum number of duties per service
+SERVICE_CREATE_BUFFER_TIME = (
+    60 * 60
+)  # Minimum lead time to create a service (in minutes)
 
 # Timezone constants
 TMZ_PRIMARY = ZoneInfo("UTC")

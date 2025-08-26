@@ -21,7 +21,7 @@ from app.src.db import (
     Schedule,
     sessionMaker,
 )
-from app.src.constants import TMZ_SECONDARY, TMZ_PRIMARY
+from app.src.constants import TMZ_SECONDARY, TMZ_PRIMARY, SERVICE_CREATE_BUFFER_TIME
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.redis import acquireLock, releaseLock
@@ -732,7 +732,7 @@ async def create_scheduled_trigger(
             triggerOn = datetime.combine(
                 triggerDate.date(), triggerTime, tzinfo=TMZ_PRIMARY
             )
-            nextTrigger = triggerOn - timedelta(hours=1)
+            nextTrigger = triggerOn - timedelta(minutes=SERVICE_CREATE_BUFFER_TIME)
             schedule.next_trigger_on = nextTrigger
         session.commit()
         session.refresh(service)
