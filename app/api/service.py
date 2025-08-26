@@ -646,7 +646,7 @@ async def fetch_service(
     ),
     description="""
     Create a new service for a specified company.           
-    Requires executive role with `create_service` permission.
+    Requires executive role with either `create_schedule` or `update_schedule` permission.
     The bus must be in ACTIVE status. 
     The company must be in VERIFIED status.    
     The route must have at least two landmarks associated with it.        
@@ -658,7 +658,10 @@ async def fetch_service(
     The service can be generated only for today and tomorrow.   
     The started_on will be set to current time when the operator start the duty, not user input.    
     The finished_on will be set to current time when the operators finish the service or when the statement is generated, not user input.   
-    The service is created in the CREATED status by default.        
+    The service is created in the CREATED status by default.       
+    The data is derived from the submitted schedule.    
+    The last_triggered_on is set to current time when the service is created using this endpoint.       
+    The next_trigger_on is set to the datetime when the service should be triggered next, considering the frequency, date, and starting time from the route
     Log the service creation activity with the associated token.
     """,
 )
@@ -732,7 +735,7 @@ async def create_scheduled_trigger(
             triggerOn = datetime.combine(
                 triggerDate.date(), triggerTime, tzinfo=TMZ_PRIMARY
             )
-            nextTrigger = triggerOn - timedelta(minutes=SERVICE_CREATE_BUFFER_TIME)
+            nextTrigger = triggerOn - timedelta(seconds=SERVICE_CREATE_BUFFER_TIME)
             schedule.next_trigger_on = nextTrigger
         session.commit()
         session.refresh(service)
@@ -756,13 +759,13 @@ async def create_scheduled_trigger(
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all services across companies.     
+    Fetch a list of all services across companies with schedule_id.     
     Only available to users with a valid executive token.       
     Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_scheduled_trigger(
-    qParam: QueryParamsForEX = Depends(), bearer=Depends(bearer_executive)
+    qParam: QueryParamsUsingScheduleForEX = Depends(), bearer=Depends(bearer_executive)
 ):
     try:
         session = sessionMaker()
@@ -1067,13 +1070,13 @@ async def fetch_service(
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all services owned by the operator's company.          
+    Fetch a list of all services owned by the operator's company with schedule_id.          
     Only available to users with a valid operator token.        
     Supports filtering, sorting, and pagination.
     """,
 )
 async def fetch_scheduled_trigger(
-    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+    qParam: QueryParamsUsingScheduleForOP = Depends(), bearer=Depends(bearer_operator)
 ):
     try:
         session = sessionMaker()
