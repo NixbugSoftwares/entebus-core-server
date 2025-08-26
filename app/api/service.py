@@ -21,7 +21,7 @@ from app.src.db import (
     Schedule,
     sessionMaker,
 )
-from app.src.constants import TMZ_SECONDARY
+from app.src.constants import TMZ_SECONDARY, TMZ_PRIMARY
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.redis import acquireLock, releaseLock
@@ -715,37 +715,25 @@ async def create_scheduled_trigger(
         schedule.last_trigger_on = datetime.now(timezone.utc)
         if schedule.frequency:
             frequencies = sorted(schedule.frequency)
-            print("1",frequencies)
-            lastTrigger = schedule.last_trigger_on
-            print("2",lastTrigger)
-            lastDay = lastTrigger.isoweekday()
-            print("3",lastDay)
+            lastDay = schedule.last_trigger_on.isoweekday()
             nextDay = None
-            print("4",nextDay)
             for frequency in frequencies:
                 if frequency > lastDay:
                     nextDay = frequency
-                    print("5",nextDay)
                     break
             if not nextDay:
                 nextDay = frequencies[0]
-                print("6",nextDay)
             daysAhead = (nextDay - lastDay) % 7
-            print("7",daysAhead)
             if daysAhead == 0:
                 daysAhead = 7
 
-            startTime = route.start_time
-            print("8",startTime)
-            nextTriggerBase = lastTrigger + timedelta(days=daysAhead)
-            print("9",nextTriggerBase)
-            routeStartDate = datetime.combine(
-                nextTriggerBase.date(), startTime, tzinfo=timezone.utc
+            triggerTime = route.start_time
+            triggerDate = schedule.last_trigger_on + timedelta(days=daysAhead)
+            triggerOn = datetime.combine(
+                triggerDate.date(), triggerTime, tzinfo=TMZ_PRIMARY
             )
-            print("10",routeStartDate)
-            adjustedStartDate = routeStartDate - timedelta(hours=1)
-            print("11",adjustedStartDate,"\n")
-            schedule.next_trigger_on = adjustedStartDate
+            nextTrigger = triggerOn - timedelta(hours=1)
+            schedule.next_trigger_on = nextTrigger
         session.commit()
         session.refresh(service)
 
