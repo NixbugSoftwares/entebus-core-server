@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, Response, status, Form
@@ -56,7 +56,6 @@ class ServiceSchemaForVE(BaseModel):
     route: Dict[str, Any]
     fare: Dict[str, Any]
     bus_id: int
-    schedule_id: Optional[int]
     ticket_mode: int
     status: int
     starting_at: datetime
@@ -69,6 +68,7 @@ class ServiceSchemaForVE(BaseModel):
 
 
 class ServiceSchema(ServiceSchemaForVE):
+    schedule_id: Optional[int]
     public_key: str
 
 
@@ -394,6 +394,7 @@ def searchTriggerSchedules(
 
 
 ## API endpoints [Executive]
+# Service
 @route_executive.post(
     URL_SERVICE,
     tags=["Service"],
@@ -626,6 +627,7 @@ async def fetch_service(
         session.close()
 
 
+# Scheduled Trigger
 @route_executive.post(
     URL_SCHEDULE_TRIGGER,
     tags=["Scheduled Trigger"],
@@ -682,8 +684,14 @@ async def create_scheduled_trigger(
         session.refresh(schedule)
 
         route = session.query(Route).filter(Route.id == schedule.route_id).first()
+        if route is None:
+            raise exceptions.UnknownValue(Schedule.route_id)
         bus = session.query(Bus).filter(Bus.id == schedule.bus_id).first()
+        if bus is None:
+            raise exceptions.UnknownValue(Schedule.bus_id)
         fare = session.query(Fare).filter(Fare.id == schedule.fare_id).first()
+        if fare is None:
+            raise exceptions.UnknownValue(Schedule.fare_id)
         company = (
             session.query(Company).filter(Company.id == schedule.company_id).first()
         )
@@ -704,6 +712,7 @@ async def create_scheduled_trigger(
             public_key=triggerData.public_key,
         )
         session.add(service)
+        schedule.last_trigger_on = datetime.now(timezone.utc)
         session.commit()
         session.refresh(service)
 
@@ -746,6 +755,7 @@ async def fetch_scheduled_trigger(
 
 
 ## API endpoints [Vendor]
+# Service
 @route_vendor.get(
     URL_SERVICE,
     tags=["Service"],
@@ -777,6 +787,7 @@ async def fetch_route(
 
 
 ## API endpoints [Operator]
+# Service
 @route_operator.post(
     URL_SERVICE,
     tags=["Service"],
@@ -1028,6 +1039,7 @@ async def fetch_service(
         session.close()
 
 
+# Scheduled Trigger
 @route_operator.get(
     URL_SCHEDULE_TRIGGER,
     tags=["Scheduled Trigger"],
