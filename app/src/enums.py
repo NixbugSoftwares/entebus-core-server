@@ -102,7 +102,6 @@ class TriggeringMode(IntEnum):
     DISABLED = 1
     AUTO = 2
     MANUAL = 3
-    IMMEDIATE = 4
 
 
 class ServiceStatus(IntEnum):
