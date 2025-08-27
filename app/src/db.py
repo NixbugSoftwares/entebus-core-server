@@ -2445,3 +2445,82 @@ class ExecutiveImage(ORMbase):
     file_type = Column(String(128), nullable=False)
     # Metadata
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
+
+
+class Location(ORMbase):
+    """
+    Represents a live geospatial record of a service or duty within a company.
+
+    This table captures real-time or historical location data, linking each position
+    to a service, duty, landmark and optionally to a location. It is central to tracking
+    vehicle or service movements and supports geospatial queries for monitoring,
+    analytics, and reporting.
+
+    Columns:
+        id (Integer):
+            Primary key. Unique identifier for the location record.
+            Auto-incremented by the database.
+
+        company_id (Integer):
+            Foreign key to the `company.id` column.
+            Identifies the company that owns the location record.
+            Required field. Deleting the company cascades and deletes the location.
+
+        duty_id (Integer):
+            Foreign key to the `duty.id` column.
+            Associates the location record with a duty assignment.
+            Optional field. If the duty is deleted, this value is set to NULL.
+
+        service_id (Integer):
+            Foreign key to the `service.id` column.
+            Associates the location with a specific service.
+            Required field. Deleting the service cascades and deletes the location.
+            Indexed for faster queries.
+
+        landmark_id (Integer):
+            Foreign key to the `landmark.id` column.
+            Associates the location with a defined landmark.
+            Required field. Indexed for efficient spatial lookups.
+
+        location (Geometry):
+            Geospatial coordinate of the record, defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
+            Represents the exact latitude and longitude of the location.
+
+        accurate (Numeric):
+            Accuracy of the location.
+            Precision up to 2 decimal places.
+            Helps distinguish between GPS-quality readings and approximate positions.
+
+        updated_on (DateTime):
+            Timestamp automatically updated whenever the record is modified.
+            Timezone-aware.
+            Useful for tracking updates or syncing data.
+
+        created_on (DateTime):
+            Timestamp indicating when the location record was created.
+            Timezone-aware.
+            Automatically set at the time of record insertion.
+    """
+
+    __tablename__ = "location"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    duty_id = Column(Integer, ForeignKey("duty.id", ondelete="SET NULL"))
+    service_id = Column(
+        Integer,
+        ForeignKey("service.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    landmark_id = Column(Integer, ForeignKey("landmark.id"), nullable=False, index=True)
+    location = Column(Geometry(geometry_type="POINT", srid=4326))
+    accurate = Column(Numeric(10, 2), nullable=False)
+    # Metadata
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
