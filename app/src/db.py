@@ -2120,6 +2120,11 @@ class Service(ORMbase):
             Foreign key referencing `bus.id`.
             Specifies the bus assigned to this service.
 
+        schedule_id (Integer):
+            Foreign key referencing the associated schedule.
+            If the schedule is deleted, the field is set to NULL.
+            Specifies the schedule associated with this service.
+
         ticket_mode (Integer):
             Enum representing the ticketing mode.
             Defaults to `TicketingMode.HYBRID`.
@@ -2176,6 +2181,7 @@ class Service(ORMbase):
     route = Column(JSONB, nullable=False)
     fare = Column(JSONB, nullable=False)
     bus_id = Column(Integer, ForeignKey("bus.id"))
+    schedule_id = Column(Integer, ForeignKey("schedule.id", ondelete="SET NULL"))
     ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
     starting_at = Column(DateTime(timezone=True), nullable=False)
