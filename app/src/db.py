@@ -2447,7 +2447,7 @@ class ExecutiveImage(ORMbase):
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
 
-class Location(ORMbase):
+class ServiceTrace(ORMbase):
     """
     Represents a live geospatial record of a service or duty within a company.
 
@@ -2475,12 +2475,12 @@ class Location(ORMbase):
             Foreign key to the `service.id` column.
             Associates the location with a specific service.
             Required field. Deleting the service cascades and deletes the location.
-            Indexed for faster queries.
+            Unique constraint ensures for service.
 
         landmark_id (Integer):
             Foreign key to the `landmark.id` column.
             Associates the location with a defined landmark.
-            Required field. Indexed for efficient spatial lookups.
+            Required field.
 
         location (Geometry):
             Geospatial coordinate of the record, defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
@@ -2502,7 +2502,7 @@ class Location(ORMbase):
             Automatically set at the time of record insertion.
     """
 
-    __tablename__ = "location"
+    __tablename__ = "service_trace"
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
@@ -2516,9 +2516,9 @@ class Location(ORMbase):
         Integer,
         ForeignKey("service.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
+        unique=True,
     )
-    landmark_id = Column(Integer, ForeignKey("landmark.id"), nullable=False, index=True)
+    landmark_id = Column(Integer, ForeignKey("landmark.id"), nullable=False)
     location = Column(Geometry(geometry_type="POINT", srid=4326))
     accurate = Column(Numeric(10, 2))
     # Metadata

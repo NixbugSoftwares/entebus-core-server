@@ -19,7 +19,7 @@ from app.src.db import (
     Landmark,
     Duty,
     Schedule,
-    Location,
+    ServiceTrace,
     sessionMaker,
 )
 from app.src.constants import TMZ_SECONDARY, TMZ_PRIMARY, SERVICE_CREATE_BUFFER_TIME
@@ -488,13 +488,13 @@ async def create_service(
         session.add(service)
         session.flush()
 
-        # Create Location
-        location = Location(
+        # Create Service Position
+        servicePosition = ServiceTrace(
             company_id=fParam.company_id,
             service_id=service.id,
             landmark_id=firstLandmark,
         )
-        session.add(location)
+        session.add(servicePosition)
         session.commit()
         session.refresh(service)
 
@@ -756,7 +756,7 @@ async def create_scheduled_trigger(
             schedule.next_trigger_on = nextTrigger
         
         # Create Location
-        location = Location(
+        location = ServiceTrace(
             company_id=service.company_id,
             service_id=service.id,
             landmark_id=firstLandmark,
