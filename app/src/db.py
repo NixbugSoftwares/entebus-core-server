@@ -2520,7 +2520,7 @@ class Location(ORMbase):
     )
     landmark_id = Column(Integer, ForeignKey("landmark.id"), nullable=False, index=True)
     location = Column(Geometry(geometry_type="POINT", srid=4326))
-    accurate = Column(Numeric(10, 2), nullable=False)
+    accurate = Column(Numeric(10, 2))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
