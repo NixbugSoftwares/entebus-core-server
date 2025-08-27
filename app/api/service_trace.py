@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Form
 from sqlalchemy.orm.session import Session
 from pydantic import BaseModel, Field
+from fastapi.encoders import jsonable_encoder
 from shapely.geometry import Point
 from shapely import wkt, wkb
 from sqlalchemy import func
@@ -269,6 +270,107 @@ async def fetch_landmark(
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchServiceTrace(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.patch(
+    URL_SERVICE_TRACE,
+    tags=["Service Trace"],
+    response_model=List[ServiceTraceSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidIdentifier,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+            exceptions.TracePointOutsideLandmark,
+            exceptions.UnknownValue(ServiceTrace.duty_id),
+            exceptions.InvalidAssociation(
+                ServiceTrace.duty_id, ServiceTrace.service_id
+            ),
+        ]
+    ),
+    description="""
+    Update the location of a service trace.
+    """,
+)
+async def update_service_trace(
+    fParam: UpdateForm = Depends(),
+    bearer=Depends(bearer_operator),
+    request_info=Depends(getters.requestInfo),
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        serviceTrace = (
+            session.query(ServiceTrace)
+            .filter(ServiceTrace.id == fParam.id)
+            .filter(ServiceTrace.company_id == token.company_id)
+            .first()
+        )
+        if serviceTrace is None:
+            raise exceptions.InvalidIdentifier()
+
+        updateIfChanged(serviceTrace, fParam, [ServiceTrace.accurate.key])
+        if fParam.duty_id is not None and fParam.duty_id != serviceTrace.duty_id:
+            duty = (
+                session.query(Duty)
+                .filter(Duty.id == fParam.duty_id)
+                .filter(Duty.operator_id == token.operator_id)
+                .first()
+            )
+            if duty is None:
+                raise exceptions.UnknownValue(ServiceTrace.duty_id)
+            if duty.service_id != serviceTrace.service_id:
+                raise exceptions.InvalidAssociation(
+                    ServiceTrace.duty_id, ServiceTrace.service_id
+                )
+            serviceTrace.duty_id = fParam.duty_id
+
+        if fParam.landmark_id is not None and fParam.landmark_id != serviceTrace.landmark_id:
+            service = session.query(Service).filter(Service.id == serviceTrace.service_id).first()
+            if service is None:
+                raise exceptions.UnknownValue(ServiceTrace.service_id)
+            landmark_ids = [landmark["landmark_id"] for landmark in service.route["landmark"]]
+            if fParam.landmark_id not in landmark_ids:
+                raise exceptions.InvalidAssociation(ServiceTrace.landmark_id, ServiceTrace.service_id)
+            serviceTrace.landmark_id = fParam.landmark_id
+
+        if fParam.location is not None:
+            locationGeom = validators.WKTstring(fParam.location, Point)
+            validators.SRID4326(locationGeom)
+            fParam.location = wkt.dumps(locationGeom)
+            currentLocation = (wkb.loads(bytes(serviceTrace.location.data))).wkt
+            if currentLocation != fParam.location:
+                landmark = (
+                    session.query(Landmark)
+                    .filter(Landmark.id == serviceTrace.landmark_id)
+                    .first()
+                )
+                boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
+                if not boundaryGeom.contains(locationGeom):
+                    raise exceptions.TracePointOutsideLandmark()
+            else:
+                fParam.location = None
+            serviceTrace.location = fParam.location
+
+        haveUpdates = session.is_modified(serviceTrace)
+        if haveUpdates:
+            session.commit()
+            session.refresh(serviceTrace)
+
+        serviceTraceData = jsonable_encoder(serviceTrace, exclude={"location"})
+        serviceTraceData["location"] = (
+            wkb.loads(bytes(serviceTrace.location.data))
+        ).wkt
+        if haveUpdates:
+            logEvent(token, request_info, serviceTraceData)
+        return serviceTraceData
+
     except Exception as e:
         exceptions.handle(e)
     finally:

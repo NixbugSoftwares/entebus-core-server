@@ -298,3 +298,9 @@ class RedisDBError(APIException):
 
     def __init__(self, detail: str):
         super().__init__(detail=detail)
+
+
+class TracePointOutsideLandmark(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    detail = "The service trace location is not within the landmark boundary"
+    headers = {"X-Error": "TracePointOutsideLandmark"}
