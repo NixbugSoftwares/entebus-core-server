@@ -2122,7 +2122,7 @@ class Service(ORMbase):
 
         schedule_id (Integer):
             Foreign key referencing the associated schedule.
-            If the route is deleted, the field is set to NULL.
+            If the schedule is deleted, the field is set to NULL.
             Specifies the schedule associated with this service.
 
         ticket_mode (Integer):
