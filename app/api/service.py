@@ -759,7 +759,7 @@ async def create_scheduled_trigger(
     status_code=status.HTTP_201_CREATED,
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all services across companies with schedule_id.     
+    Fetch the list of all services created by the trigger.       
     Only available to users with a valid executive token.       
     Supports filtering, sorting, and pagination.
     """,
@@ -1070,7 +1070,7 @@ async def fetch_service(
     response_model=List[ServiceSchema],
     responses=makeExceptionResponses([exceptions.InvalidToken]),
     description="""
-    Fetch a list of all services owned by the operator's company with schedule_id.          
+    Fetch the list of all services created by the trigger.           
     Only available to users with a valid operator token.        
     Supports filtering, sorting, and pagination.
     """,
