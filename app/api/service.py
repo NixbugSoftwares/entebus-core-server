@@ -646,7 +646,7 @@ async def fetch_service(
     ),
     description="""
     Create a new service for a specified company.           
-    Requires executive role with either `create_schedule` or `update_schedule` permission.
+    Requires executive role with `create_service` permission.
     The bus must be in ACTIVE status. 
     The company must be in VERIFIED status.    
     The route must have at least two landmarks associated with it.        
@@ -675,8 +675,7 @@ async def create_scheduled_trigger(
         session = sessionMaker()
         token = validators.executiveToken(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        if not (role.create_schedule | role.update_schedule):
-            raise exceptions.NoPermission()
+        validators.executivePermission(role, ExecutiveRole.create_service)
 
         schedule = (
             session.query(Schedule).filter(Schedule.id == fParam.schedule_id).first()
