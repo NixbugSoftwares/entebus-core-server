@@ -279,7 +279,7 @@ async def fetch_landmark(
 @route_operator.patch(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
-    response_model=List[ServiceTraceSchema],
+    response_model=ServiceTraceSchema,
     responses=makeExceptionResponses(
         [
             exceptions.InvalidToken,
@@ -316,6 +316,7 @@ async def update_service_trace(
             raise exceptions.InvalidIdentifier()
 
         updateIfChanged(serviceTrace, fParam, [ServiceTrace.accurate.key])
+
         if fParam.duty_id is not None and fParam.duty_id != serviceTrace.duty_id:
             duty = (
                 session.query(Duty)
@@ -331,20 +332,46 @@ async def update_service_trace(
                 )
             serviceTrace.duty_id = fParam.duty_id
 
-        if fParam.landmark_id is not None and fParam.landmark_id != serviceTrace.landmark_id:
-            service = session.query(Service).filter(Service.id == serviceTrace.service_id).first()
+        if (
+            fParam.landmark_id is not None
+            and fParam.landmark_id != serviceTrace.landmark_id
+        ):
+            service = (
+                session.query(Service)
+                .filter(Service.id == serviceTrace.service_id)
+                .first()
+            )
             if service is None:
                 raise exceptions.UnknownValue(ServiceTrace.service_id)
-            landmark_ids = [landmark["landmark_id"] for landmark in service.route["landmark"]]
-            if fParam.landmark_id not in landmark_ids:
-                raise exceptions.InvalidAssociation(ServiceTrace.landmark_id, ServiceTrace.service_id)
+            landmarks = []
+            for landmark in service.route["landmark"]:
+                landmarks.append(landmark["landmark_id"])
+            if fParam.landmark_id not in landmarks:
+                raise exceptions.InvalidAssociation(
+                    ServiceTrace.landmark_id, ServiceTrace.service_id
+                )
+            landmark = (
+                session.query(Landmark)
+                .filter(Landmark.id == fParam.landmark_id)
+                .first()
+            )
+            if landmark is None:
+                raise exceptions.UnknownValue(ServiceTrace.landmark_id)
+            if serviceTrace.location is not None:
+                locationGeom = wkb.loads(bytes(serviceTrace.location.data))
+                boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
+                if not boundaryGeom.contains(locationGeom):
+                    raise exceptions.TracePointOutsideLandmark()
             serviceTrace.landmark_id = fParam.landmark_id
 
         if fParam.location is not None:
             locationGeom = validators.WKTstring(fParam.location, Point)
             validators.SRID4326(locationGeom)
             fParam.location = wkt.dumps(locationGeom)
-            currentLocation = (wkb.loads(bytes(serviceTrace.location.data))).wkt
+            if serviceTrace.location is not None:
+                currentLocation = (wkb.loads(bytes(serviceTrace.location.data))).wkt
+            else:
+                currentLocation = None
             if currentLocation != fParam.location:
                 landmark = (
                     session.query(Landmark)
@@ -364,9 +391,12 @@ async def update_service_trace(
             session.refresh(serviceTrace)
 
         serviceTraceData = jsonable_encoder(serviceTrace, exclude={"location"})
-        serviceTraceData["location"] = (
-            wkb.loads(bytes(serviceTrace.location.data))
-        ).wkt
+        if serviceTrace.location is not None:
+            serviceTraceData["location"] = (
+                wkb.loads(bytes(serviceTrace.location.data))
+            ).wkt
+        else:
+            serviceTraceData["location"] = None
         if haveUpdates:
             logEvent(token, request_info, serviceTraceData)
         return serviceTraceData
