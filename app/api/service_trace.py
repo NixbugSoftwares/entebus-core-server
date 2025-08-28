@@ -227,7 +227,7 @@ async def fetch_service_trace(
     ),
     description="""
     Retrieve a list of service trace with filtering and sorting options available to vendor accounts.  
-    Supports spatial filters like proximity to a point, and constraints on metadata fields such as creation date or type.
+    Supports filters like proximity to a point, and constraints on metadata fields such as creation date or accuracy.
     """,
 )
 async def fetch_service_trace(
@@ -257,7 +257,7 @@ async def fetch_service_trace(
         ]
     ),
     description="""
-    Retrieve a list of service trace available to operators.  
+    Retrieve a list of service trace available to operators company.  
     Supports spatial and metadata-based querying with optional sorting and pagination features.
     """,
 )
@@ -286,7 +286,6 @@ async def fetch_landmark(
             exceptions.InvalidIdentifier,
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
-            exceptions.TracePointOutsideLandmark,
             exceptions.UnknownValue(ServiceTrace.duty_id),
             exceptions.InvalidAssociation(
                 ServiceTrace.duty_id, ServiceTrace.service_id
@@ -294,7 +293,12 @@ async def fetch_landmark(
         ]
     ),
     description="""
-    Update the location of a service trace.
+    Update an existing service live location.   
+    The location must be in SRID 4326.  
+    A valid access token is required.   
+    The duty and service must belong to the logged in operator.     
+    The landmark_id must be associated with the service.        
+    Only one entry can be maintained against a service, irrespective of the duty ID.
     """,
 )
 async def update_service_trace(
@@ -350,39 +354,12 @@ async def update_service_trace(
                 raise exceptions.InvalidAssociation(
                     ServiceTrace.landmark_id, ServiceTrace.service_id
                 )
-            landmark = (
-                session.query(Landmark)
-                .filter(Landmark.id == fParam.landmark_id)
-                .first()
-            )
-            if landmark is None:
-                raise exceptions.UnknownValue(ServiceTrace.landmark_id)
-            if serviceTrace.location is not None:
-                locationGeom = wkb.loads(bytes(serviceTrace.location.data))
-                boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
-                if not boundaryGeom.contains(locationGeom):
-                    raise exceptions.TracePointOutsideLandmark()
             serviceTrace.landmark_id = fParam.landmark_id
 
         if fParam.location is not None:
             locationGeom = validators.WKTstring(fParam.location, Point)
             validators.SRID4326(locationGeom)
             fParam.location = wkt.dumps(locationGeom)
-            if serviceTrace.location is not None:
-                currentLocation = (wkb.loads(bytes(serviceTrace.location.data))).wkt
-            else:
-                currentLocation = None
-            if currentLocation != fParam.location:
-                landmark = (
-                    session.query(Landmark)
-                    .filter(Landmark.id == serviceTrace.landmark_id)
-                    .first()
-                )
-                boundaryGeom = wkb.loads(bytes(landmark.boundary.data))
-                if not boundaryGeom.contains(locationGeom):
-                    raise exceptions.TracePointOutsideLandmark()
-            else:
-                fParam.location = None
             serviceTrace.location = fParam.location
 
         haveUpdates = session.is_modified(serviceTrace)
