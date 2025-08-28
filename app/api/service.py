@@ -271,7 +271,7 @@ def createService(
             private_key=privateKey,
             public_key=publicKey,
         ),
-        firstLandmark.id,
+        firstLandmark,
     ]
 
 
@@ -492,7 +492,7 @@ async def create_service(
         servicePosition = ServiceTrace(
             company_id=fParam.company_id,
             service_id=service.id,
-            landmark_id=firstLandmark,
+            landmark_id=firstLandmark.id,
         )
         session.add(servicePosition)
         session.commit()
@@ -759,7 +759,7 @@ async def create_scheduled_trigger(
         location = ServiceTrace(
             company_id=service.company_id,
             service_id=service.id,
-            landmark_id=firstLandmark,
+            landmark_id=firstLandmark.id,
         )
         session.add(location)
         session.commit()

@@ -2484,11 +2484,11 @@ class ServiceTrace(ORMbase):
 
         location (Geometry):
             Geospatial coordinate of the record, defined as a PostGIS `POINT` with SRID 4326 (WGS 84).
-            Represents the exact latitude and longitude of the location.
+            Optional field. Represents the exact latitude and longitude of the location.
 
         accurate (Numeric):
             Accuracy of the location.
-            Precision up to 2 decimal places.
+            Optional field. Precision up to 2 decimal places.
             Helps distinguish between GPS-quality readings and approximate positions.
 
         updated_on (DateTime):

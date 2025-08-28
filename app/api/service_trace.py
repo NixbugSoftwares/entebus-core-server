@@ -11,17 +11,9 @@ from sqlalchemy import func
 from geoalchemy2 import Geography
 
 from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
-from app.src.db import (
-    Route,
-    Service,
-    Landmark,
-    Duty,
-    ServiceTrace,
-    sessionMaker,
-)
+from app.src.db import Service, Duty, ServiceTrace, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.enums import ServiceStatus, DutyStatus
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -245,37 +237,6 @@ async def fetch_service_trace(
 
 
 ## API endpoints [Operator]
-@route_operator.get(
-    URL_SERVICE_TRACE,
-    tags=["Service Trace"],
-    response_model=List[ServiceTraceSchema],
-    responses=makeExceptionResponses(
-        [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-        ]
-    ),
-    description="""
-    Retrieve a list of service trace available to operators company.  
-    Supports spatial and metadata-based querying with optional sorting and pagination features.
-    """,
-)
-async def fetch_landmark(
-    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
-):
-    try:
-        session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
-
-        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
-        return searchServiceTrace(session, qParam)
-    except Exception as e:
-        exceptions.handle(e)
-    finally:
-        session.close()
-
-
 @route_operator.patch(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
@@ -287,6 +248,7 @@ async def fetch_landmark(
             exceptions.InvalidWKTStringOrType,
             exceptions.InvalidSRID4326,
             exceptions.UnknownValue(ServiceTrace.duty_id),
+            exceptions.InvalidValue(ServiceTrace.duty_id),
             exceptions.InvalidAssociation(
                 ServiceTrace.duty_id, ServiceTrace.service_id
             ),
@@ -318,6 +280,14 @@ async def update_service_trace(
         )
         if serviceTrace is None:
             raise exceptions.InvalidIdentifier()
+        duty = (
+                session.query(Duty)
+                .filter(Duty.service_id == serviceTrace.service_id)
+                .filter(Duty.operator_id == token.operator_id)
+                .first()
+            )
+        if duty is None:
+            raise exceptions.InvalidValue(ServiceTrace.duty_id)
 
         updateIfChanged(serviceTrace, fParam, [ServiceTrace.accurate.key])
 
@@ -378,6 +348,37 @@ async def update_service_trace(
             logEvent(token, request_info, serviceTraceData)
         return serviceTraceData
 
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+@route_operator.get(
+    URL_SERVICE_TRACE,
+    tags=["Service Trace"],
+    response_model=List[ServiceTraceSchema],
+    responses=makeExceptionResponses(
+        [
+            exceptions.InvalidToken,
+            exceptions.InvalidWKTStringOrType,
+            exceptions.InvalidSRID4326,
+        ]
+    ),
+    description="""
+    Retrieve a list of service trace available to operators company.  
+    Supports spatial and metadata-based querying with optional sorting and pagination features.
+    """,
+)
+async def fetch_service_trace(
+    qParam: QueryParamsForOP = Depends(), bearer=Depends(bearer_operator)
+):
+    try:
+        session = sessionMaker()
+        token = validators.operatorToken(bearer.credentials, session)
+
+        qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
+        return searchServiceTrace(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:
