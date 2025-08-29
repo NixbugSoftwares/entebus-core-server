@@ -19,6 +19,7 @@ from app.src.db import (
     Landmark,
     Duty,
     Schedule,
+    ServiceTrace,
     sessionMaker,
 )
 from app.src.constants import TMZ_SECONDARY, TMZ_PRIMARY, SERVICE_CREATE_BUFFER_TIME
@@ -260,15 +261,18 @@ def createService(
     privateKey = ticketCreator.getPEMprivateKeyString()
     publicKey = ticketCreator.getPEMpublicKeyString()
 
-    return Service(
-        name=name,
-        starting_at=fParam.starting_at,
-        ending_at=ending_at,
-        route=routeData,
-        fare=fareData,
-        private_key=privateKey,
-        public_key=publicKey,
-    )
+    return [
+        Service(
+            name=name,
+            starting_at=fParam.starting_at,
+            ending_at=ending_at,
+            route=routeData,
+            fare=fareData,
+            private_key=privateKey,
+            public_key=publicKey,
+        ),
+        firstLandmark,
+    ]
 
 
 def updateService(session: Session, service: Service, fParam: UpdateForm):
@@ -465,7 +469,9 @@ async def create_service(
             if fare.company_id != company.id:
                 raise exceptions.InvalidAssociation(Service.fare, Service.company_id)
 
-        serviceData = createService(session, route, bus, fare, company, fParam)
+        serviceData, firstLandmark = createService(
+            session, route, bus, fare, company, fParam
+        )
 
         service = Service(
             company_id=fParam.company_id,
@@ -480,6 +486,15 @@ async def create_service(
             public_key=serviceData.public_key,
         )
         session.add(service)
+        session.flush()
+
+        # Create Service Position
+        servicePosition = ServiceTrace(
+            company_id=fParam.company_id,
+            service_id=service.id,
+            landmark_id=firstLandmark.id,
+        )
+        session.add(servicePosition)
         session.commit()
         session.refresh(service)
 
@@ -698,7 +713,9 @@ async def create_scheduled_trigger(
             session.query(Company).filter(Company.id == schedule.company_id).first()
         )
 
-        triggerData = createService(session, route, bus, fare, company, fParam)
+        triggerData, firstLandmark = createService(
+            session, route, bus, fare, company, fParam
+        )
 
         service = Service(
             company_id=schedule.company_id,
@@ -714,6 +731,7 @@ async def create_scheduled_trigger(
             public_key=triggerData.public_key,
         )
         session.add(service)
+        session.flush()
         schedule.last_trigger_on = datetime.now(timezone.utc)
         if schedule.frequency:
             frequencies = sorted(schedule.frequency)
@@ -736,6 +754,14 @@ async def create_scheduled_trigger(
             )
             nextTrigger = triggerOn - timedelta(seconds=SERVICE_CREATE_BUFFER_TIME)
             schedule.next_trigger_on = nextTrigger
+        
+        # Create Location
+        location = ServiceTrace(
+            company_id=service.company_id,
+            service_id=service.id,
+            landmark_id=firstLandmark.id,
+        )
+        session.add(location)
         session.commit()
         session.refresh(service)
 
