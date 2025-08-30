@@ -45,7 +45,9 @@ class UpdateForm(BaseModel):
     id: int = Field(Form())
     landmark_id: int | None = Field(Form(default=None))
     duty_id: int | None = Field(Form(default=None))
-    location: str | None = Field(Form(default=None))
+    location: str | None = Field(
+        Form(default=None, description="Accepts only SRID 4326 (WGS84)")
+    )
     accurate: float | None = Field(Form(default=None))
 
 
@@ -281,13 +283,13 @@ async def update_service_trace(
         if serviceTrace is None:
             raise exceptions.InvalidIdentifier()
         duty = (
-                session.query(Duty)
-                .filter(Duty.service_id == serviceTrace.service_id)
-                .filter(Duty.operator_id == token.operator_id)
-                .first()
-            )
+            session.query(Duty)
+            .filter(Duty.service_id == serviceTrace.service_id)
+            .filter(Duty.operator_id == token.operator_id)
+            .first()
+        )
         if duty is None:
-            raise exceptions.InvalidValue(ServiceTrace.duty_id)
+            raise exceptions.InvalidAssociation(ServiceTrace.duty_id, Duty.operator_id)
 
         updateIfChanged(serviceTrace, fParam, [ServiceTrace.accurate.key])
 

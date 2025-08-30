@@ -488,13 +488,13 @@ async def create_service(
         session.add(service)
         session.flush()
 
-        # Create Service Position
-        servicePosition = ServiceTrace(
+        # Create service trace
+        serviceTrace = ServiceTrace(
             company_id=fParam.company_id,
             service_id=service.id,
             landmark_id=firstLandmark.id,
         )
-        session.add(servicePosition)
+        session.add(serviceTrace)
         session.commit()
         session.refresh(service)
 
@@ -754,7 +754,7 @@ async def create_scheduled_trigger(
             )
             nextTrigger = triggerOn - timedelta(seconds=SERVICE_CREATE_BUFFER_TIME)
             schedule.next_trigger_on = nextTrigger
-        
+
         # Create Location
         location = ServiceTrace(
             company_id=service.company_id,
@@ -914,7 +914,9 @@ async def create_service(
 
         company = session.query(Company).filter(Company.id == token.company_id).first()
 
-        serviceData = createService(session, route, bus, fare, company, fParam)
+        serviceData, firstLandmark = createService(
+            session, route, bus, fare, company, fParam
+        )
 
         service = Service(
             company_id=token.company_id,
@@ -929,6 +931,15 @@ async def create_service(
             public_key=serviceData.public_key,
         )
         session.add(service)
+        session.flush()
+
+        # Create service trace
+        serviceTrace = ServiceTrace(
+            company_id=token.company_id,
+            service_id=service.id,
+            landmark_id=firstLandmark.id,
+        )
+        session.add(serviceTrace)
         session.commit()
         session.refresh(service)
 
