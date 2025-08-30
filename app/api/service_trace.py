@@ -289,7 +289,7 @@ async def update_service_trace(
             .first()
         )
         if duty is None:
-            raise exceptions.InvalidValue(ServiceTrace.duty_id)
+            raise exceptions.InvalidAssociation(ServiceTrace.duty_id, Duty.operator_id)
 
         updateIfChanged(serviceTrace, fParam, [ServiceTrace.accurate.key])
 
