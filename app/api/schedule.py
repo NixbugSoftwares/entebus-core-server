@@ -55,7 +55,7 @@ class ScheduleSchema(BaseModel):
 ## Input Forms
 class CreateFormForOP(BaseModel):
     name: str = Field(Body(max_length=128))
-    description: str = Field(Body(max_length=2048))
+    description: str | None = Field(Body(max_length=2048, default=None))
     route_id: int = Field(Body())
     fare_id: int = Field(Body())
     bus_id: int = Field(Body())
