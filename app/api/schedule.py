@@ -20,6 +20,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import Day, FareScope, TicketingMode, TriggeringMode
+from app.src.constants import TMZ_PRIMARY
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -155,7 +156,14 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
+def validateTriggerTill(fParam: CreateFormForOP | CreateFormForEX | UpdateForm):
+    if fParam.trigger_till is not None:
+        if fParam.trigger_till.astimezone(TMZ_PRIMARY) < datetime.now(TMZ_PRIMARY):
+            raise exceptions.InvalidValue(Schedule.trigger_till)
+
+
 def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
+    validateTriggerTill(fParam)
     updateIfChanged(
         schedule,
         fParam,
@@ -320,6 +328,7 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
+        validateTriggerTill(fParam)
 
         schedule = Schedule(
             company_id=fParam.company_id,
@@ -516,6 +525,7 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
+        validateTriggerTill(fParam)
 
         schedule = Schedule(
             company_id=token.company_id,
