@@ -55,10 +55,10 @@ class ScheduleSchema(BaseModel):
 ## Input Forms
 class CreateFormForOP(BaseModel):
     name: str = Field(Body(max_length=128))
-    description: str | None = Field(Body(max_length=2048, default=None))
-    route_id: int | None = Field(Body(default=None))
-    fare_id: int | None = Field(Body(default=None))
-    bus_id: int | None = Field(Body(default=None))
+    description: str = Field(Body(max_length=2048))
+    route_id: int = Field(Body())
+    fare_id: int = Field(Body())
+    bus_id: int = Field(Body())
     frequency: List[Day] | None = Field(Body(description=enumStr(Day), default=None))
     ticketing_mode: TicketingMode = Field(
         Body(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
@@ -292,6 +292,7 @@ def searchSchedule(
     Requires executive role with `create_schedule` permission.      
     In this bus_id, route_id must be associated with the company.       
     If fare_id is in Local scope, it must be associated with the company.   
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule creation activity with the associated token.
     """,
 )
@@ -373,6 +374,7 @@ async def create_schedule(
     Requires executive role with `update_schedule` permission.   
     In this bus_id, route_id must be associated with the company.       
     If fare_id is in Local scope, it must be associated with the company.    
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule update activity with the associated token.
     """,
 )
@@ -487,6 +489,7 @@ async def fetch_schedule(
     The company ID is derived from the token, not user input.       
     In this bus_id, route_id must be associated with the company.           
     If fare_id is in Local scope, it must be associated with the company.       
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule creation activity with the associated token.
     """,
 )
@@ -569,6 +572,7 @@ async def create_schedule(
     Update an existing schedule belonging to the operator's company.        
     Requires operator role with `update_schedule` permission.       
     Ensures the schedule is owned by the operator's company.        
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule updating activity with the associated token.
     """,
 )
