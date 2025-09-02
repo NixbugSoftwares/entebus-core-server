@@ -20,6 +20,7 @@ from app.src.db import (
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import Day, FareScope, TicketingMode, TriggeringMode
+from app.src.constants import TMZ_PRIMARY
 from app.src.functions import (
     enumStr,
     makeExceptionResponses,
@@ -46,6 +47,7 @@ class ScheduleSchema(BaseModel):
     triggering_mode: int
     next_trigger_on: Optional[datetime]
     last_trigger_on: Optional[datetime]
+    trigger_till: Optional[datetime]
     updated_on: Optional[datetime]
     created_on: datetime
 
@@ -53,17 +55,18 @@ class ScheduleSchema(BaseModel):
 ## Input Forms
 class CreateFormForOP(BaseModel):
     name: str = Field(Body(max_length=128))
-    description: Optional[str] = Field(Body(max_length=2048, default=None))
-    route_id: Optional[int] = Field(Body(default=None))
-    fare_id: Optional[int] = Field(Body(default=None))
-    bus_id: Optional[int] = Field(Body(default=None))
-    frequency: Optional[List[Day]] = Field(Body(description=enumStr(Day), default=None))
+    description: str | None = Field(Body(max_length=2048, default=None))
+    route_id: int = Field(Body())
+    fare_id: int = Field(Body())
+    bus_id: int = Field(Body())
+    frequency: List[Day] | None = Field(Body(description=enumStr(Day), default=None))
     ticketing_mode: TicketingMode = Field(
         Body(description=enumStr(TicketingMode), default=TicketingMode.HYBRID)
     )
     triggering_mode: TriggeringMode = Field(
         Body(description=enumStr(TriggeringMode), default=TriggeringMode.AUTO)
     )
+    trigger_till: datetime | None = Field(Body(default=None))
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -84,6 +87,7 @@ class UpdateForm(BaseModel):
     triggering_mode: TriggeringMode | None = Field(
         Body(default=None, description=enumStr(TriggeringMode))
     )
+    trigger_till: datetime | None = Field(Body(default=None))
 
 
 class DeleteForm(BaseModel):
@@ -101,8 +105,9 @@ class OrderBy(IntEnum):
     name = 2
     next_trigger_on = 3
     last_trigger_on = 4
-    updated_on = 5
-    created_on = 6
+    trigger_till = 5
+    updated_on = 6
+    created_on = 7
 
 
 class QueryParamsForOP(BaseModel):
@@ -129,6 +134,9 @@ class QueryParamsForOP(BaseModel):
     # last_trigger_on based
     last_trigger_on_ge: datetime | None = Field(Query(default=None))
     last_trigger_on_le: datetime | None = Field(Query(default=None))
+    # trigger_till based
+    trigger_till_ge: datetime | None = Field(Query(default=None))
+    trigger_till_le: datetime | None = Field(Query(default=None))
     # updated_on based
     updated_on_ge: datetime | None = Field(Query(default=None))
     updated_on_le: datetime | None = Field(Query(default=None))
@@ -148,7 +156,14 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
+def validateTriggerTill(fParam: CreateFormForOP | CreateFormForEX | UpdateForm):
+    if fParam.trigger_till is not None:
+        if fParam.trigger_till.astimezone(TMZ_PRIMARY) < datetime.now(TMZ_PRIMARY):
+            raise exceptions.InvalidValue(Schedule.trigger_till)
+
+
 def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
+    validateTriggerTill(fParam)
     updateIfChanged(
         schedule,
         fParam,
@@ -158,6 +173,7 @@ def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
             Schedule.frequency.key,
             Schedule.ticketing_mode.key,
             Schedule.triggering_mode.key,
+            Schedule.trigger_till.key,
         ],
     )
     if fParam.route_id is not None and schedule.route_id != fParam.route_id:
@@ -229,6 +245,11 @@ def searchSchedule(
         query = query.filter(Schedule.last_trigger_on >= qParam.last_trigger_on_ge)
     if qParam.last_trigger_on_le is not None:
         query = query.filter(Schedule.last_trigger_on <= qParam.last_trigger_on_le)
+    # trigger_till based
+    if qParam.trigger_till_ge is not None:
+        query = query.filter(Schedule.trigger_till >= qParam.trigger_till_ge)
+    if qParam.trigger_till_le is not None:
+        query = query.filter(Schedule.trigger_till <= qParam.trigger_till_le)
     # updated_on based
     if qParam.updated_on_ge is not None:
         query = query.filter(Schedule.updated_on >= qParam.updated_on_ge)
@@ -271,6 +292,7 @@ def searchSchedule(
     Requires executive role with `create_schedule` permission.      
     In this bus_id, route_id must be associated with the company.       
     If fare_id is in Local scope, it must be associated with the company.   
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule creation activity with the associated token.
     """,
 )
@@ -307,6 +329,7 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
+        validateTriggerTill(fParam)
 
         schedule = Schedule(
             company_id=fParam.company_id,
@@ -318,6 +341,7 @@ async def create_schedule(
             frequency=fParam.frequency,
             ticketing_mode=fParam.ticketing_mode,
             triggering_mode=fParam.triggering_mode,
+            trigger_till=fParam.trigger_till,
         )
         session.add(schedule)
         session.commit()
@@ -350,6 +374,7 @@ async def create_schedule(
     Requires executive role with `update_schedule` permission.   
     In this bus_id, route_id must be associated with the company.       
     If fare_id is in Local scope, it must be associated with the company.    
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule update activity with the associated token.
     """,
 )
@@ -464,6 +489,7 @@ async def fetch_schedule(
     The company ID is derived from the token, not user input.       
     In this bus_id, route_id must be associated with the company.           
     If fare_id is in Local scope, it must be associated with the company.       
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule creation activity with the associated token.
     """,
 )
@@ -502,6 +528,7 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
+        validateTriggerTill(fParam)
 
         schedule = Schedule(
             company_id=token.company_id,
@@ -513,6 +540,7 @@ async def create_schedule(
             frequency=fParam.frequency,
             ticketing_mode=fParam.ticketing_mode,
             triggering_mode=fParam.triggering_mode,
+            trigger_till=fParam.trigger_till,
         )
         session.add(schedule)
         session.commit()
@@ -544,6 +572,7 @@ async def create_schedule(
     Update an existing schedule belonging to the operator's company.        
     Requires operator role with `update_schedule` permission.       
     Ensures the schedule is owned by the operator's company.        
+    Trigger till must be a future date, it indicates the ending datetime of the schedule.   
     Log the schedule updating activity with the associated token.
     """,
 )

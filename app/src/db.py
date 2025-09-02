@@ -1946,6 +1946,10 @@ class Schedule(ORMbase):
         next_trigger_on (DateTime):
             Timestamp indicating the next scheduled execution time.
             Automatically calculated based on `frequency` and `trigger_mode`.
+        
+        trigger_till (DateTime):
+            Timestamp indicating the last scheduled execution date and time.
+            Optional field.
 
         last_trigger_on (DateTime):
             Timestamp when the schedule was last triggered.
@@ -1978,6 +1982,7 @@ class Schedule(ORMbase):
     triggering_mode = Column(Integer, nullable=False, default=TriggeringMode.AUTO)
     next_trigger_on = Column(DateTime(timezone=True))
     last_trigger_on = Column(DateTime(timezone=True))
+    trigger_till = Column(DateTime(timezone=True))
     # Metadata
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
     created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
