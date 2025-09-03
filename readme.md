@@ -1,11 +1,31 @@
-# Entebus Core Server 
+# 🚍 Entebus Core Server
 
-This API server is built using FastAPI framework to provide a robust, efficient, and scalable solution for related tasks. FastAPI is chosen for its high performance, simplicity, and modern Python features. This application is designed to run as a Docker container in a Kubernetes environment for scalability, resilience, and easy deployment. Please ensure proper configuration and resource allocation in Kubernetes manifests to optimize performance and resource utilization.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-ready-0db7ed?logo=docker)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-ready-326ce5?logo=kubernetes)](https://kubernetes.io/)
 
-## Development Windows 11 (WSL2 Ubuntu + Docker desktop + Kubernetes)
-**Setup WSL2 Ubuntu**
-- Ubuntu 22.04.3 LTS
-- Python 3.12.3
+The **Entebus Core Server** is a high-performance API server built with [FastAPI](https://fastapi.tiangolo.com/). It provides the backbone for managing transport-related data and services. Designed for **containerized environments** (Docker + Kubernetes), it ensures scalability, resilience, and modern developer experience.
+
+## ✨ Features
+
+- ⚡ **High-performance** API with FastAPI + Uvicorn  
+- 🐘 **PostGIS support** for geospatial data  
+- 📦 **MinIO integration** for object storage  
+- 📊 **OpenObserve** for logs, metrics & traces  
+- ⚡ **Redis support** for caching & queues  
+- 🐳 Ready-to-use **Docker image** with CI-friendly tags  
+- ☸️ Deployment ready for **Kubernetes**  
+
+## 🛠️ Getting Started
+
+### Prerequisites
+
+- Ubuntu 22.04+ (WSL2 supported)  
+- Python 3.12+  
+- Docker
+- Kubernetes (optional, for cluster deployment)  
+
+### Local Development Setup
 
 ```
 sudo apt-get update
@@ -24,16 +44,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**VS Code (plugins)**
+### VS Code (plugins)
+
 * Code Spell Checker (streetsidesoftware.code-spell-checker)
 * GitLens (eamodio.gitlens)
 * Python (ms-python.python)
 * Black Formatter (ms-python.black-formatter)
 * autoDocstring (njpwerner.autodocstring)
 
-**PostGIS DB**
+### Dependencies via Docker
 
-The postgis/postgis image provides tags for running Postgres with PostGIS extensions installed. To run the Postgres container, use the following command:
+**PostgreSQL + PostGIS**
+
 ```
 docker run --name postgis \
     -e POSTGRES_PASSWORD=password \
@@ -41,9 +63,8 @@ docker run --name postgis \
     -d postgis/postgis
 ```
 
-**MinIO**
+**MinIO (object storage)**
 
-The minio/minio is an object storage server that can be used to store and serve files. To run the MinIO container, use the following command:
 ```
 docker run --name minio \
     -e MINIO_ROOT_USER=minio \
@@ -53,9 +74,8 @@ docker run --name minio \
     -d minio/minio server /data --console-address ":9001"
 ```
 
-**OpenObserve**
+**OpenObserve (logs, traces, metrics)**
 
-The OpenObserve is used for monitoring logs, traces and metrics. To run the OpenObserve container, use the following command:
 ```
 docker run -d \
     --name openobserve \
@@ -67,7 +87,6 @@ docker run -d \
 
 **Redis DB**
 
-The redis image provides tags for running Redis DB. Redis is an in-memory key-value store, commonly used for caching, real-time analytics, session storage, and queue systems.
 ```
 docker run --name redis \
     -p 6379:6379 \
@@ -75,37 +94,38 @@ docker run --name redis \
     -d redis
 ```
 
-For creating and removing the table and bucket you can use arguments `-cr` and `-rm`. For initializing the table with sample data you can use `-init`. For running the test the Postgres DB must be running and the tables should be created and initialized with sample data.
+## 🚀 Running the Server
+
+### Initialize Database & Test Data
+
 ```
-# Activate the python virtual environment
-# Create all tables and buckets
+# Create tables and buckets
 python3 -m app.setup -cr
+
 # Remove all tables and buckets
 python3 -m app.setup -rm
-# Initialize the table with sample data
+
+# Initialize with sample data
 python3 -m app.setup -init
-```
 
-**Running server**
-
-The preferred server to run the FastAPI application is uvicorn. You can access the API from http://127.0.0.1:8080/docs.
-```
-# Activate the python virtual environment
-# Start the server on port 8080 with hot reload
-uvicorn app.main:app --port 8080 --reload
-```
-
-Once the server is running, you can populate test data using the API endpoints from a new terminal window.
-```
-# Populating Test Data
+# Populate test data (requires server running)
 python3 -m app.setup -test
 ```
 
-Once the server is running, you can run the tests against it using [entebus-api-test](https://github.com/NixbugSoftwares/entebus-api-test). For running the test the Postgres DB must be running and the tables should be created and initialized with sample data.
+### Running server
+
+The preferred server to run the FastAPI application is Uvicorn. You can access the API from http://127.0.0.1:8080/docs.
+```
+# Run with Uvicorn (hot reload enabled)
+uvicorn app.main:app --port 8080 --reload
+```
+
+## 🐳 Docker Image
 
 **Docker Image**
 
-You can build the docker image and run it locally using Docker engine. Once running, the API will be available at http://127.0.0.1:8080/docs. The image is tagged using the format: `<branch-name>-<commit-id>` (for latest image you may add optional tag with `latest` instead of the commit ID).
+Build, run, and push the image:
+The image is tagged using the format: `<branch-name>-<commit-id>` (for latest image you may add optional tag `<branch-name>-latest`).
 ```
 # Building the docker image
 docker build -t docker.nixbug.com/entebus/entebus-core-server:develop-052bd99 \
@@ -125,4 +145,17 @@ docker push docker.nixbug.com/entebus/entebus-core-server:develop-052bd99
 docker pull docker.nixbug.com/entebus/entebus-core-server:develop-latest
 ```
 
+## 🤝 Contributing
 
+Contributions are welcome! 🚀
+Please check out our [Contributing Guide](CONTRIBUTING.md) for guidelines on setting up your dev environment, coding standards, and submitting PRs. This project follows a [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a welcoming community for everyone.
+
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
+Feel free to use, modify, and distribute under the terms of the license.
+
+## 📧 Contact
+
+Developed with ❤️ by Nixbug Softwares OPC Pvt Ltd (contact@nixbug.com).
+For issues or feature requests, please open a GitHub issue.
