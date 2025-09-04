@@ -1,4 +1,5 @@
 import base64, json, requests
+from requests import Response
 
 from app.src.constants import (
     OPENOBSERVE_HOST,
@@ -23,7 +24,7 @@ openobserve_host = f"{OPENOBSERVE_PROTOCOL}://{OPENOBSERVE_HOST}:{OPENOBSERVE_PO
 openobserve_url = f"{openobserve_host}/api/{OPENOBSERVE_ORG}/{OPENOBSERVE_STREAM}/_json"
 
 
-def logEvent(eventData: dict):
+def logEvent(eventData: dict) -> Response:
     """
     Send an event log to the configured OpenObserve instance.
 
