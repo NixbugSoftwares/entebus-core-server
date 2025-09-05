@@ -15,7 +15,7 @@ from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -215,8 +215,8 @@ def searchVendor(
     tags=["Vendor Account"],
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new vendor account with an active status.       
@@ -264,8 +264,12 @@ async def create_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     response_model=VendorSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing vendor account.       
@@ -311,8 +315,8 @@ async def update_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing vendor by ID.  
@@ -349,7 +353,7 @@ async def delete_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Vendor Account"],
     response_model=List[VendorSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch vendor accounts with filtering, sorting, and pagination.    
     Filter by business_id, username, gender, designation, contact details, status, and creation/update timestamps.   
@@ -380,8 +384,8 @@ async def fetch_vendor(
     tags=["Account"],
     response_model=VendorSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new vendor account with an active status, associated with the current vendor business.     
@@ -430,8 +434,12 @@ async def create_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Account"],
     response_model=VendorSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing vendor account associated with the current vendor business.      
@@ -491,8 +499,8 @@ async def update_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an vendor account associated with the current vendor business.        
@@ -540,7 +548,7 @@ async def delete_vendor(
     URL_VENDOR_ACCOUNT,
     tags=["Account"],
     response_model=List[VendorSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch the vendor information associated with the current vendor business.     
     Filter by username, gender, designation, contact details, status, and creation/update timestamps.      

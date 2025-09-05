@@ -14,7 +14,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.urls import URL_EXECUTIVE_PICTURE
 from app.src.minio import uploadFile, downloadFile, deleteFile
-from app.src.functions import enumStr, makeExceptionResponses, splitMIME, resizeImage
+from app.src.functions import enumStr, fuseExceptionResponses, splitMIME, resizeImage
 
 route_executive = APIRouter()
 
@@ -85,8 +85,8 @@ class QueryParams(BaseModel):
     tags=["Account Picture"],
     response_model=ExecutiveImageSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidImageFile]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission(), exceptions.InvalidImageFile()]
     ),
     description="""
     Upload the executive's profile picture. 
@@ -147,8 +147,8 @@ async def upload_executive_picture(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an executive's profile picture.  
@@ -202,7 +202,7 @@ async def delete_executive_picture(
     URL_EXECUTIVE_PICTURE,
     tags=["Account Picture"],
     response_model=list[ExecutiveImageSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch metadata of all executive profile pictures with filtering, sorting, and pagination.   
     Filter by file name file type, file size, id's and creation/update timestamps.   
@@ -268,8 +268,8 @@ async def fetch_executive_pictures(
 @route_executive.get(
     f"{URL_EXECUTIVE_PICTURE}" + "/{id}",
     tags=["Account Picture"],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.InvalidIdentifier()]
     ),
     description="""
     Download executive profile picture in original or resized resolution.   

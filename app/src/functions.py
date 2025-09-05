@@ -19,27 +19,26 @@ def getRequestInfo(request: Request) -> schemas.RequestInfo:
     return {"method": request.method, "path": request.url.path, "app_id": app_id}
 
 
-def makeExceptionResponses(exceptions: List[Union[Type[APIException], APIException]]):
+def fuseExceptionResponses(exceptions: List[APIException]) -> Dict[int, dict]:
+    """
+    Generate OpenAPI response documentation by fusing multiple APIException instances.
+
+    Args:
+        exceptions (List[APIException]): List of instantiated exceptions.
+
+    Returns:
+        Dict[int, dict]: A dictionary of OpenAPI response specs grouped by status code.
+    """
     responses = {}
 
-    for exc in exceptions:
-        if isinstance(exc, APIException):
-            # It's an instance — use it directly
-            exception = exc
-            example_key = type(exc).__name__
-        else:
-            # It's a class — try to instantiate with no args
-            try:
-                exception = exc()
-                example_key = exc.__name__
-            except Exception:
-                continue  # skip if we can't instantiate
-
+    for exception in exceptions:
         status_code = exception.status_code
+        example_key = type(exception).__name__
         example_value = {
             "summary": str(exception.headers),
             "value": {"detail": exception.detail},
         }
+
         if status_code not in responses:
             responses[status_code] = {
                 "model": schemas.ErrorResponse,
@@ -51,6 +50,7 @@ def makeExceptionResponses(exceptions: List[Union[Type[APIException], APIExcepti
             responses[status_code]["content"]["application/json"]["examples"][
                 example_key
             ] = example_value
+
     return responses
 
 

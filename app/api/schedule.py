@@ -23,7 +23,7 @@ from app.src.enums import Day, FareScope, TicketingMode, TriggeringMode
 from app.src.constants import TMZ_PRIMARY
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -279,10 +279,10 @@ def searchSchedule(
     tags=["Schedule"],
     response_model=ScheduleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Schedule.bus_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
@@ -360,11 +360,11 @@ async def create_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(Schedule.route_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
@@ -413,8 +413,8 @@ async def update_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing schedule by ID.      
@@ -449,7 +449,7 @@ async def delete_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     response_model=List[ScheduleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all schedules across companies.     
     Only available to users with a valid executive token.       
@@ -476,10 +476,10 @@ async def fetch_schedule(
     tags=["Schedule"],
     response_model=ScheduleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Schedule.bus_id),
         ]
     ),
@@ -559,11 +559,11 @@ async def create_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     response_model=ScheduleSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(Schedule.route_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
         ]
@@ -616,8 +616,8 @@ async def update_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing schedule by ID.          
@@ -659,7 +659,7 @@ async def delete_schedule(
     URL_SCHEDULE,
     tags=["Schedule"],
     response_model=List[ScheduleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all schedules owned by the operator's company.          
     Only available to users with a valid operator token.        

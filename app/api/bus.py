@@ -14,7 +14,7 @@ from app.src.enums import BusStatus
 from app.src.constants import REGEX_REGISTRATION_NUMBER
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -258,8 +258,8 @@ def searchBus(
     tags=["Bus"],
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new bus for a specified  company.     
@@ -309,8 +309,12 @@ async def create_bus(
     URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing bus belonging to any company.       
@@ -355,8 +359,8 @@ async def update_bus(
     URL_BUS,
     tags=["Bus"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing bus belonging to any company.       
@@ -392,7 +396,7 @@ async def delete_bus(
 @route_executive.get(
     URL_BUS,
     tags=["Bus"],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     response_model=List[BusSchema],
     description="""
     Fetches a list of all buses across companies.       
@@ -420,7 +424,7 @@ async def fetch_buses(
     URL_BUS,
     tags=["Bus"],
     response_model=List[BusSchemaForVE],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of buses across companies based on provided query parameters.        
     Requires a valid vendor token for authentication.       
@@ -452,8 +456,8 @@ async def fetch_tokens(
     tags=["Bus"],
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new bus for for the operator's own company.       
@@ -504,8 +508,12 @@ async def create_bus(
     URL_BUS,
     tags=["Bus"],
     response_model=BusSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing bus belonging to the operator's associated company.     
@@ -556,8 +564,8 @@ async def update_bus(
     URL_BUS,
     tags=["Bus"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing bus belonging to the operator's associated company.     
@@ -599,7 +607,7 @@ async def delete_bus(
     URL_BUS,
     tags=["Bus"],
     response_model=List[BusSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of buses associated with the operator's company.     
     Requires a valid operator token.        

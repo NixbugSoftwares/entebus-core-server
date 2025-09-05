@@ -9,7 +9,7 @@ from app.api.bearer import bearer_executive
 from app.src.db import ExecutiveRole, ExecutiveRoleMap, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import enumStr, fuseExceptionResponses, updateIfChanged
 from app.src.urls import URL_EXECUTIVE_ROLE_MAP
 
 route_executive = APIRouter()
@@ -79,8 +79,8 @@ class QueryParams(BaseModel):
     tags=["Role Map"],
     response_model=ExecutiveRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Assign a role to an executive account.    
@@ -119,8 +119,12 @@ async def create_role_map(
     URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     response_model=ExecutiveRoleMapSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing role maps.       
@@ -169,8 +173,8 @@ async def update_role_map(
     URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing role maps.       
@@ -211,7 +215,7 @@ async def delete_role_map(
     URL_EXECUTIVE_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[ExecutiveRoleMapSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all executive role maps.       
     Supports filtering by ID and metadata.   

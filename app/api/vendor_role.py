@@ -12,7 +12,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -207,8 +207,8 @@ def searchRole(
     tags=["Vendor Role"],
     response_model=VendorRoleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new vendor role.     
@@ -257,8 +257,12 @@ async def create_role(
     URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     response_model=VendorRoleSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing vendor role.       
@@ -303,8 +307,8 @@ async def update_role(
     URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing vendor role.       
@@ -341,7 +345,7 @@ async def delete_role(
     URL_VENDOR_ROLE,
     tags=["Vendor Role"],
     response_model=List[VendorRoleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all vendor role across business.       
     Supports filtering by ID, name, permissions and metadata.   
@@ -369,8 +373,8 @@ async def fetch_role(
     tags=["Role"],
     response_model=VendorRoleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new vendor role, associated with the current vendor business.     
@@ -419,8 +423,12 @@ async def create_role(
     URL_VENDOR_ROLE,
     tags=["Role"],
     response_model=VendorRoleSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing vendor role associated with the current vendor business.             
@@ -470,8 +478,8 @@ async def update_role(
     URL_VENDOR_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing vendor role.       
@@ -513,7 +521,7 @@ async def delete_role(
     URL_VENDOR_ROLE,
     tags=["Role"],
     response_model=List[VendorRoleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all vendor role across business.       
     Supports filtering by ID, name, permissions and metadata.   

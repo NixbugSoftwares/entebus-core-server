@@ -10,7 +10,7 @@ from app.api.bearer import bearer_executive, bearer_operator
 from app.src.db import PaperTicket, Service, Duty, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.dynamic_fare import v1
 from app.src.urls import URL_PAPER_TICKET
 from app.src.enums import DutyStatus
@@ -164,7 +164,7 @@ def searchPaperTicket(
     URL_PAPER_TICKET,
     tags=["Paper Ticket"],
     response_model=List[PaperTicketSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all paper tickets across companies.       
     Supports filtering like ID, amount range, ID range, sequence range and metadata.    
@@ -193,15 +193,15 @@ async def fetch_paper_ticket(
     tags=["Paper Ticket"],
     response_model=PaperTicketSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
+            exceptions.InvalidToken(),
             exceptions.UnknownValue(PaperTicket.service_id),
             exceptions.UnknownTicketType("ticket_type"),
-            exceptions.InvalidFareFunction,
-            exceptions.JSMemoryLimitExceeded,
-            exceptions.JSTimeLimitExceeded,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidFareFunction(),
+            exceptions.JSMemoryLimitExceeded(),
+            exceptions.JSTimeLimitExceeded(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -328,7 +328,7 @@ async def create_paper_ticket(
     URL_PAPER_TICKET,
     tags=["Paper Ticket"],
     response_model=List[PaperTicketSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all paper tickets for operator company.       
     Supports filtering like ID, amount range, ID range, sequence range and metadata.   

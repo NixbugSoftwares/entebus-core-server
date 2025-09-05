@@ -16,7 +16,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -180,11 +180,11 @@ def searchServiceTrace(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
     response_model=List[ServiceTraceSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -212,11 +212,11 @@ async def fetch_service_trace(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
     response_model=List[ServiceTraceSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -243,12 +243,12 @@ async def fetch_service_trace(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
     response_model=ServiceTraceSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
             exceptions.UnknownValue(ServiceTrace.duty_id),
             exceptions.InvalidValue(ServiceTrace.duty_id),
             exceptions.InvalidAssociation(
@@ -360,11 +360,11 @@ async def update_service_trace(
     URL_SERVICE_TRACE,
     tags=["Service Trace"],
     response_model=List[ServiceTraceSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""

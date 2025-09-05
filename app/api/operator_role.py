@@ -12,7 +12,7 @@ from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -345,8 +345,8 @@ def searchRole(
     tags=["Operator Role"],
     response_model=OperatorRoleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new operator role.     
@@ -413,11 +413,11 @@ async def create_role(
     URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     response_model=OperatorRoleSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
         ]
     ),
     description="""
@@ -463,8 +463,8 @@ async def update_role(
     URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing operator role.       
@@ -501,7 +501,7 @@ async def delete_role(
     URL_OPERATOR_ROLE,
     tags=["Operator Role"],
     response_model=List[OperatorRoleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all operator role across companies.       
     Supports filtering by ID, name, permissions and metadata.   
@@ -529,8 +529,8 @@ async def fetch_role(
     tags=["Role"],
     response_model=OperatorRoleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new operator role, associated with the current operator company.     
@@ -597,8 +597,12 @@ async def create_role(
     URL_OPERATOR_ROLE,
     tags=["Role"],
     response_model=OperatorRoleSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing operator role associated with the current operator company.             
@@ -648,8 +652,8 @@ async def update_role(
     URL_OPERATOR_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing operator role.       
@@ -691,7 +695,7 @@ async def delete_role(
     URL_OPERATOR_ROLE,
     tags=["Role"],
     response_model=List[OperatorRoleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all operator role across companies.       
     Supports filtering by ID, name, permissions and metadata.   

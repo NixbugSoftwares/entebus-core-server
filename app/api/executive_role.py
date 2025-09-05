@@ -9,7 +9,7 @@ from app.api.bearer import bearer_executive
 from app.src.db import ExecutiveRole, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import enumStr, fuseExceptionResponses, updateIfChanged
 from app.src.urls import URL_EXECUTIVE_ROLE
 
 route_executive = APIRouter()
@@ -284,8 +284,8 @@ class QueryParams(BaseModel):
     tags=["Role"],
     response_model=ExecutiveRoleSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new executive role.     
@@ -373,8 +373,12 @@ async def create_role(
     URL_EXECUTIVE_ROLE,
     tags=["Role"],
     response_model=ExecutiveRoleSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing role.       
@@ -474,8 +478,8 @@ async def update_role(
     URL_EXECUTIVE_ROLE,
     tags=["Role"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing role.       
@@ -514,7 +518,7 @@ async def delete_role(
     URL_EXECUTIVE_ROLE,
     tags=["Role"],
     response_model=List[ExecutiveRoleSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all executive role.       
     Supports filtering by ID, name, permissions and metadata.   

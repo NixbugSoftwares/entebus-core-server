@@ -14,7 +14,7 @@ from app.src.loggers import logEvent
 from app.src.enums import FareScope
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -190,17 +190,17 @@ def searchFare(
     tags=["Fare"],
     response_model=FareSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnexpectedParameter(Fare.company_id),
             exceptions.MissingParameter(Fare.company_id),
             exceptions.UnknownTicketType("ticket_type"),
-            exceptions.InvalidFareFunction,
-            exceptions.JSMemoryLimitExceeded,
-            exceptions.JSTimeLimitExceeded,
-            exceptions.InvalidFareVersion,
+            exceptions.InvalidFareFunction(),
+            exceptions.JSMemoryLimitExceeded(),
+            exceptions.JSTimeLimitExceeded(),
+            exceptions.InvalidFareVersion(),
         ]
     ),
     description="""
@@ -260,16 +260,16 @@ async def create_fare(
     URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownTicketType("ticket_type"),
-            exceptions.InvalidFareFunction,
-            exceptions.JSMemoryLimitExceeded,
-            exceptions.JSTimeLimitExceeded,
-            exceptions.InvalidFareVersion,
+            exceptions.InvalidFareFunction(),
+            exceptions.JSMemoryLimitExceeded(),
+            exceptions.JSTimeLimitExceeded(),
+            exceptions.InvalidFareVersion(),
         ]
     ),
     description="""
@@ -325,8 +325,8 @@ async def update_fare(
     URL_FARE,
     tags=["Fare"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing fare.       
@@ -363,7 +363,7 @@ async def delete_fare(
     URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all fares across Global and Local scope.       
     Supports filtering by company ID, name, scope and metadata.  
@@ -391,7 +391,7 @@ async def fetch_fare(
     URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all fare across  Global and Local scope.   
     Only available to users with a valid vendor token.     
@@ -419,13 +419,13 @@ async def fetch_route(
     tags=["Fare"],
     response_model=FareSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownTicketType("ticket_type"),
-            exceptions.InvalidFareFunction,
-            exceptions.InvalidFareVersion,
+            exceptions.InvalidFareFunction(),
+            exceptions.InvalidFareVersion(),
         ]
     ),
     description="""
@@ -479,14 +479,14 @@ async def create_fare(
     URL_FARE,
     tags=["Fare"],
     response_model=FareSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownTicketType("ticket_type"),
-            exceptions.InvalidFareFunction,
-            exceptions.InvalidFareVersion,
+            exceptions.InvalidFareFunction(),
+            exceptions.InvalidFareVersion(),
         ]
     ),
     description="""
@@ -545,8 +545,8 @@ async def update_fare(
     URL_FARE,
     tags=["Fare"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing fare belonging to the operator's associated company.     
@@ -587,7 +587,7 @@ async def delete_fare(
     URL_FARE,
     tags=["Fare"],
     response_model=List[FareSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of fares associated with the operator's company and in global scope.     
     Requires a valid operator token.        

@@ -13,7 +13,7 @@ from app.src.db import ExecutiveRole, Vendor, VendorToken, Business, sessionMake
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType, BusinessStatus
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.urls import URL_VENDOR_TOKEN
 
 route_vendor = APIRouter()
@@ -152,11 +152,11 @@ def searchVendorToken(
 
 ## API endpoints [Executive]
 @route_executive.get(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Vendor Token"],
     response_model=List[MaskedVendorTokenSchema],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Fetches a list of vendor tokens belonging to a business, filtered by optional query parameters.     
@@ -183,11 +183,11 @@ async def fetch_tokens(
 
 
 @route_executive.delete(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Vendor Token"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Revokes an access token associated with an vendor account.      
@@ -228,14 +228,14 @@ async def delete_token(
 
 ## API endpoints [Vendor]
 @route_vendor.post(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Token"],
     response_model=VendorTokenSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InactiveAccount,
-            exceptions.InvalidCredentials,
+            exceptions.InactiveAccount(),
+            exceptions.InvalidCredentials(),
             exceptions.InactiveResource(Business),
         ]
     ),
@@ -314,11 +314,15 @@ async def create_token(
 
 
 @route_vendor.patch(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Token"],
     response_model=VendorTokenSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Refreshes an existing vendor access token.      
@@ -369,11 +373,11 @@ async def refresh_token(
 
 
 @route_vendor.delete(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Revokes an active access token associated with an vendor account.   
@@ -427,10 +431,10 @@ async def delete_token(
 
 
 @route_vendor.get(
-    URL_VENDOR_TOKEN ,
+    URL_VENDOR_TOKEN,
     tags=["Token"],
     response_model=List[MaskedVendorTokenSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of vendor tokens filtered by optional query parameters.      
     Vendors without `manage_token` permission can only retrieve their own tokens.       

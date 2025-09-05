@@ -16,7 +16,7 @@ from app.src.db import (
 )
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.urls import URL_OPERATOR_ROLE_MAP
 
 route_executive = APIRouter()
@@ -162,10 +162,10 @@ def searchRoleMap(
     tags=["Operator Role Map"],
     response_model=OperatorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(OperatorRoleMap.operator_id),
             exceptions.InvalidAssociation(
                 OperatorRoleMap.role_id, OperatorRoleMap.company_id
@@ -220,11 +220,11 @@ async def create_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     response_model=OperatorRoleMapSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(OperatorRoleMap.role_id),
             exceptions.InvalidAssociation(
                 OperatorRoleMap.role_id, OperatorRoleMap.company_id
@@ -277,8 +277,8 @@ async def update_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing operator role maps.       
@@ -319,7 +319,7 @@ async def delete_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Operator Role Map"],
     response_model=List[OperatorRoleMapSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all operator role maps across companies.       
     Supports filtering by ID and metadata.   
@@ -347,10 +347,10 @@ async def fetch_role_map(
     tags=["Role Map"],
     response_model=OperatorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(OperatorRoleMap.operator_id),
             exceptions.InvalidAssociation(
                 OperatorRoleMap.role_id, OperatorRoleMap.company_id
@@ -409,11 +409,11 @@ async def create_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=OperatorRoleMapSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(OperatorRoleMap.role_id),
             exceptions.InvalidAssociation(
                 OperatorRoleMap.role_id, OperatorRoleMap.company_id
@@ -467,8 +467,8 @@ async def update_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing operator role map.       
@@ -510,7 +510,7 @@ async def delete_role_map(
     URL_OPERATOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[OperatorRoleMapSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all operator role maps for the current operator company.       
     Supports filtering by ID and metadata.   

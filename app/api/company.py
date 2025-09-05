@@ -26,7 +26,7 @@ from app.src.enums import CompanyStatus, CompanyType
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -291,12 +291,12 @@ def searchCompany(
     tags=["Company"],
     response_model=CompanySchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -365,13 +365,13 @@ async def create_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=CompanySchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
             exceptions.InvalidStateTransition("status"),
         ]
     ),
@@ -422,8 +422,8 @@ async def update_company(
     URL_COMPANY,
     tags=["Company"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing company by ID.  
@@ -460,11 +460,11 @@ async def delete_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -492,11 +492,11 @@ async def fetch_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchemaForVE],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -528,13 +528,13 @@ async def fetch_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=CompanySchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -582,11 +582,11 @@ async def update_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -622,8 +622,8 @@ async def fetch_company(
     URL_COMPANY,
     tags=["Company"],
     response_model=List[CompanySchemaForVE],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidWKTStringOrType, exceptions.InvalidSRID4326]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidWKTStringOrType(), exceptions.InvalidSRID4326()]
     ),
     description="""
     Fetch the company information with optional filters like name, type, location, etc.  

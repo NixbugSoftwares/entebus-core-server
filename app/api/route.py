@@ -13,7 +13,7 @@ from app.src.loggers import logEvent
 from app.src.redis import acquireLock, releaseLock
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -157,8 +157,8 @@ def searchRoute(
     tags=["Route"],
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new route for a specified company.  
@@ -198,8 +198,12 @@ async def create_route(
     URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Update an existing route by ID.  
@@ -242,11 +246,11 @@ async def update_route(
     URL_ROUTE,
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -287,7 +291,7 @@ async def delete_route(
     URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all routes across companies.  
     Supports filtering by company ID, name, time, and metadata.  
@@ -313,7 +317,7 @@ async def fetch_route(
     URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all routes across companies.  
     Only available to users with a valid vendor token.  
@@ -338,8 +342,8 @@ async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_ven
     tags=["Route"],
     response_model=RouteSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new route for the operator's own company.  
@@ -379,8 +383,12 @@ async def create_route(
     URL_ROUTE,
     tags=["Route"],
     response_model=RouteSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Update an existing route belonging to the operator's company.  
@@ -428,11 +436,11 @@ async def update_route(
     URL_ROUTE,
     tags=["Route"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -478,7 +486,7 @@ async def delete_route(
     URL_ROUTE,
     tags=["Route"],
     response_model=List[RouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of routes belonging to the operator's own company.  
     Supports filters like ID, time, name, and creation timestamps.  

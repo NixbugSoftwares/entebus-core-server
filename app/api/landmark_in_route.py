@@ -15,7 +15,7 @@ from app.src.urls import URL_LANDMARK_IN_ROUTE
 from app.src.redis import acquireLock, releaseLock
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -219,13 +219,13 @@ def searchLandmarkInRoute(
     tags=["Landmark In Route"],
     response_model=LandmarkInRouteSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(LandmarkInRoute.route_id),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -279,13 +279,13 @@ async def create_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     response_model=LandmarkInRouteSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -348,11 +348,11 @@ async def update_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -410,7 +410,7 @@ async def delete_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     response_model=List[LandmarkInRouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch all landmarks assigned to routes.  
     Supports filtering by route ID, landmark ID, distance, delta times, etc.  
@@ -436,7 +436,7 @@ async def fetch_landmarks_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     response_model=List[LandmarkInRouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch all landmark-in-route records viewable by vendors.  
     Supports filters like route ID, landmark ID, timing offsets, etc.  
@@ -463,13 +463,13 @@ async def fetch_landmarks_in_route(
     tags=["Landmark In Route"],
     response_model=LandmarkInRouteSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(LandmarkInRoute.route_id),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -529,13 +529,13 @@ async def create_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     response_model=LandmarkInRouteSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidValue(LandmarkInRoute.arrival_delta),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -598,11 +598,11 @@ async def update_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -662,7 +662,7 @@ async def delete_landmark_in_route(
     URL_LANDMARK_IN_ROUTE,
     tags=["Landmark In Route"],
     response_model=List[LandmarkInRouteSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch all landmark-route mappings that belong to the operator's company.  
     Supports filtering by route ID, landmark ID, and time-based metrics.  

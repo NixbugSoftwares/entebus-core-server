@@ -22,7 +22,7 @@ from app.src.constants import SERVICE_START_BUFFER_TIME, MAX_DUTY_PER_SERVICE
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import DutyStatus, ServiceStatus, AccountStatus
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.urls import URL_DUTY
 from app.src.redis import acquireLock, releaseLock
 
@@ -216,16 +216,16 @@ def searchDuty(
     tags=["Duty"],
     response_model=DutySchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Service),
             exceptions.ExceededMaxLimit(Duty),
             exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -314,13 +314,13 @@ async def create_duty(
     URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidStateTransition("status"),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -393,8 +393,12 @@ async def update_duty(
     URL_DUTY,
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.DataInUse(Duty)]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.DataInUse(Duty),
+        ]
     ),
     description="""
     Delete an existing duty by ID.   
@@ -436,7 +440,7 @@ async def delete_duty(
     URL_DUTY,
     tags=["Duty"],
     response_model=list[DutySchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all duties across companies.     
     Only available to users with a valid executive token.       
@@ -463,16 +467,16 @@ async def get_duties(
     tags=["Duty"],
     response_model=DutySchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Duty.service_id),
             exceptions.InvalidAssociation(Duty.operator_id, Duty.company_id),
             exceptions.InactiveResource(Duty),
             exceptions.ExceededMaxLimit(Duty),
             exceptions.DuplicateDuty(Duty.operator_id, Duty.service_id),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -583,13 +587,13 @@ async def create_duty(
     URL_DUTY,
     tags=["Duty"],
     response_model=DutySchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidStateTransition("status"),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -675,8 +679,12 @@ async def update_duty(
     URL_DUTY,
     tags=["Duty"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.DataInUse(Duty)]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.DataInUse(Duty),
+        ]
     ),
     description="""
     Delete an existing duty by ID.    
@@ -724,7 +732,7 @@ async def delete_duty(
     URL_DUTY,
     tags=["Duty"],
     response_model=list[DutySchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all duties across companies.     
     Only available to users with a valid operator token.       

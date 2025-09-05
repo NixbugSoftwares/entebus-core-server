@@ -37,7 +37,7 @@ from app.src.enums import (
 )
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -404,16 +404,16 @@ def searchTriggerSchedules(
     tags=["Service"],
     response_model=ServiceSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Service.bus_id),
             exceptions.InvalidAssociation(Service.fare, Service.company_id),
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
             exceptions.InvalidValue(Service.starting_at),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -514,11 +514,11 @@ async def create_service(
     URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidStateTransition("status"),
             exceptions.DataInUse(Service),
         ]
@@ -573,10 +573,10 @@ async def update_service(
     URL_SERVICE,
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.DataInUse(Service),
         ]
     ),
@@ -621,7 +621,7 @@ async def delete_service(
     URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all services across companies.     
     Only available to users with a valid executive token.       
@@ -648,15 +648,15 @@ async def fetch_service(
     tags=["Scheduled Trigger"],
     response_model=ServiceSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Service.schedule_id),
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
             exceptions.InvalidValue(Service.starting_at),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -782,7 +782,7 @@ async def create_scheduled_trigger(
     tags=["Scheduled Trigger"],
     response_model=List[ServiceSchema],
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch the list of all services created by the trigger.       
     Only available to users with a valid executive token.       
@@ -809,7 +809,7 @@ async def fetch_scheduled_trigger(
     URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchemaForVE],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all service  which are in CREATED or STARTED status across companies.   
     Only available to users with a valid vendor token.      
@@ -842,16 +842,16 @@ async def fetch_route(
     tags=["Service"],
     response_model=ServiceSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(Service.bus_id),
             exceptions.InvalidAssociation(Service.fare, Service.company_id),
             exceptions.InactiveResource(Bus),
             exceptions.InvalidRoute(),
             exceptions.InvalidValue(Service.starting_at),
-            exceptions.LockAcquireTimeout,
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -959,11 +959,11 @@ async def create_service(
     URL_SERVICE,
     tags=["Service"],
     response_model=ServiceSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.InvalidStateTransition("status"),
             exceptions.DataInUse(Service),
         ]
@@ -1023,10 +1023,10 @@ async def update_service(
     URL_SERVICE,
     tags=["Service"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.DataInUse(Service),
         ]
     ),
@@ -1077,7 +1077,7 @@ async def delete_service(
     URL_SERVICE,
     tags=["Service"],
     response_model=List[ServiceSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch a list of all services owned by the operator's company.          
     Only available to users with a valid operator token.        
@@ -1104,7 +1104,7 @@ async def fetch_service(
     URL_SCHEDULE_TRIGGER,
     tags=["Scheduled Trigger"],
     response_model=List[ServiceSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch the list of all services created by the trigger.           
     Only available to users with a valid operator token.        

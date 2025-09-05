@@ -19,7 +19,7 @@ from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.minio import deleteFile
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import enumStr, fuseExceptionResponses, updateIfChanged
 from app.src.urls import URL_EXECUTIVE_ACCOUNT
 
 route_executive = APIRouter()
@@ -129,8 +129,8 @@ class QueryParams(BaseModel):
     tags=["Account"],
     response_model=ExecutiveSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Create a new executive account.     
@@ -177,8 +177,12 @@ async def create_executive(
     URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     response_model=ExecutiveSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Update an existing executive account.   
@@ -251,8 +255,8 @@ async def update_executive(
     URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an executive account.    
@@ -302,7 +306,7 @@ async def delete_executive(
     URL_EXECUTIVE_ACCOUNT,
     tags=["Account"],
     response_model=List[ExecutiveSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch executive accounts with filtering, sorting, and pagination.   
     Filter by username, gender, designation, contact details, status, and creation/update timestamps.   

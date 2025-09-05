@@ -12,7 +12,7 @@ from app.src.db import Executive, ExecutiveToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses
+from app.src.functions import enumStr, fuseExceptionResponses
 from app.src.urls import URL_EXECUTIVE_TOKEN
 
 route_executive = APIRouter()
@@ -95,8 +95,8 @@ class QueryParams(BaseModel):
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InactiveAccount, exceptions.InvalidCredentials]
+    responses=fuseExceptionResponses(
+        [exceptions.InactiveAccount(), exceptions.InvalidCredentials()]
     ),
     description="""
     Issues a new access token for an executive after validating credentials.    
@@ -165,8 +165,12 @@ async def create_token(
     URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     response_model=ExecutiveTokenSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Refreshes an existing executive access token.
@@ -221,8 +225,8 @@ async def refresh_token(
     URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Revokes an active access token associated with an executive account.    
@@ -277,7 +281,7 @@ async def delete_token(
     URL_EXECUTIVE_TOKEN,
     tags=["Token"],
     response_model=List[MaskedExecutiveTokenSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Retrieves access tokens associated with executive accounts.     
     If the authenticated user has the `manage_ex_token` permission, all masked tokens from the ExecutiveToken table are returned.     

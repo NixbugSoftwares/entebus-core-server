@@ -26,7 +26,7 @@ from app.src.enums import BusinessStatus, BusinessType
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -286,12 +286,12 @@ def searchBusiness(
     tags=["Business"],
     response_model=BusinessSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -361,13 +361,13 @@ async def create_business(
     URL_BUSINESS,
     tags=["Business"],
     response_model=BusinessSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -413,8 +413,8 @@ async def update_business(
     URL_BUSINESS,
     tags=["Business"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing business by ID.  
@@ -451,11 +451,11 @@ async def delete_business(
     URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -483,13 +483,13 @@ async def fetch_business(
     URL_BUSINESS,
     tags=["Business"],
     response_model=BusinessSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -537,10 +537,10 @@ async def update_business(
     URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.InvalidIdentifier(),
         ]
     ),
     description="""
@@ -577,10 +577,10 @@ async def fetch_business(
     URL_BUSINESS,
     tags=["Business"],
     response_model=List[BusinessSchemaForPU],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""

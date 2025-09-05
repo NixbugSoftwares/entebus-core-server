@@ -21,7 +21,7 @@ from app.src.enums import AccountStatus, GenderType
 from app.src.loggers import logEvent
 from app.src.functions import (
     enumStr,
-    makeExceptionResponses,
+    fuseExceptionResponses,
     updateIfChanged,
     promoteToParent,
 )
@@ -217,12 +217,12 @@ def searchOperator(
 
 ## API endpoints [Executive]
 @route_executive.post(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Operator Account"],
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new operator account with an active status.       
@@ -267,11 +267,15 @@ async def create_operator(
 
 
 @route_executive.patch(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Operator Account"],
     response_model=OperatorSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing operator account.       
@@ -314,11 +318,11 @@ async def update_operator(
 
 
 @route_executive.delete(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Operator Account"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing operator by ID.  
@@ -352,10 +356,10 @@ async def delete_operator(
 
 
 @route_executive.get(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Operator Account"],
     response_model=List[OperatorSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch operator accounts with filtering, sorting, and pagination.    
     Filter by company_id, username, gender, designation, contact details, status, and creation/update timestamps.   
@@ -382,12 +386,12 @@ async def fetch_operator(
 
 ## API endpoints [Operator]
 @route_operator.post(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Account"],
     response_model=OperatorSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Creates a new operator account with an active status, associated with the current operator company.     
@@ -434,11 +438,15 @@ async def create_operator(
 
 
 @route_operator.patch(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Account"],
     response_model=OperatorSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Updates an existing operator account associated with the current operator company.      
@@ -495,11 +503,11 @@ async def update_operator(
 
 
 @route_operator.delete(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Account"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an operator account associated with the current operator company.        
@@ -544,10 +552,10 @@ async def delete_operator(
 
 
 @route_operator.get(
-    URL_OPERATOR_ACCOUNT ,
+    URL_OPERATOR_ACCOUNT,
     tags=["Account"],
     response_model=List[OperatorSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetch the operator information associated with the current operator company.     
     Filter by username, gender, designation, contact details, status, and creation/update timestamps.      

@@ -16,7 +16,7 @@ from app.src.db import BusStop, Landmark, ExecutiveRole, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.enums import LandmarkType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, getArea, makeExceptionResponses, updateIfChanged
+from app.src.functions import enumStr, getArea, fuseExceptionResponses, updateIfChanged
 from app.src.urls import URL_LANDMARK
 from app.src.redis import acquireLock, releaseLock
 
@@ -197,16 +197,16 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
     tags=["Landmark"],
     response_model=LandmarkSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-            exceptions.InvalidAABB,
-            exceptions.InvalidBoundaryArea,
-            exceptions.OverlappingLandmarkBoundary,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
+            exceptions.InvalidAABB(),
+            exceptions.InvalidBoundaryArea(),
+            exceptions.OverlappingLandmarkBoundary(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -253,18 +253,18 @@ async def create_landmark(
     URL_LANDMARK,
     tags=["Landmark"],
     response_model=LandmarkSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-            exceptions.InvalidAABB,
-            exceptions.InvalidBoundaryArea,
-            exceptions.BusStopOutsideLandmark,
-            exceptions.OverlappingLandmarkBoundary,
-            exceptions.LockAcquireTimeout,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
+            exceptions.InvalidAABB(),
+            exceptions.InvalidBoundaryArea(),
+            exceptions.BusStopOutsideLandmark(),
+            exceptions.OverlappingLandmarkBoundary(),
+            exceptions.LockAcquireTimeout(),
         ]
     ),
     description="""
@@ -329,8 +329,8 @@ async def update_landmark(
     URL_LANDMARK,
     tags=["Landmark"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete an existing landmark by ID.  
@@ -367,11 +367,11 @@ async def delete_landmark(
     URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -399,11 +399,11 @@ async def fetch_landmark(
     URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -430,11 +430,11 @@ async def fetch_landmark(
     URL_LANDMARK,
     tags=["Landmark"],
     response_model=List[LandmarkSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""

@@ -16,7 +16,7 @@ from app.src.db import (
 )
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.urls import URL_VENDOR_ROLE_MAP
 
 route_executive = APIRouter()
@@ -158,10 +158,10 @@ def searchRoleMap(
     tags=["Vendor Role Map"],
     response_model=VendorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(VendorRoleMap.vendor_id),
             exceptions.InvalidAssociation(
                 VendorRoleMap.role_id, VendorRoleMap.business_id
@@ -210,11 +210,11 @@ async def create_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     response_model=VendorRoleMapSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(VendorRoleMap.role_id),
             exceptions.InvalidAssociation(
                 VendorRoleMap.role_id, VendorRoleMap.business_id
@@ -265,8 +265,8 @@ async def update_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing vendor role maps.       
@@ -305,7 +305,7 @@ async def delete_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Vendor Role Map"],
     response_model=List[VendorRoleMapSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all vendor role maps across business.       
     Supports filtering by ID and metadata.   
@@ -333,10 +333,10 @@ async def fetch_role_map(
     tags=["Role Map"],
     response_model=VendorRoleMapSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
             exceptions.UnknownValue(VendorRoleMap.vendor_id),
             exceptions.InvalidAssociation(
                 VendorRoleMap.role_id, VendorRoleMap.business_id
@@ -395,11 +395,11 @@ async def create_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=VendorRoleMapSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(VendorRoleMap.role_id),
             exceptions.InvalidAssociation(
                 VendorRoleMap.role_id, VendorRoleMap.business_id
@@ -453,8 +453,8 @@ async def update_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Deletes an existing vendor role map.       
@@ -496,7 +496,7 @@ async def delete_role_map(
     URL_VENDOR_ROLE_MAP,
     tags=["Role Map"],
     response_model=List[VendorRoleMapSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of all vendor role maps for the current vendor business.       
     Supports filtering by ID and metadata.   

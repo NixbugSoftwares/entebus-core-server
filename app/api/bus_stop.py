@@ -14,7 +14,7 @@ from app.api.bearer import bearer_executive, bearer_operator, bearer_vendor
 from app.src.db import BusStop, Landmark, sessionMaker
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, updateIfChanged
+from app.src.functions import enumStr, fuseExceptionResponses, updateIfChanged
 from app.src.urls import URL_BUS_STOP
 
 route_executive = APIRouter()
@@ -157,14 +157,14 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
     tags=["Bus Stop"],
     response_model=BusStopSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
             exceptions.UnknownValue(BusStop.landmark_id),
-            exceptions.BusStopOutsideLandmark,
+            exceptions.BusStopOutsideLandmark(),
         ]
     ),
     description="""
@@ -222,14 +222,14 @@ async def create_bus_stop(
     URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=BusStopSchema,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.NoPermission,
-            exceptions.InvalidIdentifier,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
-            exceptions.BusStopOutsideLandmark,
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
+            exceptions.BusStopOutsideLandmark(),
         ]
     ),
     description="""
@@ -293,8 +293,8 @@ async def update_bus_stop(
     URL_BUS_STOP,
     tags=["Bus Stop"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Delete a bus stop by ID.  
@@ -333,11 +333,11 @@ async def delete_bus_stop(
     URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -365,11 +365,11 @@ async def fetch_bus_stop(
     URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""
@@ -397,11 +397,11 @@ async def fetch_bus_stop(
     URL_BUS_STOP,
     tags=["Bus Stop"],
     response_model=List[BusStopSchema],
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InvalidToken,
-            exceptions.InvalidWKTStringOrType,
-            exceptions.InvalidSRID4326,
+            exceptions.InvalidToken(),
+            exceptions.InvalidWKTStringOrType(),
+            exceptions.InvalidSRID4326(),
         ]
     ),
     description="""

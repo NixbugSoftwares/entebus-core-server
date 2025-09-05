@@ -13,7 +13,7 @@ from app.src.db import ExecutiveRole, Operator, OperatorToken, sessionMaker
 from app.src import argon2, exceptions, validators, getters
 from app.src.enums import AccountStatus, PlatformType
 from app.src.loggers import logEvent
-from app.src.functions import enumStr, makeExceptionResponses, promoteToParent
+from app.src.functions import enumStr, fuseExceptionResponses, promoteToParent
 from app.src.urls import URL_OPERATOR_TOKEN
 
 route_operator = APIRouter()
@@ -155,8 +155,8 @@ def searchOperatorToken(
     URL_OPERATOR_TOKEN,
     tags=["Operator token"],
     response_model=List[MaskedOperatorTokenSchema],
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Fetches a list of operator tokens belonging to a company, filtered by optional query parameters.    
@@ -186,8 +186,8 @@ async def fetch_tokens(
     URL_OPERATOR_TOKEN,
     tags=["Operator token"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Revokes an access token associated with an operator account.       
@@ -232,10 +232,10 @@ async def delete_token(
     tags=["Token"],
     response_model=OperatorTokenSchema,
     status_code=status.HTTP_201_CREATED,
-    responses=makeExceptionResponses(
+    responses=fuseExceptionResponses(
         [
-            exceptions.InactiveAccount,
-            exceptions.InvalidCredentials,
+            exceptions.InactiveAccount(),
+            exceptions.InvalidCredentials(),
         ]
     ),
     description="""
@@ -309,8 +309,12 @@ async def create_token(
     URL_OPERATOR_TOKEN,
     tags=["Token"],
     response_model=OperatorTokenSchema,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission, exceptions.InvalidIdentifier]
+    responses=fuseExceptionResponses(
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidIdentifier(),
+        ]
     ),
     description="""
     Refreshes an existing operator access token.    
@@ -364,8 +368,8 @@ async def refresh_token(
     URL_OPERATOR_TOKEN,
     tags=["Token"],
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=makeExceptionResponses(
-        [exceptions.InvalidToken, exceptions.NoPermission]
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidToken(), exceptions.NoPermission()]
     ),
     description="""
     Revokes an active access token associated with an operator account.     
@@ -421,7 +425,7 @@ async def delete_token(
     URL_OPERATOR_TOKEN,
     tags=["Token"],
     response_model=List[MaskedOperatorTokenSchema],
-    responses=makeExceptionResponses([exceptions.InvalidToken]),
+    responses=fuseExceptionResponses([exceptions.InvalidToken()]),
     description="""
     Fetches a list of operator tokens filtered by optional query parameters.    
     Operators without `manage_token` permission can only retrieve their own tokens.  
