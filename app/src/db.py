@@ -1,3 +1,14 @@
+"""
+Database setup and ORM models for EnteBus Core Server.
+
+This module:
+- Configures the SQLAlchemy engine, session factory, and base class.
+- Contains ORM models representing core entities (e.g., ExecutiveRole).
+
+All models should inherit from `ORMbase` (and optionally `BaseMixin`)
+to ensure consistency across the schema.
+"""
+
 from secrets import token_hex
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -47,14 +58,28 @@ from app.src.enums import (
 )
 
 
-# Global DBMS variables
-dbURL = f"{PSQL_DB_DRIVER}://{PSQL_DB_USERNAME}:{PSQL_DB_PASSWORD}@{PSQL_DB_HOST}:{PSQL_DB_PORT}/{PSQL_DB_NAME}"
+# ---------------------------------------------------------------------------
+# Database setup
+# ---------------------------------------------------------------------------
+def get_db_url() -> str:
+    """Build and return the SQLAlchemy-compatible PostgreSQL DB URL."""
+    return (
+        f"{PSQL_DB_DRIVER}://{PSQL_DB_USERNAME}:{PSQL_DB_PASSWORD}"
+        f"@{PSQL_DB_HOST}:{PSQL_DB_PORT}/{PSQL_DB_NAME}"
+    )
+
+
+dbURL = get_db_url()
 engine = create_engine(url=dbURL, echo=False)
 sessionMaker = sessionmaker(bind=engine, expire_on_commit=False)
+
+# Base class for ORM models
 ORMbase = declarative_base()
 
 
-# ----------------------------------- General DB Models ---------------------------------------#
+# ---------------------------------------------------------------------------
+# ORM Models
+# ---------------------------------------------------------------------------
 class ExecutiveRole(ORMbase):
     """
     Represents a predefined role assigned to executives, defining what actions
@@ -92,7 +117,7 @@ class ExecutiveRole(ORMbase):
             Whether this role permits the creation of a new landmark.
 
         update_landmark (Boolean):
-            Whether this role permits editing existing the landmark.
+            Whether this role permits editing the existing landmark.
 
         delete_landmark (Boolean):
             Whether this role permits deletion of a landmark.
@@ -398,7 +423,6 @@ class ExecutiveRoleMap(ORMbase):
             Foreign key referencing `executive.id`.
             Identifies the executive receiving the role.
             Cascades on delete — if the executive is removed, related mappings are deleted.
-            An executive can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -944,7 +968,6 @@ class OperatorRoleMap(ORMbase):
             Foreign key referencing `operator.id`.
             Identifies the operator receiving the role.
             Cascades on delete — if the operator is removed, related mappings are deleted.
-            An operator can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -1532,7 +1555,6 @@ class VendorRoleMap(ORMbase):
             Foreign key referencing `vendor.id`.
             Identifies the vendor receiving the role.
             Cascades on delete — if the vendor is removed, the mapping is deleted.
-            An vendor can be assigned to a single role.
 
         updated_on (DateTime):
             Timestamp automatically updated whenever the mapping record is modified.
@@ -1946,7 +1968,7 @@ class Schedule(ORMbase):
         next_trigger_on (DateTime):
             Timestamp indicating the next scheduled execution time.
             Automatically calculated based on `frequency` and `trigger_mode`.
-        
+
         trigger_till (DateTime):
             Timestamp indicating the last scheduled execution date and time.
             Optional field.
