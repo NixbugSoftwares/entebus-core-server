@@ -1,3 +1,16 @@
+"""
+Centralized exception handling for EnteBus API.
+
+This module provides:
+- Base APIException class extending FastAPI's HTTPException.
+- Custom domain-specific exceptions with appropriate status codes and headers.
+- Utility functions for formatting DB errors, logging, and routing exceptions.
+
+Usage:
+    - Raise specific exceptions in route handlers or services.
+    - Use `handle()` to normalize raw exceptions (DB, Redis, Pydantic) into API-friendly responses.
+"""
+
 from traceback import format_exception
 from logging import getLogger
 from fastapi import status, HTTPException
@@ -7,8 +20,15 @@ from pydantic import ValidationError
 from redis.exceptions import RedisError
 
 
-# Function to format DB integrity log error
-def formatIntegrityError(e: IntegrityError):
+# ---------------------------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------------------------
+
+
+def formatIntegrityError(e: IntegrityError) -> str:
+    """
+    Format a database integrity error into a user-friendly message.
+    """
     errorMessage: str = e.orig.diag.message_detail
     errorMessage = errorMessage.translate({ord(i): None for i in '\\"\\.\\(\\)'})
     errorMessage = errorMessage.replace("Key ", "For ")
@@ -16,31 +36,44 @@ def formatIntegrityError(e: IntegrityError):
     return errorMessage
 
 
-# Function to log error
-def logException(e: Exception):
+def logException(e: Exception) -> None:
+    """Log an exception with traceback using Uvicorn's error logger."""
     detail = str(format_exception(type(e), e, e.__traceback__))
     logger = getLogger("uvicorn.error")
     logger.error(detail)
 
 
-# Base class for all app specific exceptions
+# ---------------------------------------------------------------------------
+# Base Exception
+# ---------------------------------------------------------------------------
 class APIException(HTTPException):
+    """
+    Base class for all application-specific exceptions.
+
+    Provides default handling of status_code, detail, and headers.
+    """
+
     status_code = status.HTTP_400_BAD_REQUEST
     detail = None
     headers = None
 
     def __init__(self, *args, **kwargs):
-        if "status_code" not in kwargs:
-            kwargs["status_code"] = self.status_code
-        if "detail" not in kwargs:
-            kwargs["detail"] = self.detail
-        if "headers" not in kwargs:
-            kwargs["headers"] = self.headers
+        kwargs.setdefault("status_code", self.status_code)
+        kwargs.setdefault("detail", self.detail)
+        kwargs.setdefault("headers", self.headers)
         super().__init__(*args, **kwargs)
 
 
-# Function to handle exceptions
+# ---------------------------------------------------------------------------
+# Exception handling entrypoint
+# ---------------------------------------------------------------------------
 def handle(e: Exception):
+    """
+    Normalize and re-raise exceptions as API-friendly errors.
+
+    Converts raw exceptions from DB, Pydantic, Redis, etc. into
+    corresponding APIException subclasses.
+    """
     if isinstance(e, IntegrityError):
         if e.orig.diag.sqlstate == UNIQUE_VIOLATION:
             raise UniqueViolation(formatIntegrityError(e))
@@ -52,11 +85,14 @@ def handle(e: Exception):
         raise e
     if isinstance(e, RedisError):
         raise RedisDBError(detail=str(e))
-    else:
-        logException(e)
-        raise e
+
+    logException(e)
+    raise e
 
 
+# ---------------------------------------------------------------------------
+# Exception Classes
+# ---------------------------------------------------------------------------
 class PydanticError(APIException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     headers = {"X-Error": "PydanticError"}
