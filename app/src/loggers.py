@@ -5,44 +5,26 @@ from app.src.schemas import RequestInfo
 from app.src.enums import AppID
 
 
-def logExecutiveEvent(token: ExecutiveToken, requestInfo: RequestInfo, data: dict):
-    logDetails = {
-        "_method": requestInfo.method,
-        "_path": requestInfo.path,
-        "_executive_id": token.executive_id,
-        "_app_id": requestInfo.app_id,
-    }
-    logDetails.update(data)
-    openobserve.logEvent(logDetails)
-
-
-def logVendorEvent(token: VendorToken, requestInfo: RequestInfo, data: dict):
-    logDetails = {
-        "_method": requestInfo.method,
-        "_path": requestInfo.path,
-        "_vendor_id": token.vendor_id,
-        "_app_id": requestInfo.app_id,
-    }
-    logDetails.update(data)
-    openobserve.logEvent(logDetails)
-
-
-def logOperatorEvent(token: OperatorToken, requestInfo: RequestInfo, data: dict):
-    logDetails = {
-        "_method": requestInfo.method,
-        "_path": requestInfo.path,
-        "_operator_id": token.operator_id,
-        "_app_id": requestInfo.app_id,
-    }
-    logDetails.update(data)
-    openobserve.logEvent(logDetails)
-
-
 def logEvent(
-    token: Union[OperatorToken, ExecutiveToken, VendorToken],
+    token: Union[ExecutiveToken, OperatorToken, VendorToken],
     requestInfo: RequestInfo,
     data: dict,
-):
+) -> None:
+    """
+    Log an event to OpenObserve with request and user context.
+
+    Args:
+        token (Union[ExecutiveToken, OperatorToken, VendorToken]): Authenticated user token.
+        requestInfo (RequestInfo): Metadata about the current request.
+        data (dict): Additional event-specific details to include in the log.
+
+    Notes:
+        - Automatically attaches `_app_id`, `_method`, `_path`, and user-specific ID.
+        - User-specific key depends on the app:
+            - Executive → `_executive_id`
+            - Operator  → `_operator_id`
+            - Vendor    → `_vendor_id`
+    """
     logDetails = {
         "_method": requestInfo.method,
         "_path": requestInfo.path,
@@ -58,3 +40,23 @@ def logEvent(
 
     logDetails.update(data)
     openobserve.logEvent(logDetails)
+
+
+# Convenience wrappers (optional — use only if you want explicit naming in routes)
+def logExecutiveEvent(
+    token: ExecutiveToken, requestInfo: RequestInfo, data: dict
+) -> None:
+    """Wrapper around logEvent for executive context."""
+    logEvent(token, requestInfo, data)
+
+
+def logVendorEvent(token: VendorToken, requestInfo: RequestInfo, data: dict) -> None:
+    """Wrapper around logEvent for vendor context."""
+    logEvent(token, requestInfo, data)
+
+
+def logOperatorEvent(
+    token: OperatorToken, requestInfo: RequestInfo, data: dict
+) -> None:
+    """Wrapper around logEvent for operator context."""
+    logEvent(token, requestInfo, data)
