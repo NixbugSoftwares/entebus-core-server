@@ -1,5 +1,6 @@
-from typing import List, Type, Dict, Optional
+from typing import List, Type, Dict, Optional, Any
 from fastapi import Request
+from shapely import wkt, errors
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
@@ -93,6 +94,40 @@ def enumStr(enumClass):
     return ", ".join(f"{x.name}: {x.value}" for x in enumClass)
 
 
+def toWKTgeometry(wktString: str, type) -> Optional[BaseGeometry]:
+    """
+    Convert a WKT (Well-Known Text) string into a Shapely geometry of the expected type.
+
+    This function attempts to parse the given WKT string into a geometry object
+    using Shapely. If parsing fails or the resulting geometry is not an instance
+    of the expected type, it returns `None`.
+
+    Args:
+        wktString (str): The WKT representation of the geometry.
+            Example: "POINT (30 10)", "LINESTRING (30 10, 10 30, 40 40)".
+        type (Type[BaseGeometry]): The expected Shapely geometry type
+            (e.g., `Point`, `Polygon`, `LineString`).
+
+    Returns:
+        Optional[BaseGeometry]: The parsed geometry object if valid and of the
+        correct type, otherwise `None`.
+
+    Example:
+        >>> from shapely.geometry import Point, Polygon
+        >>> toWKTgeometry("POINT (30 10)", Point)
+        <shapely.geometry.point.Point object at ...>
+        >>> toWKTgeometry("POINT (30 10)", Polygon) is None
+        True
+    """
+    try:
+        geom = wkt.loads(wktString)
+        if not isinstance(geom, type):
+            return None
+        return geom
+    except errors.WKTReadingError:
+        return None
+
+
 def isSRID4326(wktGeom: BaseGeometry) -> bool:
     """
     Validate whether a Shapely geometry uses coordinates consistent with SRID 4326 (WGS84).
@@ -149,6 +184,69 @@ def isSRID4326(wktGeom: BaseGeometry) -> bool:
                 return False
 
     return True
+
+
+def isAABB(wktGeometry: BaseGeometry) -> bool:
+    """
+    Check if a geometry is an Axis-Aligned Bounding Box (AABB).
+
+    Args:
+        wktGeometry (BaseGeometry): Geometry to check.
+
+    Returns:
+        bool: True if geometry is a valid AABB, False otherwise.
+
+    Notes:
+        - AABB must be a Polygon with exactly 5 coordinates (closing point repeats).
+        - Each side must be either horizontal or vertical.
+    """
+    if not isinstance(wktGeometry, Polygon):
+        return False
+
+    coords = list(wktGeometry.exterior.coords)
+    if len(coords) != 5:  # A rectangle has 4 sides + 1 closing point
+        return False
+
+    coords = coords[:-1]  # Remove duplicate closing point
+
+    # Each side must be aligned with x or y axis
+    for i in range(4):
+        x1, y1 = coords[i]
+        x2, y2 = coords[(i + 1) % 4]
+        if not (x1 == x2 or y1 == y2):
+            return False
+
+    return True
+
+
+def isValidTransition(
+    transitions: dict[Any, list[Any]], old_state: Any, new_state: Any
+) -> bool:
+    """
+    Check if a state transition is valid.
+
+    Args:
+        transitions (dict[Any, list[Any]]): Mapping of valid transitions.
+            Example:
+                {
+                    "CREATED": ["STARTED"],
+                    "STARTED": ["ENDED"],
+                }
+        old_state (Any): Current state value.
+        new_state (Any): Desired new state value.
+
+    Returns:
+        bool: True if transition is valid, False otherwise.
+
+    Notes:
+        - If `old_state` is not in the transitions mapping, this will return False.
+        - Both states can be any type (enum, int, str), as long as they match keys/values in the mapping.
+    """
+    if not transitions:
+        return False
+    if old_state not in transitions:
+        return False
+    return new_state in transitions[old_state]
 
 
 def getArea(geom: BaseGeometry) -> float:
