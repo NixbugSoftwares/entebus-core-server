@@ -19,6 +19,8 @@ from psycopg2.errorcodes import UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION
 from pydantic import ValidationError
 from redis.exceptions import RedisError
 from sqlalchemy import Column
+from typing import Type
+from sqlalchemy.orm import DeclarativeMeta
 
 
 # ---------------------------------------------------------------------------
@@ -120,8 +122,8 @@ class UnknownValue(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     headers = {"X-Error": "UnknownValue"}
 
-    def __init__(self, column_name: Column):
-        detail = f"Invalid {column_name.name} is provided"
+    def __init__(self, column: Column):
+        detail = f"Invalid {column.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -129,8 +131,8 @@ class InvalidValue(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidValue"}
 
-    def __init__(self, column_name: Column):
-        detail = f"Invalid {column_name.name} is provided"
+    def __init__(self, column: Column):
+        detail = f"Invalid {column.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -204,8 +206,8 @@ class InvalidStateTransition(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidStateTransition"}
 
-    def __init__(self, column_name: Column):
-        detail = f"The {column_name.name} cannot be set to the provided value"
+    def __init__(self, column: Column):
+        detail = f"The {column.name} cannot be set to the provided value"
         super().__init__(detail=detail)
 
 
@@ -213,8 +215,8 @@ class InvalidAssociation(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidAssociation"}
 
-    def __init__(self, column_name_1: Column, column_name_2: Column):
-        detail = f"The {column_name_1.name} is not associated with {column_name_2.name}"
+    def __init__(self, column_1: Column, column_2: Column):
+        detail = f"The {column_1.name} is not associated with {column_2.name}"
         super().__init__(detail=detail)
 
 
@@ -228,7 +230,7 @@ class InactiveResource(APIException):
     status_code = status.HTTP_412_PRECONDITION_FAILED
     headers = {"X-Error": "InactiveResource"}
 
-    def __init__(self, orm_class):
+    def __init__(self, orm_class: Type[DeclarativeMeta]):
         detail = (
             f"The status of {orm_class.__name__} is not in an active or useful state"
         )
@@ -239,7 +241,7 @@ class DataInUse(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "DataInUse"}
 
-    def __init__(self, orm_class):
+    def __init__(self, orm_class: Type[DeclarativeMeta]):
         detail = f"The {orm_class.__name__} is currently in use"
         super().__init__(detail=detail)
 
@@ -248,8 +250,8 @@ class MissingParameter(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "MissingParameter"}
 
-    def __init__(self, column_name: Column):
-        detail = f"The {column_name.name} is missing"
+    def __init__(self, column: Column):
+        detail = f"The {column.name} is missing"
         super().__init__(detail=detail)
 
 
@@ -257,8 +259,8 @@ class UnexpectedParameter(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "UnexpectedParameter"}
 
-    def __init__(self, column_name: Column):
-        detail = f"Unexpected parameter {column_name.name} is provided"
+    def __init__(self, column: Column):
+        detail = f"Unexpected parameter {column.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -301,7 +303,7 @@ class ExceededMaxLimit(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "ExceededMaxLimit"}
 
-    def __init__(self, orm_class):
+    def __init__(self, orm_class: Type[DeclarativeMeta]):
         detail = f"Maximum limit for {orm_class.__name__} is exceeded"
         super().__init__(detail=detail)
 
@@ -316,8 +318,10 @@ class DuplicateDuty(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "DuplicateDuty"}
 
-    def __init__(self, column_name_1: Column, column_name_2: Column):
-        detail = f"The {column_name_1.name} already has a assigned duty for this {column_name_2.name}"
+    def __init__(self, column_1: Column, column_2: Column):
+        detail = (
+            f"The {column_1.name} already has a assigned duty for this {column_2.name}"
+        )
         super().__init__(detail=detail)
 
 
