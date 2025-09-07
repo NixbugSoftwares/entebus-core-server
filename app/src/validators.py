@@ -305,8 +305,8 @@ def fareFunction(function: str, attributes: dict) -> DynamicFare:
             raise exceptions.UnknownTicketType(name)
 
     # Random ticket type should always return -1.0
-    bogus_type = "".join(random.choices(string.ascii_letters, k=32))
-    if fareFunction.evaluate(bogus_type, 0) != -1.0:
+    bogusType = "".join(random.choices(string.ascii_letters, k=32))
+    if fareFunction.evaluate(bogusType, 0) != -1.0:
         raise exceptions.InvalidFareFunction()
 
     return fareFunction
