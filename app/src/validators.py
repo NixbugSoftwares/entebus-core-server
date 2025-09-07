@@ -189,7 +189,7 @@ def AABB(wktGeometry: BaseGeometry) -> bool:
 # Other validations
 # ---------------------------------------------------------------------------
 def stateTransition(
-    transitions: dict[Any, list[Any]], old_state: Any, new_state: Any, state: Column
+    transitions: dict[Any, list[Any]], old_state: Any, new_state: Any, column: Column
 ) -> bool:
     """
     Validate whether a state transition is allowed.
@@ -198,7 +198,7 @@ def stateTransition(
         transitions (dict[Any, list[Any]]): Mapping of valid transitions.
         old_state (Any): Current state value.
         new_state (Any): Desired new state value.
-        state (Column): SQLAlchemy column representing the state
+        column (Column): SQLAlchemy column representing the state
             (used to format error messages).
 
     Returns:
@@ -208,7 +208,7 @@ def stateTransition(
         exceptions.InvalidStateTransition: If the transition is not permitted.
     """
     if not isValidTransition(transitions, old_state, new_state):
-        raise exceptions.InvalidStateTransition(state.name)
+        raise exceptions.InvalidStateTransition(column.name)
     return True
 
 

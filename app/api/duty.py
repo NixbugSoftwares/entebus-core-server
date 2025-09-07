@@ -319,7 +319,7 @@ async def create_duty(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.InvalidStateTransition("status"),
+            exceptions.InvalidStateTransition(Duty.status),
             exceptions.LockAcquireTimeout(),
         ]
     ),
@@ -592,7 +592,7 @@ async def create_duty(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.InvalidStateTransition("status"),
+            exceptions.InvalidStateTransition(Duty.status),
             exceptions.LockAcquireTimeout(),
         ]
     ),

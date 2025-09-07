@@ -18,13 +18,12 @@ from sqlalchemy.exc import IntegrityError
 from psycopg2.errorcodes import UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION
 from pydantic import ValidationError
 from redis.exceptions import RedisError
+from sqlalchemy import Column
 
 
 # ---------------------------------------------------------------------------
 # Utility functions
 # ---------------------------------------------------------------------------
-
-
 def formatIntegrityError(e: IntegrityError) -> str:
     """
     Format a database integrity error into a user-friendly message.
@@ -121,8 +120,8 @@ class UnknownValue(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     headers = {"X-Error": "UnknownValue"}
 
-    def __init__(self, column_name: str):
-        detail = f"Invalid {column_name.key} is provided"
+    def __init__(self, column_name: Column):
+        detail = f"Invalid {column_name.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -130,8 +129,8 @@ class InvalidValue(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidValue"}
 
-    def __init__(self, column_name: str):
-        detail = f"Invalid {column_name.key} is provided"
+    def __init__(self, column_name: Column):
+        detail = f"Invalid {column_name.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -205,8 +204,8 @@ class InvalidStateTransition(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidStateTransition"}
 
-    def __init__(self, state_name: str):
-        detail = f"The {state_name} cannot be set to the provided value"
+    def __init__(self, column_name: Column):
+        detail = f"The {column_name.name} cannot be set to the provided value"
         super().__init__(detail=detail)
 
 
@@ -214,8 +213,8 @@ class InvalidAssociation(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidAssociation"}
 
-    def __init__(self, column_name_1: str, column_name_2: str):
-        detail = f"The {column_name_1.key} is not associated with {column_name_2.key}"
+    def __init__(self, column_name_1: Column, column_name_2: Column):
+        detail = f"The {column_name_1.name} is not associated with {column_name_2.name}"
         super().__init__(detail=detail)
 
 
@@ -249,8 +248,8 @@ class MissingParameter(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "MissingParameter"}
 
-    def __init__(self, column_name_1: str):
-        detail = f"The {column_name_1.key} is missing"
+    def __init__(self, column_name: Column):
+        detail = f"The {column_name.name} is missing"
         super().__init__(detail=detail)
 
 
@@ -258,8 +257,8 @@ class UnexpectedParameter(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "UnexpectedParameter"}
 
-    def __init__(self, column_name_1: str):
-        detail = f"Unexpected parameter {column_name_1.key} is provided"
+    def __init__(self, column_name: Column):
+        detail = f"Unexpected parameter {column_name.name} is provided"
         super().__init__(detail=detail)
 
 
@@ -317,8 +316,8 @@ class DuplicateDuty(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "DuplicateDuty"}
 
-    def __init__(self, column_name_1: str, column_name_2: str):
-        detail = f"The {column_name_1.key} already has a assigned duty for this {column_name_2.key}"
+    def __init__(self, column_name_1: Column, column_name_2: Column):
+        detail = f"The {column_name_1.name} already has a assigned duty for this {column_name_2.name}"
         super().__init__(detail=detail)
 
 

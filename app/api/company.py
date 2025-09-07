@@ -372,7 +372,7 @@ async def create_company(
             exceptions.InvalidIdentifier(),
             exceptions.InvalidWKTStringOrType(),
             exceptions.InvalidSRID4326(),
-            exceptions.InvalidStateTransition("status"),
+            exceptions.InvalidStateTransition(Company.status),
         ]
     ),
     description="""

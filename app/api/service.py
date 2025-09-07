@@ -519,7 +519,7 @@ async def create_service(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.InvalidStateTransition("status"),
+            exceptions.InvalidStateTransition(Service.status),
             exceptions.DataInUse(Service),
         ]
     ),
@@ -964,7 +964,7 @@ async def create_service(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.InvalidStateTransition("status"),
+            exceptions.InvalidStateTransition(Service.status),
             exceptions.DataInUse(Service),
         ]
     ),
