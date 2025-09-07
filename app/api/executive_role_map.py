@@ -95,9 +95,9 @@ async def create_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ex_role)
+        validators.executive_permission(role, ExecutiveRole.update_ex_role)
 
         roleMap = ExecutiveRoleMap(
             role_id=fParam.role_id, executive_id=fParam.executive_id
@@ -140,9 +140,9 @@ async def update_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ex_role)
+        validators.executive_permission(role, ExecutiveRole.update_ex_role)
 
         roleMap = (
             session.query(ExecutiveRoleMap)
@@ -191,9 +191,9 @@ async def delete_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ex_role)
+        validators.executive_permission(role, ExecutiveRole.update_ex_role)
 
         roleMap = (
             session.query(ExecutiveRoleMap)
@@ -228,7 +228,7 @@ async def fetch_role_map(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         query = session.query(ExecutiveRoleMap)
 

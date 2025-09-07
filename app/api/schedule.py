@@ -303,9 +303,9 @@ async def create_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_schedule)
+        validators.executive_permission(role, ExecutiveRole.create_schedule)
 
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
         if company is None:
@@ -385,9 +385,9 @@ async def update_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_schedule)
+        validators.executive_permission(role, ExecutiveRole.update_schedule)
 
         schedule = session.query(Schedule).filter(Schedule.id == fParam.id).first()
         if schedule is None:
@@ -429,9 +429,9 @@ async def delete_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_schedule)
+        validators.executive_permission(role, ExecutiveRole.delete_schedule)
 
         schedule = session.query(Schedule).filter(Schedule.id == fParam.id).first()
         if schedule is not None:
@@ -461,7 +461,7 @@ async def fetch_schedule(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchSchedule(session, qParam)
     except Exception as e:
@@ -500,9 +500,9 @@ async def create_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_schedule)
+        validators.operator_permission(role, OperatorRole.create_schedule)
 
         bus = (
             session.query(Bus)
@@ -583,9 +583,9 @@ async def update_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_schedule)
+        validators.operator_permission(role, OperatorRole.update_schedule)
 
         schedule = (
             session.query(Schedule)
@@ -633,9 +633,9 @@ async def delete_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_schedule)
+        validators.operator_permission(role, OperatorRole.delete_schedule)
 
         schedule = (
             session.query(Schedule)
@@ -671,7 +671,7 @@ async def fetch_schedule(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchSchedule(session, qParam)

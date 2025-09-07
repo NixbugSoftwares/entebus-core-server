@@ -285,7 +285,7 @@ def updateService(session: Session, service: Service, fParam: UpdateForm):
     }
     updateIfChanged(service, fParam, [Service.ticket_mode.key, Service.remark.key])
     if fParam.status is not None and service.status != fParam.status:
-        validators.stateTransition(
+        validators.state_transition(
             serviceStatusTransition, service.status, fParam.status, Service.status
         )
         if fParam.status in [ServiceStatus.ENDED]:
@@ -444,9 +444,9 @@ async def create_service(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_service)
+        validators.executive_permission(role, ExecutiveRole.create_service)
 
         routeLock = acquireLock(Route.__tablename__, fParam.route)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
@@ -543,9 +543,9 @@ async def update_service(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_service)
+        validators.executive_permission(role, ExecutiveRole.update_service)
 
         service = session.query(Service).filter(Service.id == fParam.id).first()
         if service is None:
@@ -595,9 +595,9 @@ async def delete_service(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_service)
+        validators.executive_permission(role, ExecutiveRole.delete_service)
 
         service = session.query(Service).filter(Service.id == fParam.id).first()
         if service and service.status != ServiceStatus.CREATED:
@@ -633,7 +633,7 @@ async def fetch_service(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchService(session, qParam)
     except Exception as e:
@@ -688,9 +688,9 @@ async def create_scheduled_trigger(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_service)
+        validators.executive_permission(role, ExecutiveRole.create_service)
 
         schedule = (
             session.query(Schedule).filter(Schedule.id == fParam.schedule_id).first()
@@ -794,7 +794,7 @@ async def fetch_scheduled_trigger(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchTriggerSchedules(session, qParam)
     except Exception as e:
@@ -821,7 +821,7 @@ async def fetch_route(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         qParam = promoteToParent(
             qParam,
@@ -883,9 +883,9 @@ async def create_service(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_service)
+        validators.operator_permission(role, OperatorRole.create_service)
 
         routeLock = acquireLock(Route.__tablename__, fParam.route)
         bus = (
@@ -988,9 +988,9 @@ async def update_service(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_service)
+        validators.operator_permission(role, OperatorRole.update_service)
 
         service = (
             session.query(Service)
@@ -1046,9 +1046,9 @@ async def delete_service(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_service)
+        validators.operator_permission(role, OperatorRole.delete_service)
 
         service = (
             session.query(Service)
@@ -1089,7 +1089,7 @@ async def fetch_service(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchService(session, qParam)
@@ -1116,7 +1116,7 @@ async def fetch_scheduled_trigger(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchTriggerSchedules(session, qParam)

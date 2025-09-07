@@ -224,9 +224,9 @@ async def create_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_ve_role)
+        validators.executive_permission(role, ExecutiveRole.create_ve_role)
 
         role = VendorRole(
             name=fParam.name,
@@ -279,9 +279,9 @@ async def update_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ve_role)
+        validators.executive_permission(role, ExecutiveRole.update_ve_role)
 
         role = session.query(VendorRole).filter(VendorRole.id == fParam.id).first()
         if role is None:
@@ -325,9 +325,9 @@ async def delete_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_ve_role)
+        validators.executive_permission(role, ExecutiveRole.delete_ve_role)
 
         role = session.query(VendorRole).filter(VendorRole.id == fParam.id).first()
         if role is not None:
@@ -358,7 +358,7 @@ async def fetch_role(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchRole(session, qParam)
     except Exception as e:
@@ -390,9 +390,9 @@ async def create_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.create_role)
+        validators.vendor_permission(role, VendorRole.create_role)
 
         role = VendorRole(
             name=fParam.name,
@@ -445,9 +445,9 @@ async def update_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.update_role)
+        validators.vendor_permission(role, VendorRole.update_role)
 
         role = (
             session.query(VendorRole)
@@ -496,9 +496,9 @@ async def delete_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.delete_role)
+        validators.vendor_permission(role, VendorRole.delete_role)
 
         role = (
             session.query(VendorRole)
@@ -534,7 +534,7 @@ async def fetch_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
 
         qParam = promoteToParent(
             qParam, QueryParamsForEX, business_id=token.business_id

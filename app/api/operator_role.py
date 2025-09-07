@@ -362,9 +362,9 @@ async def create_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_op_role)
+        validators.executive_permission(role, ExecutiveRole.create_op_role)
 
         role = OperatorRole(
             name=fParam.name,
@@ -435,9 +435,9 @@ async def update_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_op_role)
+        validators.executive_permission(role, ExecutiveRole.update_op_role)
 
         role = session.query(OperatorRole).filter(OperatorRole.id == fParam.id).first()
         if role is None:
@@ -481,9 +481,9 @@ async def delete_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_op_role)
+        validators.executive_permission(role, ExecutiveRole.delete_op_role)
 
         role = session.query(OperatorRole).filter(OperatorRole.id == fParam.id).first()
         if role is not None:
@@ -514,7 +514,7 @@ async def fetch_role(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchRole(session, qParam)
     except Exception as e:
@@ -546,9 +546,9 @@ async def create_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_role)
+        validators.operator_permission(role, OperatorRole.create_role)
 
         role = OperatorRole(
             name=fParam.name,
@@ -619,9 +619,9 @@ async def update_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_role)
+        validators.operator_permission(role, OperatorRole.update_role)
 
         role = (
             session.query(OperatorRole)
@@ -670,9 +670,9 @@ async def delete_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_role)
+        validators.operator_permission(role, OperatorRole.delete_role)
 
         role = (
             session.query(OperatorRole)
@@ -708,7 +708,7 @@ async def fetch_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchRole(session, qParam)

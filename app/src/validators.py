@@ -76,17 +76,17 @@ def _validate_token(model_cls, access_token: str, session: Session):
     return token
 
 
-def executiveToken(access_token: str, session: Session) -> ExecutiveToken:
+def executive_token(access_token: str, session: Session) -> ExecutiveToken:
     """Validate an executive access token."""
     return _validate_token(ExecutiveToken, access_token, session)
 
 
-def vendorToken(access_token: str, session: Session) -> VendorToken:
+def vendor_token(access_token: str, session: Session) -> VendorToken:
     """Validate a vendor access token."""
     return _validate_token(VendorToken, access_token, session)
 
 
-def operatorToken(access_token: str, session: Session) -> OperatorToken:
+def operator_token(access_token: str, session: Session) -> OperatorToken:
     """Validate an operator access token."""
     return _validate_token(OperatorToken, access_token, session)
 
@@ -113,17 +113,17 @@ def _validate_permission(role, permission: Column) -> bool:
     raise exceptions.NoPermission()
 
 
-def executivePermission(role: ExecutiveRole, permission: Column) -> bool:
+def executive_permission(role: ExecutiveRole, permission: Column) -> bool:
     """Validate that an executive has the required permission."""
     return _validate_permission(role, permission)
 
 
-def vendorPermission(role: VendorRole, permission: Column) -> bool:
+def vendor_permission(role: VendorRole, permission: Column) -> bool:
     """Validate that a vendor has the required permission."""
     return _validate_permission(role, permission)
 
 
-def operatorPermission(role: OperatorRole, permission: Column) -> bool:
+def operator_permission(role: OperatorRole, permission: Column) -> bool:
     """Validate that an operator has the required permission."""
     return _validate_permission(role, permission)
 
@@ -131,12 +131,12 @@ def operatorPermission(role: OperatorRole, permission: Column) -> bool:
 # ---------------------------------------------------------------------------
 # Geometry validation
 # ---------------------------------------------------------------------------
-def WKTstring(wktString: str, expected_type: Type[BaseGeometry]) -> BaseGeometry:
+def WKT_string(wkt_string: str, expected_type: Type[BaseGeometry]) -> BaseGeometry:
     """
     Validate and parse a WKT string into a Shapely geometry of the expected type.
 
     Args:
-        wktString (str): The WKT representation of the geometry.
+        wkt_string (str): The WKT representation of the geometry.
         expected_type (Type[BaseGeometry]): The expected Shapely geometry type
             (e.g., `Point`, `Polygon`, `LineString`).
 
@@ -146,18 +146,18 @@ def WKTstring(wktString: str, expected_type: Type[BaseGeometry]) -> BaseGeometry
     Raises:
         exceptions.InvalidWKTStringOrType: If parsing fails or type mismatches.
     """
-    wktGeometry = toWKTgeometry(wktString, expected_type)
-    if wktGeometry is None:
+    wkt_geometry = toWKTgeometry(wkt_string, expected_type)
+    if wkt_geometry is None:
         raise exceptions.InvalidWKTStringOrType()
-    return wktGeometry
+    return wkt_geometry
 
 
-def SRID4326(wktGeometry: BaseGeometry) -> bool:
+def SRID_4326(wkt_geometry: BaseGeometry) -> bool:
     """
     Validate that the given geometry uses SRID 4326 (WGS84 lat/long bounds).
 
     Args:
-        wktGeometry (BaseGeometry): Geometry to validate.
+        wkt_geometry (BaseGeometry): Geometry to validate.
 
     Returns:
         bool: True if geometry is within valid SRID 4326 coordinate ranges.
@@ -165,14 +165,17 @@ def SRID4326(wktGeometry: BaseGeometry) -> bool:
     Raises:
         exceptions.InvalidSRID4326: If geometry has invalid latitude/longitude.
     """
-    if not isSRID4326(wktGeometry):
+    if not isSRID4326(wkt_geometry):
         raise exceptions.InvalidSRID4326()
     return True
 
 
-def AABB(wktGeometry: BaseGeometry) -> bool:
+def AABB(wkt_geometry: BaseGeometry) -> bool:
     """
     Validate that the geometry is an Axis-Aligned Bounding Box (AABB).
+
+    Args:
+        wkt_geometry (BaseGeometry): Geometry to validate.
 
     Returns:
         bool: True if valid AABB.
@@ -180,7 +183,7 @@ def AABB(wktGeometry: BaseGeometry) -> bool:
     Raises:
         exceptions.InvalidAABB: If geometry is not a valid AABB.
     """
-    if not isAABB(wktGeometry):
+    if not isAABB(wkt_geometry):
         raise exceptions.InvalidAABB()
     return True
 
@@ -188,7 +191,7 @@ def AABB(wktGeometry: BaseGeometry) -> bool:
 # ---------------------------------------------------------------------------
 # Other validations
 # ---------------------------------------------------------------------------
-def stateTransition(
+def state_transition(
     transitions: dict[Any, list[Any]], old_state: Any, new_state: Any, column: Column
 ) -> bool:
     """
@@ -212,7 +215,7 @@ def stateTransition(
     return True
 
 
-def landmarkInRoute(route_id: int, session: Session) -> bool:
+def landmark_in_route(route_id: int, session: Session) -> bool:
     """
     Validate that a route has a correct sequence of landmarks.
 
@@ -251,7 +254,7 @@ def landmarkInRoute(route_id: int, session: Session) -> bool:
     ):
         return False
 
-    seenArrivals, seenDepartures = set(), set()
+    seen_arrivals, seen_departures = set(), set()
 
     for i in range(1, len(landmarks)):
         # Arrival must not be earlier than previous departure
@@ -259,18 +262,18 @@ def landmarkInRoute(route_id: int, session: Session) -> bool:
             return False
 
         # Arrival and departure deltas must be unique
-        if landmarks[i].arrival_delta in seenArrivals:
+        if landmarks[i].arrival_delta in seen_arrivals:
             return False
-        if landmarks[i].departure_delta in seenDepartures:
+        if landmarks[i].departure_delta in seen_departures:
             return False
 
-        seenArrivals.add(landmarks[i].arrival_delta)
-        seenDepartures.add(landmarks[i].departure_delta)
+        seen_arrivals.add(landmarks[i].arrival_delta)
+        seen_departures.add(landmarks[i].departure_delta)
 
     return True
 
 
-def fareFunction(function: str, attributes: dict) -> DynamicFare:
+def fare_function(function: str, attributes: dict) -> DynamicFare:
     """
     Validate and build a dynamic fare function against system rules.
 
@@ -297,16 +300,16 @@ def fareFunction(function: str, attributes: dict) -> DynamicFare:
     if attributes["df_version"] != DYNAMIC_FARE_VERSION:
         raise exceptions.InvalidFareVersion()
 
-    fareFunction = DynamicFare(function)
+    fare_function = DynamicFare(function)
 
     for ticket_type in attributes["ticket_types"]:
         name = ticket_type["name"]
-        if fareFunction.evaluate(name, 0) < 0 or fareFunction.evaluate(name, 1) < 0:
+        if fare_function.evaluate(name, 0) < 0 or fare_function.evaluate(name, 1) < 0:
             raise exceptions.UnknownTicketType(name)
 
     # Random ticket type should always return -1.0
-    bogusType = "".join(random.choices(string.ascii_letters, k=32))
-    if fareFunction.evaluate(bogusType, 0) != -1.0:
+    bogus_type = "".join(random.choices(string.ascii_letters, k=32))
+    if fare_function.evaluate(bogus_type, 0) != -1.0:
         raise exceptions.InvalidFareFunction()
 
-    return fareFunction
+    return fare_function

@@ -107,8 +107,8 @@ class QueryParams(BaseModel):
 ## Function
 def validateBoundary(session: Session, fParam: CreateForm | UpdateForm) -> Polygon:
     # Validate the WKT polygon input string
-    boundaryGeom = validators.WKTstring(fParam.boundary, Polygon)
-    validators.SRID4326(boundaryGeom)
+    boundaryGeom = validators.WKT_string(fParam.boundary, Polygon)
+    validators.SRID_4326(boundaryGeom)
     validators.AABB(boundaryGeom)
 
     # Validate the boundary area
@@ -134,8 +134,8 @@ def searchLandmark(session: Session, qParam: QueryParams) -> List[Landmark]:
 
     # Pre-processing
     if qParam.location is not None:
-        geometry = validators.WKTstring(qParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(qParam.location, Point)
+        validators.SRID_4326(geometry)
         qParam.location = wkt.dumps(geometry)
 
     # Filters
@@ -223,9 +223,9 @@ async def create_landmark(
     landmarkLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_landmark)
+        validators.executive_permission(role, ExecutiveRole.create_landmark)
 
         landmarkLock = acquireLock(Landmark.__tablename__)
         validateBoundary(session, fParam)
@@ -281,9 +281,9 @@ async def update_landmark(
     landmarkLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_landmark)
+        validators.executive_permission(role, ExecutiveRole.update_landmark)
 
         landmarkLock = acquireLock(Landmark.__tablename__)
         landmark = session.query(Landmark).filter(Landmark.id == fParam.id).first()
@@ -345,9 +345,9 @@ async def delete_landmark(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_landmark)
+        validators.executive_permission(role, ExecutiveRole.delete_landmark)
 
         landmark = session.query(Landmark).filter(Landmark.id == fParam.id).first()
         if landmark is not None:
@@ -385,7 +385,7 @@ async def fetch_landmark(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchLandmark(session, qParam)
     except Exception as e:
@@ -416,7 +416,7 @@ async def fetch_landmark(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchLandmark(session, qParam)
     except Exception as e:
@@ -447,7 +447,7 @@ async def fetch_landmark(
 ):
     try:
         session = sessionMaker()
-        validators.operatorToken(bearer.credentials, session)
+        validators.operator_token(bearer.credentials, session)
 
         return searchLandmark(session, qParam)
     except Exception as e:

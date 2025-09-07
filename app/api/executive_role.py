@@ -301,9 +301,9 @@ async def create_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_ex_role)
+        validators.executive_permission(role, ExecutiveRole.create_ex_role)
 
         role = ExecutiveRole(
             name=fParam.name,
@@ -393,9 +393,9 @@ async def update_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ex_role)
+        validators.executive_permission(role, ExecutiveRole.update_ex_role)
 
         role = (
             session.query(ExecutiveRole).filter(ExecutiveRole.id == fParam.id).first()
@@ -496,9 +496,9 @@ async def delete_role(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_ex_role)
+        validators.executive_permission(role, ExecutiveRole.delete_ex_role)
 
         role = (
             session.query(ExecutiveRole).filter(ExecutiveRole.id == fParam.id).first()
@@ -529,7 +529,7 @@ async def delete_role(
 async def fetch_role(qParam: QueryParams = Depends(), bearer=Depends(bearer_executive)):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         query = session.query(ExecutiveRole)
 

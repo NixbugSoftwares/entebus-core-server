@@ -97,8 +97,8 @@ def searchBusStop(session: Session, qParam: QueryParams) -> List[BusStop]:
 
     # Pre-processing
     if qParam.location is not None:
-        geometry = validators.WKTstring(qParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(qParam.location, Point)
+        validators.SRID_4326(geometry)
         qParam.location = wkt.dumps(geometry)
 
     # Filters
@@ -180,13 +180,13 @@ async def create_bus_stop(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_landmark | role.update_landmark):
             raise exceptions.NoPermission()
 
-        locationGeom = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(locationGeom)
+        locationGeom = validators.WKT_string(fParam.location, Point)
+        validators.SRID_4326(locationGeom)
         fParam.location = wkt.dumps(locationGeom)
 
         landmark = (
@@ -245,7 +245,7 @@ async def update_bus_stop(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_landmark | role.update_landmark):
             raise exceptions.NoPermission()
@@ -256,8 +256,8 @@ async def update_bus_stop(
 
         updateIfChanged(busStop, fParam, [BusStop.name.key])
         if fParam.location is not None:
-            locationGeom = validators.WKTstring(fParam.location, Point)
-            validators.SRID4326(locationGeom)
+            locationGeom = validators.WKT_string(fParam.location, Point)
+            validators.SRID_4326(locationGeom)
             fParam.location = wkt.dumps(locationGeom)
 
             currentLocation = (wkb.loads(bytes(busStop.location.data))).wkt
@@ -309,7 +309,7 @@ async def delete_bus_stop(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_landmark | role.update_landmark):
             raise exceptions.NoPermission()
@@ -351,7 +351,7 @@ async def fetch_bus_stop(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchBusStop(session, qParam)
     except Exception as e:
@@ -383,7 +383,7 @@ async def fetch_bus_stop(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchBusStop(session, qParam)
     except Exception as e:
@@ -415,7 +415,7 @@ async def fetch_bus_stop(
 ):
     try:
         session = sessionMaker()
-        validators.operatorToken(bearer.credentials, session)
+        validators.operator_token(bearer.credentials, session)
 
         return searchBusStop(session, qParam)
     except Exception as e:

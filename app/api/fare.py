@@ -128,7 +128,7 @@ def updateFare(fare: Fare, fParam: UpdateForm):
     updateIfChanged(fare, fParam, [Fare.name.key, Fare.function.key])
     if fParam.attributes is not None and fParam.attributes != fare.attributes:
         fare.attributes = fParam.attributes.model_dump()
-    validators.fareFunction(fare.function, fare.attributes)
+    validators.fare_function(fare.function, fare.attributes)
 
 
 def searchFare(
@@ -226,12 +226,12 @@ async def create_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_fare)
+        validators.executive_permission(role, ExecutiveRole.create_fare)
 
         fParam.attributes = fParam.attributes.model_dump()
-        validators.fareFunction(fParam.function, fParam.attributes)
+        validators.fare_function(fParam.function, fParam.attributes)
         if fParam.scope == FareScope.GLOBAL and fParam.company_id is not None:
             raise exceptions.UnexpectedParameter(Fare.company_id)
         if fParam.scope == FareScope.LOCAL and fParam.company_id is None:
@@ -296,9 +296,9 @@ async def update_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_fare)
+        validators.executive_permission(role, ExecutiveRole.update_fare)
 
         fare = session.query(Fare).filter(Fare.id == fParam.id).first()
         if fare is None:
@@ -343,9 +343,9 @@ async def delete_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_fare)
+        validators.executive_permission(role, ExecutiveRole.delete_fare)
 
         fare = session.query(Fare).filter(Fare.id == fParam.id).first()
         if fare is not None:
@@ -377,7 +377,7 @@ async def fetch_fare(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchFare(session, qParam)
     except Exception as e:
@@ -404,7 +404,7 @@ async def fetch_route(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchFare(session, qParam)
     except Exception as e:
@@ -449,12 +449,12 @@ async def create_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_fare)
+        validators.operator_permission(role, OperatorRole.create_fare)
 
         fParam.attributes = fParam.attributes.model_dump()
-        validators.fareFunction(fParam.function, fParam.attributes)
+        validators.fare_function(fParam.function, fParam.attributes)
         fare = Fare(
             name=fParam.name,
             attributes=fParam.attributes,
@@ -511,9 +511,9 @@ async def update_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_fare)
+        validators.operator_permission(role, OperatorRole.update_fare)
 
         fare = (
             session.query(Fare)
@@ -562,9 +562,9 @@ async def delete_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_fare)
+        validators.operator_permission(role, OperatorRole.delete_fare)
 
         fare = (
             session.query(Fare)
@@ -600,7 +600,7 @@ async def fetch_fare(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchFare(session, qParam)

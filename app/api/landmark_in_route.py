@@ -244,7 +244,7 @@ async def create_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -256,7 +256,7 @@ async def create_landmark_in_route(
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
-        isValid = validators.landmarkInRoute(route.id, session)
+        isValid = validators.landmark_in_route(route.id, session)
         if isValid:
             route.status = RouteStatus.VALID
         else:
@@ -304,7 +304,7 @@ async def update_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -325,7 +325,7 @@ async def update_landmark_in_route(
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
         if haveUpdates:
-            isValid = validators.landmarkInRoute(route.id, session)
+            isValid = validators.landmark_in_route(route.id, session)
             if isValid:
                 route.status = RouteStatus.VALID
             else:
@@ -370,7 +370,7 @@ async def delete_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -390,7 +390,7 @@ async def delete_landmark_in_route(
             )
             session.delete(landmarkInRoute)
             session.flush()
-            isValid = validators.landmarkInRoute(route.id, session)
+            isValid = validators.landmark_in_route(route.id, session)
             if isValid:
                 route.status = RouteStatus.VALID
             else:
@@ -422,7 +422,7 @@ async def fetch_landmarks_in_route(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchLandmarkInRoute(session, qParam)
     except Exception as e:
@@ -448,7 +448,7 @@ async def fetch_landmarks_in_route(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchLandmarkInRoute(session, qParam)
     except Exception as e:
@@ -489,7 +489,7 @@ async def create_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -506,7 +506,7 @@ async def create_landmark_in_route(
         landmarkInRoute = createLandmarkInRoute(session, route, fParam)
         session.add(landmarkInRoute)
 
-        isValid = validators.landmarkInRoute(route.id, session)
+        isValid = validators.landmark_in_route(route.id, session)
         if isValid:
             route.status = RouteStatus.VALID
         else:
@@ -554,7 +554,7 @@ async def update_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -575,7 +575,7 @@ async def update_landmark_in_route(
         updateLandmarkInRoute(landmarkInRoute, fParam)
         haveUpdates = session.is_modified(landmarkInRoute)
         if haveUpdates:
-            isValid = validators.landmarkInRoute(route.id, session)
+            isValid = validators.landmark_in_route(route.id, session)
             if isValid:
                 route.status = RouteStatus.VALID
             else:
@@ -620,7 +620,7 @@ async def delete_landmark_in_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         if not (role.create_route | role.update_route):
             raise exceptions.NoPermission()
@@ -642,7 +642,7 @@ async def delete_landmark_in_route(
             session.delete(landmarkInRoute)
             session.flush()
 
-            isValid = validators.landmarkInRoute(route.id, session)
+            isValid = validators.landmark_in_route(route.id, session)
             if isValid:
                 route.status = RouteStatus.VALID
             else:
@@ -674,7 +674,7 @@ async def fetch_landmarks_in_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchLandmarkInRoute(session, qParam)

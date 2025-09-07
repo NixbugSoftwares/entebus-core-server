@@ -191,7 +191,7 @@ def updateCompany(
             wallet.name = walletName
             company.name = fParam.name
         if fParam.status is not None and company.status != fParam.status:
-            validators.stateTransition(
+            validators.state_transition(
                 companyStatusTransition, company.status, fParam.status, Company.status
             )
             company.status = fParam.status
@@ -207,8 +207,8 @@ def updateCompany(
         ],
     )
     if fParam.location is not None:
-        locationGeom = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(locationGeom)
+        locationGeom = validators.WKT_string(fParam.location, Point)
+        validators.SRID_4326(locationGeom)
         fParam.location = wkt.dumps(locationGeom)
 
         currentLocation = (wkb.loads(bytes(company.location.data))).wkt
@@ -224,8 +224,8 @@ def searchCompany(
 
     # Pre-processing
     if qParam.location is not None:
-        geometry = validators.WKTstring(qParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(qParam.location, Point)
+        validators.SRID_4326(geometry)
         qParam.location = wkt.dumps(geometry)
 
     # Filters
@@ -313,12 +313,12 @@ async def create_company(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_company)
+        validators.executive_permission(role, ExecutiveRole.create_company)
 
-        locationGeom = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(locationGeom)
+        locationGeom = validators.WKT_string(fParam.location, Point)
+        validators.SRID_4326(locationGeom)
         fParam.location = wkt.dumps(locationGeom)
 
         company = Company(
@@ -393,9 +393,9 @@ async def update_company(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_company)
+        validators.executive_permission(role, ExecutiveRole.update_company)
 
         company = session.query(Company).filter(Company.id == fParam.id).first()
         if company is None:
@@ -438,9 +438,9 @@ async def delete_company(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_company)
+        validators.executive_permission(role, ExecutiveRole.delete_company)
 
         company = session.query(Company).filter(Company.id == fParam.id).first()
         if company is not None:
@@ -478,7 +478,7 @@ async def fetch_company(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchCompany(session, qParam)
     except Exception as e:
@@ -510,7 +510,7 @@ async def fetch_company(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
         qParam = promoteToParent(
             qParam,
             QueryParamsForEX,
@@ -550,9 +550,9 @@ async def update_company(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_company)
+        validators.operator_permission(role, OperatorRole.update_company)
 
         if fParam.id is None:
             fParam.id = token.company_id
@@ -600,7 +600,7 @@ async def fetch_company(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         if qParam.id is None:
             qParam.id = token.company_id

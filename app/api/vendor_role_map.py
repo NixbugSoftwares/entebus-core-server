@@ -181,9 +181,9 @@ async def create_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ve_role)
+        validators.executive_permission(role, ExecutiveRole.update_ve_role)
 
         vendor = session.query(Vendor).filter(Vendor.id == fParam.vendor_id).first()
         if vendor is None:
@@ -235,9 +235,9 @@ async def update_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ve_role)
+        validators.executive_permission(role, ExecutiveRole.update_ve_role)
 
         roleMap = (
             session.query(VendorRoleMap).filter(VendorRoleMap.id == fParam.id).first()
@@ -283,9 +283,9 @@ async def delete_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_ve_role)
+        validators.executive_permission(role, ExecutiveRole.update_ve_role)
 
         roleMap = (
             session.query(VendorRoleMap).filter(VendorRoleMap.id == fParam.id).first()
@@ -318,7 +318,7 @@ async def fetch_role_map(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchRoleMap(session, qParam)
     except Exception as e:
@@ -356,9 +356,9 @@ async def create_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.update_role)
+        validators.vendor_permission(role, VendorRole.update_role)
 
         vendor = (
             session.query(Vendor)
@@ -420,9 +420,9 @@ async def update_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.update_role)
+        validators.vendor_permission(role, VendorRole.update_role)
 
         roleMap = (
             session.query(VendorRoleMap)
@@ -471,9 +471,9 @@ async def delete_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.update_role)
+        validators.vendor_permission(role, VendorRole.update_role)
 
         roleMap = (
             session.query(VendorRoleMap)
@@ -509,7 +509,7 @@ async def fetch_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
 
         qParam = promoteToParent(
             qParam, QueryParamsForEX, business_id=token.business_id

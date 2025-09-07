@@ -171,9 +171,9 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.manage_ve_token)
+        validators.executive_permission(role, ExecutiveRole.manage_ve_token)
 
         return searchVendorToken(session, qParam)
     except Exception as e:
@@ -204,9 +204,9 @@ async def delete_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.manage_ve_token)
+        validators.executive_permission(role, ExecutiveRole.manage_ve_token)
 
         tokenToDelete = (
             session.query(VendorToken).filter(VendorToken.id == fParam.id).first()
@@ -340,7 +340,7 @@ async def refresh_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         if fParam.id is None:
             tokenToUpdate = token
         else:
@@ -396,7 +396,7 @@ async def delete_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
 
         if fParam.id is None:
@@ -448,7 +448,7 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
         canManageToken = bool(role and role.manage_token)
 

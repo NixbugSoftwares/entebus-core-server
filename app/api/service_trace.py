@@ -109,8 +109,8 @@ def searchServiceTrace(
 
     # Pre-processing
     if qParam.location is not None:
-        geometry = validators.WKTstring(qParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(qParam.location, Point)
+        validators.SRID_4326(geometry)
         qParam.location = wkt.dumps(geometry)
     # Filters
     if qParam.landmark_id is not None:
@@ -198,7 +198,7 @@ async def fetch_service_trace(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchServiceTrace(session, qParam)
     except Exception as e:
@@ -229,7 +229,7 @@ async def fetch_service_trace(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchServiceTrace(session, qParam)
     except Exception as e:
@@ -272,7 +272,7 @@ async def update_service_trace(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         serviceTrace = (
             session.query(ServiceTrace)
@@ -329,8 +329,8 @@ async def update_service_trace(
             serviceTrace.landmark_id = fParam.landmark_id
 
         if fParam.location is not None:
-            locationGeom = validators.WKTstring(fParam.location, Point)
-            validators.SRID4326(locationGeom)
+            locationGeom = validators.WKT_string(fParam.location, Point)
+            validators.SRID_4326(locationGeom)
             fParam.location = wkt.dumps(locationGeom)
             serviceTrace.location = fParam.location
 
@@ -377,7 +377,7 @@ async def fetch_service_trace(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchServiceTrace(session, qParam)

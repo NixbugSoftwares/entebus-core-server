@@ -174,9 +174,9 @@ async def create_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_route)
+        validators.executive_permission(role, ExecutiveRole.create_route)
 
         route = Route(
             company_id=fParam.company_id, name=fParam.name, start_time=fParam.start_time
@@ -218,9 +218,9 @@ async def update_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_route)
+        validators.executive_permission(role, ExecutiveRole.update_route)
 
         route = session.query(Route).filter(Route.id == fParam.id).first()
         if route is None:
@@ -267,9 +267,9 @@ async def delete_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_route)
+        validators.executive_permission(role, ExecutiveRole.delete_route)
 
         routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = session.query(Route).filter(Route.id == fParam.id).first()
@@ -303,7 +303,7 @@ async def fetch_route(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchRoute(session, qParam)
     except Exception as e:
@@ -327,7 +327,7 @@ async def fetch_route(
 async def fetch_route(qParam: QueryParams = Depends(), bearer=Depends(bearer_vendor)):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         return searchRoute(session, qParam)
     except Exception as e:
@@ -359,9 +359,9 @@ async def create_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_route)
+        validators.operator_permission(role, OperatorRole.create_route)
 
         route = Route(
             company_id=token.company_id, name=fParam.name, start_time=fParam.start_time
@@ -403,9 +403,9 @@ async def update_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_route)
+        validators.operator_permission(role, OperatorRole.update_route)
 
         route = (
             session.query(Route)
@@ -457,9 +457,9 @@ async def delete_route(
     routeLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_route)
+        validators.operator_permission(role, OperatorRole.delete_route)
 
         routeLock = acquireLock(Route.__tablename__, fParam.id)
         route = (
@@ -498,7 +498,7 @@ async def fetch_route(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParams, company_id=token.company_id)
         return searchRoute(session, qParam)

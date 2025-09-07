@@ -233,9 +233,9 @@ async def create_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_vendor)
+        validators.executive_permission(role, ExecutiveRole.create_vendor)
 
         fParam.password = argon2.makePassword(fParam.password)
         vendor = Vendor(
@@ -287,9 +287,9 @@ async def update_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_vendor)
+        validators.executive_permission(role, ExecutiveRole.update_vendor)
 
         vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
         if vendor is None:
@@ -331,9 +331,9 @@ async def delete_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, VendorRole.delete_vendor)
+        validators.executive_permission(role, VendorRole.delete_vendor)
 
         vendor = session.query(Vendor).filter(Vendor.id == fParam.id).first()
         if vendor is not None:
@@ -369,7 +369,7 @@ async def fetch_vendor(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchVendor(session, qParam)
     except Exception as e:
@@ -403,9 +403,9 @@ async def create_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.create_vendor)
+        validators.vendor_permission(role, VendorRole.create_vendor)
 
         fParam.password = argon2.makePassword(fParam.password)
         vendor = Vendor(
@@ -458,7 +458,7 @@ async def update_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
 
         if fParam.id is None:
@@ -517,9 +517,9 @@ async def delete_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.delete_vendor)
+        validators.vendor_permission(role, VendorRole.delete_vendor)
 
         # Prevent self deletion
         if fParam.id == token.business_id:
@@ -564,7 +564,7 @@ async def fetch_vendor(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
 
         qParam = promoteToParent(
             qParam, QueryParamsForEX, business_id=token.business_id

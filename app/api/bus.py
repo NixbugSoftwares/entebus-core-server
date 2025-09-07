@@ -274,9 +274,9 @@ async def create_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_bus)
+        validators.executive_permission(role, ExecutiveRole.create_bus)
 
         if fParam.manufactured_on > datetime.now(timezone.utc):
             raise exceptions.InvalidValue(Bus.manufactured_on)
@@ -331,9 +331,9 @@ async def update_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_bus)
+        validators.executive_permission(role, ExecutiveRole.update_bus)
 
         bus = session.query(Bus).filter(Bus.id == fParam.id).first()
         if bus is None:
@@ -377,9 +377,9 @@ async def delete_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_bus)
+        validators.executive_permission(role, ExecutiveRole.delete_bus)
 
         bus = session.query(Bus).filter(Bus.id == fParam.id).first()
         if bus is not None:
@@ -410,7 +410,7 @@ async def fetch_buses(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchBus(session, qParam)
     except Exception as e:
@@ -436,7 +436,7 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        validators.vendorToken(bearer.credentials, session)
+        validators.vendor_token(bearer.credentials, session)
 
         qParam = promoteToParent(
             qParam,
@@ -473,9 +473,9 @@ async def create_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_bus)
+        validators.operator_permission(role, OperatorRole.create_bus)
 
         if fParam.manufactured_on > datetime.now(timezone.utc):
             raise exceptions.InvalidValue(Bus.manufactured_on)
@@ -531,9 +531,9 @@ async def update_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_bus)
+        validators.operator_permission(role, OperatorRole.update_bus)
 
         bus = (
             session.query(Bus)
@@ -581,9 +581,9 @@ async def delete_bus(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_bus)
+        validators.operator_permission(role, OperatorRole.delete_bus)
 
         bus = (
             session.query(Bus)
@@ -619,7 +619,7 @@ async def fetch_buses(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchBus(session, qParam)

@@ -239,9 +239,9 @@ async def create_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_operator)
+        validators.executive_permission(role, ExecutiveRole.create_operator)
 
         fParam.password = argon2.makePassword(fParam.password)
         operator = Operator(
@@ -293,9 +293,9 @@ async def update_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_operator)
+        validators.executive_permission(role, ExecutiveRole.update_operator)
 
         operator = session.query(Operator).filter(Operator.id == fParam.id).first()
         if operator is None:
@@ -337,9 +337,9 @@ async def delete_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, OperatorRole.delete_operator)
+        validators.executive_permission(role, OperatorRole.delete_operator)
 
         operator = session.query(Operator).filter(Operator.id == fParam.id).first()
         if operator is not None:
@@ -375,7 +375,7 @@ async def fetch_operator(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchOperator(session, qParam)
     except Exception as e:
@@ -409,9 +409,9 @@ async def create_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_operator)
+        validators.operator_permission(role, OperatorRole.create_operator)
 
         fParam.password = argon2.makePassword(fParam.password)
         operator = Operator(
@@ -465,7 +465,7 @@ async def update_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
 
         if fParam.id is None:
@@ -524,9 +524,9 @@ async def delete_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_operator)
+        validators.operator_permission(role, OperatorRole.delete_operator)
 
         # Prevent self deletion
         if fParam.id == token.operator_id:
@@ -571,7 +571,7 @@ async def fetch_operator(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchOperator(session, qParam)

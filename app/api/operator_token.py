@@ -171,9 +171,9 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.manage_op_token)
+        validators.executive_permission(role, ExecutiveRole.manage_op_token)
 
         return searchOperatorToken(session, qParam)
     except Exception as e:
@@ -204,9 +204,9 @@ async def delete_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.manage_op_token)
+        validators.executive_permission(role, ExecutiveRole.manage_op_token)
 
         tokenToDelete = (
             session.query(OperatorToken).filter(OperatorToken.id == fParam.id).first()
@@ -332,7 +332,7 @@ async def refresh_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         if fParam.id is None:
             tokenToUpdate = token
         else:
@@ -387,7 +387,7 @@ async def delete_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
 
         if fParam.id is None:
@@ -439,7 +439,7 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
         canManageToken = bool(role and role.manage_token)
 

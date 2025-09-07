@@ -102,7 +102,7 @@ async def upload_executive_picture(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
         if fParam.executive_id is None:
@@ -164,7 +164,7 @@ async def delete_executive_picture(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
         if fParam.id is None:
@@ -218,7 +218,7 @@ async def fetch_executive_pictures(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         query = session.query(ExecutiveImage)
 
@@ -284,7 +284,7 @@ async def download_executive_picture(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         executiveImage = (
             session.query(ExecutiveImage).filter(ExecutiveImage.id == qParam.id).first()

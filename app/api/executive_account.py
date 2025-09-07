@@ -146,9 +146,9 @@ async def create_executive(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_executive)
+        validators.executive_permission(role, ExecutiveRole.create_executive)
 
         fParam.password = argon2.makePassword(fParam.password)
         executive = Executive(
@@ -199,7 +199,7 @@ async def update_executive(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
         if fParam.id is None:
@@ -274,9 +274,9 @@ async def delete_executive(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_executive)
+        validators.executive_permission(role, ExecutiveRole.delete_executive)
 
         # Prevent self deletion
         if fParam.id == token.executive_id:
@@ -321,7 +321,7 @@ async def fetch_executive(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         query = session.query(Executive)
 

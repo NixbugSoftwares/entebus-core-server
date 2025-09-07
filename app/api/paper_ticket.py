@@ -178,7 +178,7 @@ async def fetch_paper_ticket(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchPaperTicket(session, qParam)
     except Exception as e:
@@ -223,7 +223,7 @@ async def create_paper_ticket(
     dutyLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
         dutyLock = acquireLock(Duty.__tablename__, fParam.duty_id)
@@ -341,7 +341,7 @@ async def fetch_paper_ticket(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchPaperTicket(session, qParam)

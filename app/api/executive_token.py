@@ -189,7 +189,7 @@ async def refresh_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
 
         if fParam.id is None:
             tokenToUpdate = token
@@ -244,7 +244,7 @@ async def delete_token(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
 
         if fParam.id is None:
@@ -295,7 +295,7 @@ async def fetch_tokens(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
         canManageToken = bool(role and role.manage_ex_token)
 

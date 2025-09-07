@@ -185,9 +185,9 @@ async def create_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_op_role)
+        validators.executive_permission(role, ExecutiveRole.update_op_role)
 
         operator = (
             session.query(Operator).filter(Operator.id == fParam.operator_id).first()
@@ -245,9 +245,9 @@ async def update_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_op_role)
+        validators.executive_permission(role, ExecutiveRole.update_op_role)
 
         roleMap = (
             session.query(OperatorRoleMap)
@@ -295,9 +295,9 @@ async def delete_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_op_role)
+        validators.executive_permission(role, ExecutiveRole.update_op_role)
 
         roleMap = (
             session.query(OperatorRoleMap)
@@ -332,7 +332,7 @@ async def fetch_role_map(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchRoleMap(session, qParam)
     except Exception as e:
@@ -370,9 +370,9 @@ async def create_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_role)
+        validators.operator_permission(role, OperatorRole.update_role)
 
         operator = (
             session.query(Operator)
@@ -434,9 +434,9 @@ async def update_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_role)
+        validators.operator_permission(role, OperatorRole.update_role)
 
         roleMap = (
             session.query(OperatorRoleMap)
@@ -485,9 +485,9 @@ async def delete_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_role)
+        validators.operator_permission(role, OperatorRole.update_role)
 
         roleMap = (
             session.query(OperatorRoleMap)
@@ -523,7 +523,7 @@ async def fetch_role_map(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchRoleMap(session, qParam)

@@ -201,8 +201,8 @@ def updateBusiness(
         ],
     )
     if fParam.location is not None:
-        geometry = validators.WKTstring(fParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(fParam.location, Point)
+        validators.SRID_4326(geometry)
         fParam.location = wkt.dumps(geometry)
 
         currentLocation = (wkb.loads(bytes(business.location.data))).wkt
@@ -217,8 +217,8 @@ def searchBusiness(
 
     # Pre-processing
     if qParam.location is not None:
-        geometry = validators.WKTstring(qParam.location, Point)
-        validators.SRID4326(geometry)
+        geometry = validators.WKT_string(qParam.location, Point)
+        validators.SRID_4326(geometry)
         qParam.location = wkt.dumps(geometry)
 
     # Filters
@@ -308,13 +308,13 @@ async def create_business(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_business)
+        validators.executive_permission(role, ExecutiveRole.create_business)
 
         if fParam.location is not None:
-            geometry = validators.WKTstring(fParam.location, Point)
-            validators.SRID4326(geometry)
+            geometry = validators.WKT_string(fParam.location, Point)
+            validators.SRID_4326(geometry)
             fParam.location = wkt.dumps(geometry)
 
         business = Business(
@@ -384,9 +384,9 @@ async def update_business(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_business)
+        validators.executive_permission(role, ExecutiveRole.update_business)
 
         business = session.query(Business).filter(Business.id == fParam.id).first()
         if business is None:
@@ -429,9 +429,9 @@ async def delete_business(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_business)
+        validators.executive_permission(role, ExecutiveRole.delete_business)
 
         business = session.query(Business).filter(Business.id == fParam.id).first()
         if business is not None:
@@ -469,7 +469,7 @@ async def fetch_business(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchBusiness(session, qParam)
     except Exception as e:
@@ -505,9 +505,9 @@ async def update_business(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
         role = getters.vendorRole(token, session)
-        validators.vendorPermission(role, VendorRole.update_business)
+        validators.vendor_permission(role, VendorRole.update_business)
 
         if fParam.id is None:
             fParam.id = token.business_id
@@ -555,7 +555,7 @@ async def fetch_business(
 ):
     try:
         session = sessionMaker()
-        token = validators.vendorToken(bearer.credentials, session)
+        token = validators.vendor_token(bearer.credentials, session)
 
         if qParam.id is None:
             qParam.id = token.business_id

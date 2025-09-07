@@ -248,9 +248,9 @@ async def create_duty(
     serviceLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.create_duty)
+        validators.executive_permission(role, ExecutiveRole.create_duty)
 
         serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
         company = session.query(Company).filter(Company.id == fParam.company_id).first()
@@ -346,9 +346,9 @@ async def update_duty(
     dutyLock = None
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.update_duty)
+        validators.executive_permission(role, ExecutiveRole.update_duty)
 
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
@@ -365,11 +365,11 @@ async def update_duty(
             DutyStatus.NOT_USED: [],
         }
         if fParam.status is not None and fParam.status != duty.status:
-            validators.stateTransition(
+            validators.state_transition(
                 dutyStatusTransition, duty.status, fParam.status, Duty.status
             )
             if fParam.status == DutyStatus.TERMINATED:
-                validators.executivePermission(role, ExecutiveRole.update_service)
+                validators.executive_permission(role, ExecutiveRole.update_service)
 
         updateDuty(session, duty, fParam)
         haveUpdates = session.is_modified(duty)
@@ -418,9 +418,9 @@ async def delete_duty(
 ):
     try:
         session = sessionMaker()
-        token = validators.executiveToken(bearer.credentials, session)
+        token = validators.executive_token(bearer.credentials, session)
         role = getters.executiveRole(token, session)
-        validators.executivePermission(role, ExecutiveRole.delete_duty)
+        validators.executive_permission(role, ExecutiveRole.delete_duty)
 
         duty = session.query(Duty).filter(Duty.id == fParam.id).first()
         if duty is None:
@@ -452,7 +452,7 @@ async def get_duties(
 ):
     try:
         session = sessionMaker()
-        validators.executiveToken(bearer.credentials, session)
+        validators.executive_token(bearer.credentials, session)
 
         return searchDuty(session, qParam)
     except Exception as e:
@@ -507,9 +507,9 @@ async def create_duty(
     serviceLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.create_duty)
+        validators.operator_permission(role, OperatorRole.create_duty)
 
         serviceLock = acquireLock(Service.__tablename__, fParam.service_id)
         operator = (
@@ -621,9 +621,9 @@ async def update_duty(
     dutyLock = None
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.update_duty)
+        validators.operator_permission(role, OperatorRole.update_duty)
 
         duty = (
             session.query(Duty)
@@ -645,11 +645,11 @@ async def update_duty(
             DutyStatus.NOT_USED: [],
         }
         if fParam.status is not None and fParam.status != duty.status:
-            validators.stateTransition(
+            validators.state_transition(
                 dutyStatusTransition, duty.status, fParam.status, Duty.status
             )
             if fParam.status == DutyStatus.TERMINATED:
-                validators.operatorPermission(role, OperatorRole.update_service)
+                validators.operator_permission(role, OperatorRole.update_service)
 
         if (
             fParam.status in [DutyStatus.STARTED, DutyStatus.ENDED]
@@ -705,9 +705,9 @@ async def delete_duty(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
         role = getters.operatorRole(token, session)
-        validators.operatorPermission(role, OperatorRole.delete_duty)
+        validators.operator_permission(role, OperatorRole.delete_duty)
 
         duty = (
             session.query(Duty)
@@ -744,7 +744,7 @@ async def get_duties(
 ):
     try:
         session = sessionMaker()
-        token = validators.operatorToken(bearer.credentials, session)
+        token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchDuty(session, qParam)
