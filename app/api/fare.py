@@ -196,7 +196,7 @@ def searchFare(
             exceptions.NoPermission(),
             exceptions.UnexpectedParameter(Fare.company_id),
             exceptions.MissingParameter(Fare.company_id),
-            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.UnknownTicketType("name"),
             exceptions.InvalidFareFunction(),
             exceptions.JSMemoryLimitExceeded(),
             exceptions.JSTimeLimitExceeded(),
@@ -265,7 +265,7 @@ async def create_fare(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.UnknownTicketType("name"),
             exceptions.InvalidFareFunction(),
             exceptions.JSMemoryLimitExceeded(),
             exceptions.JSTimeLimitExceeded(),
@@ -423,7 +423,7 @@ async def fetch_route(
         [
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
-            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.UnknownTicketType("name"),
             exceptions.InvalidFareFunction(),
             exceptions.InvalidFareVersion(),
         ]
@@ -484,7 +484,7 @@ async def create_fare(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
-            exceptions.UnknownTicketType("ticket_type"),
+            exceptions.UnknownTicketType("name"),
             exceptions.InvalidFareFunction(),
             exceptions.InvalidFareVersion(),
         ]

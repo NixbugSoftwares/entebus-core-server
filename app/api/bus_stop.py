@@ -360,7 +360,7 @@ async def fetch_bus_stop(
         session.close()
 
 
-# ## API endpoints [Vendor]
+## API endpoints [Vendor]
 @route_vendor.get(
     URL_BUS_STOP,
     tags=["Bus Stop"],
@@ -392,7 +392,7 @@ async def fetch_bus_stop(
         session.close()
 
 
-# ## API endpoints [Operator]
+## API endpoints [Operator]
 @route_operator.get(
     URL_BUS_STOP,
     tags=["Bus Stop"],

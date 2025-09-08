@@ -70,7 +70,7 @@ def fuseExceptionResponses(exceptions: List[APIException]) -> Dict[int, dict]:
     return responses
 
 
-def enumStr(enumClass):
+def enumStr(enumClass) -> str:
     """
     Convert an Enum class into a comma-separated string of its members.
 
@@ -94,7 +94,7 @@ def enumStr(enumClass):
     return ", ".join(f"{x.name}: {x.value}" for x in enumClass)
 
 
-def toWKTgeometry(wktString: str, type) -> Optional[BaseGeometry]:
+def toWKTgeometry(wktString: str, type: Type[BaseGeometry]) -> Optional[BaseGeometry]:
     """
     Convert a WKT (Well-Known Text) string into a Shapely geometry of the expected type.
 
@@ -153,7 +153,7 @@ def isSRID4326(wktGeom: BaseGeometry) -> bool:
         >>> from shapely.geometry import Point, Polygon, LineString, MultiPoint
         >>> isSRID4326(Point(77.5946, 12.9716))
         True
-        >>> isSRID4326(Point(200, 95))  # invalid lon/lat
+        >>> isSRID4326(Point(200, 95))  # invalid lat/lon
         False
         >>> polygon = Polygon([(77, 12), (78, 12), (78, 13), (77, 13), (77, 12)])
         >>> isSRID4326(polygon)
@@ -173,7 +173,10 @@ def isSRID4326(wktGeom: BaseGeometry) -> bool:
         return True
 
     # Point, LineString, Polygon (and similar)
-    if hasattr(wktGeom, "coords"):
+    if hasattr(wktGeom, "exterior"):
+        if not check_coords(wktGeom.exterior.coords):
+            return False
+    elif hasattr(wktGeom, "coords"):
         if not check_coords(wktGeom.coords):
             return False
 

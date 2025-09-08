@@ -1,5 +1,6 @@
 from typing import BinaryIO
 from minio import Minio
+
 from app.src.constants import MINIO_HOST, MINIO_PASSWORD, MINIO_PORT, MINIO_USERNAME
 
 # MinIO client instance

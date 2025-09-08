@@ -90,8 +90,7 @@ docker run -d \
 ```
 docker run --name redis \
     -p 6379:6379 \
-    -e REDIS_PASSWORD=password \
-    -d redis
+    -d redis redis-server --requirepass "password"
 ```
 
 ## 🚀 Running the Server

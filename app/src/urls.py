@@ -11,8 +11,8 @@ gateway or service base URL when making requests.
 # -------------------------------
 # Authentication & Tokens
 # -------------------------------
-URL_OPERATOR_TOKEN = "/company/account/token"
 URL_EXECUTIVE_TOKEN = "/entebus/account/token"
+URL_OPERATOR_TOKEN = "/company/account/token"
 URL_VENDOR_TOKEN = "/business/account/token"
 
 # -------------------------------
@@ -25,7 +25,7 @@ URL_OPERATOR_ACCOUNT = "/company/account"
 URL_OPERATOR_PICTURE = "/company/account/picture"
 
 URL_VENDOR_ACCOUNT = "/business/account"
-URL_OPERATOR_PICTURE = "/business/account/picture"
+URL_VENDOR_PICTURE = "/business/account/picture"
 
 # -------------------------------
 # Roles & Role Mappings

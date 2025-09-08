@@ -86,7 +86,11 @@ class QueryParams(BaseModel):
     response_model=ExecutiveImageSchema,
     status_code=status.HTTP_201_CREATED,
     responses=fuseExceptionResponses(
-        [exceptions.InvalidToken(), exceptions.NoPermission(), exceptions.InvalidImageFile()]
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidImageFile(),
+        ]
     ),
     description="""
     Upload the executive's profile picture. 

@@ -285,6 +285,7 @@ def searchSchedule(
             exceptions.NoPermission(),
             exceptions.UnknownValue(Schedule.bus_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
+            exceptions.InvalidValue(Schedule.trigger_till),
         ]
     ),
     description="""
@@ -367,6 +368,7 @@ async def create_schedule(
             exceptions.InvalidIdentifier(),
             exceptions.UnknownValue(Schedule.route_id),
             exceptions.InvalidAssociation(Schedule.bus_id, Schedule.company_id),
+            exceptions.InvalidValue(Schedule.trigger_till),
         ]
     ),
     description="""
