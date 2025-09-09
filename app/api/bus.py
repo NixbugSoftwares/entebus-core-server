@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status, Form
@@ -11,7 +11,7 @@ from app.src.db import ExecutiveRole, OperatorRole, sessionMaker, Bus
 from app.src import exceptions, validators, getters
 from app.src.loggers import logEvent
 from app.src.enums import BusStatus
-from app.src.constants import REGEX_REGISTRATION_NUMBER
+from app.src.constants import REGEX_REGISTRATION_NUMBER, TMZ_PRIMARY
 from app.src.functions import (
     enumStr,
     fuseExceptionResponses,
@@ -151,7 +151,15 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
+def validateManufacturedOn(fParam: CreateFormForOP | CreateFormForEX | UpdateForm):
+    if fParam.manufactured_on is not None:
+        fParam.manufactured_on = fParam.manufactured_on.replace(tzinfo=TMZ_PRIMARY)
+        if fParam.manufactured_on > datetime.now(TMZ_PRIMARY):
+            raise exceptions.InvalidValue(Bus.manufactured_on)
+
+
 def updateBus(bus: Bus, fParam: UpdateForm):
+    validateManufacturedOn(fParam)
     updateIfChanged(
         bus,
         fParam,
@@ -163,15 +171,9 @@ def updateBus(bus: Bus, fParam: UpdateForm):
             Bus.fitness_upto.key,
             Bus.road_tax_upto.key,
             Bus.status.key,
+            Bus.manufactured_on.key,
         ],
     )
-    if (
-        fParam.manufactured_on is not None
-        and bus.manufactured_on != fParam.manufactured_on
-    ):
-        if fParam.manufactured_on > datetime.now(timezone.utc):
-            raise exceptions.InvalidValue(Bus.manufactured_on)
-        bus.manufactured_on = fParam.manufactured_on
 
 
 def searchBus(
@@ -259,11 +261,16 @@ def searchBus(
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=fuseExceptionResponses(
-        [exceptions.InvalidToken(), exceptions.NoPermission()]
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidValue(Bus.manufactured_on),
+        ]
     ),
     description="""
     Creates a new bus for a specified  company.     
     Only executive with `create_bus` permission can create bus.     
+    Manufactured on must be a past date.    
     Logs the bus account creation activity with the associated token.
     """,
 )
@@ -278,8 +285,8 @@ async def create_bus(
         role = getters.executiveRole(token, session)
         validators.executive_permission(role, ExecutiveRole.create_bus)
 
-        if fParam.manufactured_on > datetime.now(timezone.utc):
-            raise exceptions.InvalidValue(Bus.manufactured_on)
+        validateManufacturedOn(fParam)
+
         bus = Bus(
             company_id=fParam.company_id,
             name=fParam.name,
@@ -314,6 +321,7 @@ async def create_bus(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
+            exceptions.InvalidValue(Bus.manufactured_on),
         ]
     ),
     description="""
@@ -321,6 +329,7 @@ async def create_bus(
     Only executives with `update_bus` permission can perform this operation.        
     Supports partial updates such as modifying the bus name or capacity.        
     Changes are saved only if the bus data has been modified.       
+    Manufactured on must be a past date.    
     Logs the bus updating activity with the associated token.
     """,
 )
@@ -457,12 +466,17 @@ async def fetch_tokens(
     response_model=BusSchema,
     status_code=status.HTTP_201_CREATED,
     responses=fuseExceptionResponses(
-        [exceptions.InvalidToken(), exceptions.NoPermission()]
+        [
+            exceptions.InvalidToken(),
+            exceptions.NoPermission(),
+            exceptions.InvalidValue(Bus.manufactured_on),
+        ]
     ),
     description="""
     Creates a new bus for for the operator's own company.       
     Only operator with `create_bus` permission can create bus.      
     The company ID is derived from the token, not user input.       
+    Manufactured on must be a past date.    
     Logs the bus account creation activity with the associated token.
     """,
 )
@@ -477,8 +491,8 @@ async def create_bus(
         role = getters.operatorRole(token, session)
         validators.operator_permission(role, OperatorRole.create_bus)
 
-        if fParam.manufactured_on > datetime.now(timezone.utc):
-            raise exceptions.InvalidValue(Bus.manufactured_on)
+        validateManufacturedOn(fParam)
+
         bus = Bus(
             company_id=token.company_id,
             registration_number=fParam.registration_number,
@@ -513,6 +527,7 @@ async def create_bus(
             exceptions.InvalidToken(),
             exceptions.NoPermission(),
             exceptions.InvalidIdentifier(),
+            exceptions.InvalidValue(Bus.manufactured_on),
         ]
     ),
     description="""
@@ -521,6 +536,7 @@ async def create_bus(
     Validates the bus ID and ensures it belongs to the operator's company.      
     Supports partial updates such as modifying the bus name or capacity.        
     Changes are saved only if the bus data has been modified.       
+    Manufactured on must be a past date.    
     Logs the bus updating activity using the operator's token and request metadata.
     """,
 )
