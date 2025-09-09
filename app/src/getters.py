@@ -1,5 +1,6 @@
 from fastapi import Request
 from sqlalchemy.orm.session import Session
+from sqlalchemy.orm import DeclarativeMeta
 
 from app.src import schemas
 from app.src.db import (
@@ -36,7 +37,11 @@ def requestInfo(request: Request) -> schemas.RequestInfo:
 
 
 def _getRole(
-    session: Session, role_cls, role_map_cls, foreign_key: str, token
+    session: Session,
+    role_cls: DeclarativeMeta,
+    role_map_cls: DeclarativeMeta,
+    foreign_key: str,
+    token: object,
 ) -> object | None:
     """
     Generic role-fetching utility.
@@ -62,14 +67,24 @@ def _getRole(
 
 def executiveRole(token: ExecutiveToken, session: Session) -> ExecutiveRole | None:
     """Fetch the role associated with an executive token."""
-    return _getRole(session, ExecutiveRole, ExecutiveRoleMap, "executive_id", token)
+    return _getRole(
+        session,
+        ExecutiveRole,
+        ExecutiveRoleMap,
+        ExecutiveRoleMap.executive_id.name,
+        token,
+    )
 
 
 def operatorRole(token: OperatorToken, session: Session) -> OperatorRole | None:
     """Fetch the role associated with an operator token."""
-    return _getRole(session, OperatorRole, OperatorRoleMap, "operator_id", token)
+    return _getRole(
+        session, OperatorRole, OperatorRoleMap, OperatorRoleMap.operator_id.name, token
+    )
 
 
 def vendorRole(token: VendorToken, session: Session) -> VendorRole | None:
     """Fetch the role associated with a vendor token."""
-    return _getRole(session, VendorRole, VendorRoleMap, "vendor_id", token)
+    return _getRole(
+        session, VendorRole, VendorRoleMap, VendorRoleMap.vendor_id.name, token
+    )

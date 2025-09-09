@@ -18,6 +18,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import Column
 from shapely.geometry.base import BaseGeometry
 from typing import Type, Any
+from sqlalchemy.orm import DeclarativeMeta
 
 from app.src.db import (
     ExecutiveRole,
@@ -31,12 +32,6 @@ from app.src.db import (
 from app.src.constants import MIN_LANDMARK_IN_ROUTE, DYNAMIC_FARE_VERSION
 from app.src import exceptions
 from app.src.dynamic_fare.v1 import DynamicFare
-
-
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-
-from app.src.db import ExecutiveToken
 from app.src import exceptions
 from app.src.functions import isAABB, isSRID4326, isValidTransition, toWKTgeometry
 
@@ -44,7 +39,9 @@ from app.src.functions import isAABB, isSRID4326, isValidTransition, toWKTgeomet
 # ---------------------------------------------------------------------------
 # Token validation
 # ---------------------------------------------------------------------------
-def _validate_token(model_cls, access_token: str, session: Session):
+def _validate_token(
+    model_cls: Type[DeclarativeMeta], access_token: str, session: Session
+) -> DeclarativeMeta:
     """
     Generic token validator for any token model.
 
@@ -94,7 +91,7 @@ def operator_token(access_token: str, session: Session) -> OperatorToken:
 # ---------------------------------------------------------------------------
 # Permission checks
 # ---------------------------------------------------------------------------
-def _validate_permission(role, permission: Column) -> bool:
+def _validate_permission(role: Any, permission: Column) -> bool:
     """
     Generic permission validator.
 

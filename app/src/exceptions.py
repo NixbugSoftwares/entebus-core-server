@@ -68,7 +68,7 @@ class APIException(HTTPException):
 # ---------------------------------------------------------------------------
 # Exception handling entrypoint
 # ---------------------------------------------------------------------------
-def handle(e: Exception):
+def handle(e: Exception) -> None:
     """
     Normalize and re-raise exceptions as API-friendly errors.
 
