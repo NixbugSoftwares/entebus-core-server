@@ -289,9 +289,13 @@ async def delete_executive(
                 .filter(ExecutiveImage.executive_id == executive.id)
                 .first()
             )
-            session.delete(executive)
-            session.commit()
-            deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
+            if executiveImage is not None:
+                session.delete(executive)
+                session.commit()
+                deleteFile(EXECUTIVE_PICTURES, str(executiveImage.id))
+            else:
+                session.delete(executive)
+                session.commit()
             logEvent(
                 token, request_info, jsonable_encoder(executive, exclude={"password"})
             )
