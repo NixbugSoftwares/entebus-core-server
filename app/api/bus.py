@@ -23,6 +23,7 @@ from app.src.urls import URL_BUS
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -122,6 +123,10 @@ class QueryParams(BaseModel):
 
 class QueryParamsForVE(QueryParams):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForPU(QueryParamsForVE):
+    pass
 
 
 class QueryParamsForOP(QueryParams):
@@ -638,6 +643,34 @@ async def fetch_buses(
         token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
+        return searchBus(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Public]
+@route_public.get(
+    URL_BUS,
+    tags=["Bus"],
+    response_model=List[BusSchema],
+    description="""
+    Fetches a list of buses across companies.        
+    Requires a valid vendor token for authentication.       
+    Supports flexible filtering using query parameters such as bus ID, name, or company ID.     
+    Requires no authentication.
+    """,
+)
+async def fetch_bus(qParam: QueryParamsForPU = Depends()):
+    try:
+        session = sessionMaker()
+
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
+            status=BusStatus.ACTIVE,
+        )
         return searchBus(session, qParam)
     except Exception as e:
         exceptions.handle(e)

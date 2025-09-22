@@ -47,6 +47,7 @@ from app.src.urls import URL_SERVICE, URL_SCHEDULE_TRIGGER
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -173,6 +174,10 @@ class QueryParamsForEX(QueryParamsForOP):
 
 class QueryParamsForVE(QueryParams):
     company_id: int | None = Field(Query(default=None))
+
+
+class QueryParamsForPU(QueryParamsForVE):
+    pass
 
 
 class QueryParamsUsingScheduleForOP(BaseModel):
@@ -1120,6 +1125,34 @@ async def fetch_scheduled_trigger(
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
         return searchTriggerSchedules(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Public]
+@route_public.get(
+    URL_SERVICE,
+    tags=["Service"],
+    response_model=List[ServiceSchema],
+    description="""
+    Fetch a list of all services across companies.       
+    Only available to users with a valid public token.       
+    Supports filtering, sorting, and pagination.        
+    Requires no authentication.
+    """,
+)
+async def fetch_service(qParam: QueryParamsForPU = Depends()):
+    try:
+        session = sessionMaker()
+
+        qParam = promoteToParent(
+            qParam,
+            QueryParamsForEX,
+            status=ServiceStatus.STARTED,
+        )
+        return searchService(session, qParam)
     except Exception as e:
         exceptions.handle(e)
     finally:

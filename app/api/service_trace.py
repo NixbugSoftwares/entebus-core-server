@@ -103,6 +103,10 @@ class QueryParamsForVE(QueryParamsForEX):
     pass
 
 
+class QueryParamsForPU(QueryParamsForEX):
+    pass
+
+
 def searchServiceTrace(
     session: Session, qParam: QueryParamsForOP | QueryParamsForEX | QueryParamsForVE
 ) -> List[ServiceTrace]:
@@ -398,11 +402,11 @@ async def fetch_service_trace(
     ),
     description="""
     Fetch the service trace information with optional filters like location, landmark_id, etc.  
-    Supports sorting and pagination.  
+    Supports sorting and pagination.    
     Requires no authentication.
     """,
 )
-async def fetch_service_trace(qParam: QueryParamsForOP = Depends()):
+async def fetch_service_trace(qParam: QueryParamsForPU = Depends()):
     try:
         session = sessionMaker()
 

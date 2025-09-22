@@ -23,6 +23,7 @@ from app.src.redis import acquireLock, releaseLock
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -448,6 +449,31 @@ async def fetch_landmark(
     try:
         session = sessionMaker()
         validators.operator_token(bearer.credentials, session)
+
+        return searchLandmark(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Public]
+@route_public.get(
+    URL_LANDMARK,
+    tags=["Landmark"],
+    response_model=List[LandmarkSchema],
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidWKTStringOrType(), exceptions.InvalidSRID4326()]
+    ),
+    description="""
+    Retrieve a list of landmarks available to public users.  
+    Supports spatial and metadata-based querying with optional sorting and pagination features.     
+    Requires no authentication.
+    """,
+)
+async def fetch_landmark(qParam: QueryParams = Depends()):
+    try:
+        session = sessionMaker()
 
         return searchLandmark(session, qParam)
     except Exception as e:
