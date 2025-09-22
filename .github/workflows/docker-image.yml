@@ -1,0 +1,67 @@
+name: Build, Push, and Deploy
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:         
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image vars
+        id: vars
+        run: |
+          BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | tr '/' '-')
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/entebus-core-server" >> $GITHUB_ENV
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+            ${{ env.IMAGE }}:${{ env.BRANCH }}-latest
+
+      - name: Install kubectl
+        run: |
+          VERSION=v1.30.0
+          echo "Installing kubectl $VERSION"
+          curl -LO "https://dl.k8s.io/${VERSION}/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" > ~/.kube/config
+
+      - name: Deploy to K8s
+        run: |
+          kubectl -n entebus-backend set image deployment/entebus-core-server \
+            entebus-core-server=${{ env.IMAGE }}:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+          kubectl -n entebus-backend rollout status deployment/entebus-core-server
