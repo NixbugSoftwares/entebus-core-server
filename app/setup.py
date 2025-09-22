@@ -116,6 +116,12 @@ def initDB():
         full_name="Entebus guest",
         designation="Guest",
     )
+    scheduler = Executive(
+        username="scheduler",
+        password=password,
+        full_name="Entebus scheduler",
+        designation="Scheduler",
+    )
     adminRole = ExecutiveRole(
         name="Admin",
         manage_ex_token=True,
@@ -218,12 +224,66 @@ def initDB():
         update_ve_role=False,
         delete_ve_role=False,
     )
-    session.add_all([admin, guest, adminRole, guestRole])
+    schedulerRole = ExecutiveRole(
+        name="Scheduler role",
+        manage_ex_token=False,
+        manage_op_token=False,
+        manage_ve_token=False,
+        create_executive=False,
+        update_executive=False,
+        delete_executive=False,
+        create_landmark=False,
+        update_landmark=False,
+        delete_landmark=False,
+        create_company=False,
+        update_company=False,
+        delete_company=False,
+        create_operator=False,
+        update_operator=False,
+        delete_operator=False,
+        create_business=False,
+        update_business=False,
+        delete_business=False,
+        create_route=False,
+        update_route=False,
+        delete_route=False,
+        create_bus=False,
+        update_bus=False,
+        delete_bus=False,
+        create_vendor=False,
+        update_vendor=False,
+        delete_vendor=False,
+        create_schedule=False,
+        update_schedule=False,
+        delete_schedule=False,
+        create_service=True,
+        update_service=True,
+        delete_service=True,
+        create_fare=False,
+        update_fare=False,
+        delete_fare=False,
+        create_duty=False,
+        update_duty=False,
+        delete_duty=False,
+        create_ex_role=False,
+        update_ex_role=False,
+        delete_ex_role=False,
+        create_op_role=False,
+        update_op_role=False,
+        delete_op_role=False,
+        create_ve_role=False,
+        update_ve_role=False,
+        delete_ve_role=False,
+    )
+    session.add_all([admin, guest, scheduler, adminRole, guestRole, schedulerRole])
     session.flush()
 
     adminToRoleMapping = ExecutiveRoleMap(executive_id=admin.id, role_id=adminRole.id)
     guestToRoleMapping = ExecutiveRoleMap(executive_id=guest.id, role_id=guestRole.id)
-    session.add_all([adminToRoleMapping, guestToRoleMapping])
+    schedulerToRoleMapping = ExecutiveRoleMap(
+        executive_id=scheduler.id, role_id=schedulerRole.id
+    )
+    session.add_all([adminToRoleMapping, guestToRoleMapping, schedulerToRoleMapping])
     session.flush()
 
     session.commit()

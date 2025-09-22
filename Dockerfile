@@ -38,5 +38,11 @@ WORKDIR /code/app
 # Expose the port
 EXPOSE 8080
 
+# ENV PYTHONPATH=/code
 ENV PYTHONPATH=/code
+
+# Accept environment variables
+ENV SCHEDULER_USERNAME=SCHEDULER_USERNAME
+ENV SCHEDULER_PASSWORD=SCHEDULER_PASSWORD
+
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
