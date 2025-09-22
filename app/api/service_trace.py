@@ -25,6 +25,7 @@ from app.src.urls import URL_SERVICE_TRACE
 route_executive = APIRouter()
 route_vendor = APIRouter()
 route_operator = APIRouter()
+route_public = APIRouter()
 
 
 ## Output Schema
@@ -380,6 +381,32 @@ async def fetch_service_trace(
         token = validators.operator_token(bearer.credentials, session)
 
         qParam = promoteToParent(qParam, QueryParamsForEX, company_id=token.company_id)
+        return searchServiceTrace(session, qParam)
+    except Exception as e:
+        exceptions.handle(e)
+    finally:
+        session.close()
+
+
+## API endpoints [Public]
+@route_public.get(
+    URL_SERVICE_TRACE,
+    tags=["Service Trace"],
+    response_model=List[ServiceTraceSchema],
+    responses=fuseExceptionResponses(
+        [exceptions.InvalidWKTStringOrType(), exceptions.InvalidSRID4326()]
+    ),
+    description="""
+    Fetch the service trace information with optional filters like location, landmark_id, etc.  
+    Supports sorting and pagination.  
+    Requires no authentication.
+    """,
+)
+async def fetch_service_trace(qParam: QueryParamsForOP = Depends()):
+    try:
+        session = sessionMaker()
+
+        qParam = promoteToParent(qParam, QueryParamsForEX)
         return searchServiceTrace(session, qParam)
     except Exception as e:
         exceptions.handle(e)

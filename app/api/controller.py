@@ -123,3 +123,4 @@ app_vendor.include_router(vendor_role_map.route_vendor)
 # ------------------------------------------------------
 app_public.include_router(company.route_public)
 app_public.include_router(business.route_public)
+app_public.include_router(service_trace.route_public)
