@@ -177,7 +177,6 @@ class QueryParamsForVE(QueryParams):
 
 
 class QueryParamsForPU(QueryParamsForVE):
-    # status based
     status: ServiceStatus | None = Field(
         Query(default=None, description=enumStr(ServiceStatus))
     )
