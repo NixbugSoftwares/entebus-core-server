@@ -177,7 +177,10 @@ class QueryParamsForVE(QueryParams):
 
 
 class QueryParamsForPU(QueryParamsForVE):
-    pass
+    # status based
+    status: ServiceStatus | None = Field(
+        Query(default=None, description=enumStr(ServiceStatus))
+    )
 
 
 class QueryParamsUsingScheduleForOP(BaseModel):
@@ -1150,7 +1153,6 @@ async def fetch_service(qParam: QueryParamsForPU = Depends()):
         qParam = promoteToParent(
             qParam,
             QueryParamsForEX,
-            status=ServiceStatus.STARTED,
         )
         return searchService(session, qParam)
     except Exception as e:
