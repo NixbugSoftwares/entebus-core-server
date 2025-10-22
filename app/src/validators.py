@@ -298,15 +298,15 @@ def fare_function(function: str, attributes: dict) -> DynamicFare:
         raise exceptions.InvalidFareVersion()
 
     fare_function = DynamicFare(function)
+    # test_extra = {"startingLandmarkId": 16, "endingLandmarkId": 28}
+    # for ticket_type in attributes["ticket_types"]:
+    #     name = ticket_type["name"]
+    #     if fare_function.evaluate(name, 0, test_extra) < 0 or fare_function.evaluate(name, 1, test_extra) < 0:
+    #         raise exceptions.UnknownTicketType(name)
 
-    for ticket_type in attributes["ticket_types"]:
-        name = ticket_type["name"]
-        if fare_function.evaluate(name, 0) < 0 or fare_function.evaluate(name, 1) < 0:
-            raise exceptions.UnknownTicketType(name)
-
-    # Random ticket type should always return -1.0
-    bogus_type = "".join(random.choices(string.ascii_letters, k=32))
-    if fare_function.evaluate(bogus_type, 0) != -1.0:
-        raise exceptions.InvalidFareFunction()
+    # # Random ticket type should always return -1.0
+    # bogus_type = "".join(random.choices(string.ascii_letters, k=32))
+    # if fare_function.evaluate(bogus_type, 0, test_extra) != -1.0:
+    #     raise exceptions.InvalidFareFunction()
 
     return fare_function

@@ -19,12 +19,13 @@ class DynamicFare:
         except Exception:
             raise exceptions.InvalidFareFunction()
 
-    def evaluate(self, ticketType, totalDistance):
+    def evaluate(self, ticketType, totalDistance, extra):
         try:
             return self.jsContext.call(
                 "getFare",
                 ticketType,
                 totalDistance,
+                extra,
                 timeout=self.timeOutLimit,
                 max_memory=self.maxMemorySize,
             )
@@ -32,3 +33,5 @@ class DynamicFare:
             raise exceptions.JSTimeLimitExceeded()
         except py_mini_racer.JSOOMException:
             raise exceptions.JSMemoryLimitExceeded()
+        # except py_mini_racer.JSEvalException:
+        #     raise exceptions.InvalidFareFunction()

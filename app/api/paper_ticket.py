@@ -278,20 +278,26 @@ async def create_paper_ticket(
         fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
         totalFare = 0
         fareFunction = v1.DynamicFare(service.fare["function"])
+        
+        # First validate that all ticket types exist in fare configuration
+        fareTicketTypes = service.fare["attributes"]["ticket_types"]
+        for ticketType in fParam.ticket_types:
+            ticketTypeName = ticketType["name"]
+            if not any(ft["name"] == ticketTypeName for ft in fareTicketTypes):
+                raise exceptions.UnknownTicketType(ticketTypeName)
+
+        # Calculate total fare for all ticket types
+        extra = {
+            "startingLandmarkId": fParam.pickup_point,
+            "endingLandmarkId": fParam.dropping_point,
+        }
         for ticketType in fParam.ticket_types:
             ticketTypeName = ticketType["name"]
             ticketTypeCount = ticketType["count"]
             if ticketTypeCount <= 0:
                 raise exceptions.UnknownValue(PaperTicket.ticket_types)
-            attributeTicketTypes = None
-            fareTicketTypes = service.fare["attributes"]["ticket_types"]
-            for attributeTicketType in fareTicketTypes:
-                if attributeTicketType["name"] == ticketTypeName:
-                    attributeTicketTypes = attributeTicketType
-                    break
-            if attributeTicketTypes is None:
-                raise exceptions.UnknownTicketType(ticketTypeName)
-            ticketPrice = fareFunction.evaluate(ticketTypeName, distance)
+                
+            ticketPrice = fareFunction.evaluate(ticketTypeName, distance, extra)
             totalFare += ticketPrice * ticketTypeCount
 
         if totalFare != fParam.amount:
