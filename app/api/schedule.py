@@ -67,7 +67,7 @@ class CreateFormForOP(BaseModel):
         Body(description=enumStr(TriggeringMode), default=TriggeringMode.AUTO)
     )
     trigger_till: datetime | None = Field(Body(default=None))
-    next_trigger_on: datetime = Field(Body())
+    next_trigger_on: datetime | None = Field(Body(default=None))
 
 
 class CreateFormForEX(CreateFormForOP):

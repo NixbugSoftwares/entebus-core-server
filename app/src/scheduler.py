@@ -1,17 +1,17 @@
-"""Simple scheduler worker that wakes every minute, reads due schedules
-and creates Service entries directly in the database.
+"""Scheduler worker that runs at 6 AM IST daily to create services for all schedules.
 
-This module purposefully keeps the behavior minimal:
-- sleeps for 60 seconds between runs
-- selects schedules with triggering_mode AUTO and next_trigger_on <= now
-- performs minimal status checks and creates a Service record directly
-- updates schedule.last_trigger_on and clears next_trigger_on (no recurrence logic)
+This module:
+- Wakes up at 6 AM IST every day
+- Processes ALL schedules in the database
+- Creates service entries for the current date using route timings
+- Performs status checks before creating services
 
-Call `trigger_schedules_worker()` from your application startup if you want
-this to run continuously in a background thread/process.
+Call `trigger_schedules_worker()` from your application startup to run
+this continuously in a background thread/process.
 """
 
 import time
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.orm.session import Session
@@ -37,8 +37,8 @@ from app.src.enums import (
 )
 
 
-def process_schedule(session: Session, schedule: Schedule) -> Optional[int]:
-
+def process_schedule(session: Session, schedule: Schedule, service_date: datetime) -> Optional[int]:
+    """Create a service entry for a schedule using the given date."""
     # load required relations
     route = session.query(Route).filter(Route.id == schedule.route_id).first()
     fare = session.query(Fare).filter(Fare.id == schedule.fare_id).first()
@@ -65,9 +65,15 @@ def process_schedule(session: Session, schedule: Schedule) -> Optional[int]:
     )
     if not landmarks_in_route:
         return None
-    current_date = datetime.now(TMZ_SECONDARY).date()
-    starting_at = datetime.combine(current_date, route.start_time)
 
+    # Ensure service_date is timezone-aware in TMZ_SECONDARY
+    if service_date.tzinfo is None:
+        service_date = service_date.replace(tzinfo=TMZ_SECONDARY)
+
+    # Set service starting time using route's start_time for the given date
+    # route.start_time is a time object (naive). Create a timezone-aware datetime.
+    starting_at = datetime.combine(service_date.date(), route.start_time).astimezone(TMZ_SECONDARY)
+    
     last_landmark = landmarks_in_route[0]
     ending_at = starting_at + timedelta(seconds=last_landmark.arrival_delta)
 
@@ -88,9 +94,11 @@ def process_schedule(session: Session, schedule: Schedule) -> Optional[int]:
     if not first_landmark or not last_landmark:
         return None
 
-    # create name using IST (TMZ_SECONDARY)
+    # create name using IST (TMZ_SECONDARY) with portable time formatting
     IST_starting_at = starting_at.astimezone(TMZ_SECONDARY)
-    starting_at_str = IST_starting_at.strftime("%Y-%m-%d %-I:%M %p")
+    # Use portable hour formatting by removing leading zeros manually
+    hour = IST_starting_at.strftime("%I").lstrip('0')
+    starting_at_str = f"{IST_starting_at.strftime('%Y-%m-%d')} {hour}:{IST_starting_at.strftime('%M %p')}"
 
     name = f"{starting_at_str} {first_landmark.name} -> {last_landmark.name} ({bus.registration_number})"
 
@@ -110,6 +118,7 @@ def process_schedule(session: Session, schedule: Schedule) -> Optional[int]:
         route=routeData,
         fare=fareData,
         bus_id=bus.id,
+        schedule_id=schedule.id,
         ticket_mode=schedule.ticketing_mode,
         starting_at=starting_at,
         ending_at=ending_at,
@@ -119,36 +128,50 @@ def process_schedule(session: Session, schedule: Schedule) -> Optional[int]:
 
     session.add(service)
 
-    schedule.last_trigger_on = datetime.now(TMZ_SECONDARY)
-    schedule.next_trigger_on = starting_at + timedelta(days=1)
-
     session.flush()
     return service.id
 
 
 def trigger_schedules_worker(run_once: bool = False) -> None:
+    """Main worker function that runs every day at 6 AM IST."""
+    logger = logging.getLogger(__name__)
     while True:
-        time.sleep(60)
-        now = datetime.now(TMZ_SECONDARY)
-        with sessionMaker() as session:
-            try:
-                schedules = (
-                    session.query(Schedule)
-                    .filter(Schedule.next_trigger_on <= now)
-                    .all()
-                )
-                for s in schedules:
+        try:
+            # Calculate next run time (6 AM IST)
+            now = datetime.now(TMZ_SECONDARY)
+
+            # Create today's 6:00 AM IST
+            next_run = now.replace(hour=6, minute=0, second=0, microsecond=0)
+            # If it's past 6 AM, schedule for next day
+            if now >= next_run:
+                next_run = next_run + timedelta(days=1)
+            
+            # Sleep until next run time
+            sleep_seconds = (next_run - now).total_seconds()
+            if sleep_seconds > 0:
+                time.sleep(sleep_seconds)
+
+            service_date = datetime.now(TMZ_SECONDARY)
+
+            # Get schedules and process
+            with sessionMaker() as session:
+                schedules = session.query(Schedule).all()
+                for schedule in schedules:
                     try:
-                        sid = process_schedule(session, s)
+                        sid = process_schedule(session, schedule, service_date)
                         if sid:
                             session.commit()
+                            logger.info("Created service %s for schedule %s", sid, schedule.id)
                         else:
                             session.rollback()
-                    except Exception:
+                    except Exception as e:
+                        logger.exception("Failed to process schedule %s: %s", schedule.id, e)
                         session.rollback()
-                # continue loop
-            except Exception:
-                # keep the worker alive on unexpected errors
-                session.rollback()
+        except Exception:
+            pass
+            logging.getLogger(__name__).exception("Scheduler main loop failed")
+            
         if run_once:
             break
+        time.sleep(60)
+
