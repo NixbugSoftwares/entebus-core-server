@@ -561,6 +561,7 @@ def testDB():
         "route_id": route.json()["id"],
         "bus_id": bus1.json()["id"],
         "fare_id": fare.json()["id"],
+        "next_trigger_on": (datetime.now() + timedelta(minutes=7)).isoformat(),
         "frequency": [
             Day.MONDAY,
             Day.TUESDAY,

@@ -67,6 +67,7 @@ class CreateFormForOP(BaseModel):
         Body(description=enumStr(TriggeringMode), default=TriggeringMode.AUTO)
     )
     trigger_till: datetime | None = Field(Body(default=None))
+    next_trigger_on: datetime = Field(Body())
 
 
 class CreateFormForEX(CreateFormForOP):
@@ -156,14 +157,20 @@ class QueryParamsForEX(QueryParamsForOP):
 
 
 ## Function
-def validateTriggerTill(fParam: CreateFormForOP | CreateFormForEX | UpdateForm):
-    if fParam.trigger_till is not None:
-        if fParam.trigger_till.astimezone(TMZ_PRIMARY) < datetime.now(TMZ_PRIMARY):
-            raise exceptions.InvalidValue(Schedule.trigger_till)
+def validateDatetimeField(
+    fParam: CreateFormForOP | CreateFormForEX | UpdateForm,
+    fieldName: str,
+):
+    value = getattr(fParam, fieldName, None)
+    if value is not None:
+        if value.astimezone(TMZ_PRIMARY) < datetime.now(TMZ_PRIMARY):
+            fieldRef = getattr(Schedule, fieldName)
+            raise exceptions.InvalidValue(fieldRef)
 
 
 def updateSchedule(session: Session, schedule: Schedule, fParam: UpdateForm):
-    validateTriggerTill(fParam)
+    validateDatetimeField(fParam, Schedule.trigger_till.name)
+    validateDatetimeField(fParam, Schedule.next_trigger_on.name)
     updateIfChanged(
         schedule,
         fParam,
@@ -330,7 +337,8 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
-        validateTriggerTill(fParam)
+        validateDatetimeField(fParam, Schedule.trigger_till.name)
+        validateDatetimeField(fParam, Schedule.next_trigger_on.name)
 
         schedule = Schedule(
             company_id=fParam.company_id,
@@ -343,6 +351,7 @@ async def create_schedule(
             ticketing_mode=fParam.ticketing_mode,
             triggering_mode=fParam.triggering_mode,
             trigger_till=fParam.trigger_till,
+            next_trigger_on=fParam.next_trigger_on,
         )
         session.add(schedule)
         session.commit()
@@ -530,7 +539,8 @@ async def create_schedule(
                 raise exceptions.InvalidAssociation(
                     Schedule.fare_id, Schedule.company_id
                 )
-        validateTriggerTill(fParam)
+        validateDatetimeField(fParam, Schedule.trigger_till.name)
+        validateDatetimeField(fParam, Schedule.next_trigger_on.name)
 
         schedule = Schedule(
             company_id=token.company_id,
