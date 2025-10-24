@@ -3,6 +3,7 @@ from enum import IntEnum
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, status, Body
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm.session import Session
 
@@ -197,6 +198,7 @@ async def fetch_paper_ticket(
         [
             exceptions.InvalidToken(),
             exceptions.UnknownValue(PaperTicket.service_id),
+            exceptions.InvalidValue(PaperTicket.amount),
             exceptions.UnknownTicketType("ticket_type"),
             exceptions.InvalidFareFunction(),
             exceptions.JSMemoryLimitExceeded(),
@@ -278,7 +280,7 @@ async def create_paper_ticket(
         fParam.ticket_types = jsonable_encoder(fParam.ticket_types)
         totalFare = 0
         fareFunction = v1.DynamicFare(service.fare["function"])
-        
+
         # First validate that all ticket types exist in fare configuration
         fareTicketTypes = service.fare["attributes"]["ticket_types"]
         for ticketType in fParam.ticket_types:
@@ -296,12 +298,29 @@ async def create_paper_ticket(
             ticketTypeCount = ticketType["count"]
             if ticketTypeCount <= 0:
                 raise exceptions.UnknownValue(PaperTicket.ticket_types)
-                
+
             ticketPrice = fareFunction.evaluate(ticketTypeName, distance, extra)
             totalFare += ticketPrice * ticketTypeCount
 
         if totalFare != fParam.amount:
-            raise exceptions.UnknownValue(PaperTicket.amount)
+            raise exceptions.InvalidValue(PaperTicket.amount)
+
+        # Duplicate check before inserting
+        existing_ticket = (
+            session.query(PaperTicket)
+            .filter_by(
+                service_id=fParam.service_id,
+                duty_id=fParam.duty_id,
+                sequence_id=fParam.sequence_id,
+            )
+            .first()
+        )
+        if existing_ticket:
+            existing_ticket_data = jsonable_encoder(existing_ticket)
+            return JSONResponse(
+                status_code=status.HTTP_201_CREATED,
+                content=existing_ticket_data,
+            )
 
         paperTicket = PaperTicket(
             service_id=fParam.service_id,
