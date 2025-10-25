@@ -128,6 +128,7 @@ class QueryParamsForEX(QueryParamsForOP):
 # Functions
 def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
     service = session.query(Service).filter(Service.id == duty.service_id).first()
+    now = datetime.now(timezone.utc)
     if fParam.status is not None and fParam.status != duty.status:
         if fParam.status == DutyStatus.STARTED:
             if duty.started_on is None:
@@ -143,6 +144,20 @@ def updateDuty(session: Session, duty: Duty, fParam: UpdateForm):
                 .scalar()
             ) or 0
             duty.finished_on = datetime.now(timezone.utc)
+            if fParam.status == DutyStatus.ENDED:
+                duties = (
+                    session.query(Duty)
+                    .filter(
+                        Duty.id != fParam.id,
+                        Duty.service_id == service.id,
+                        Duty.status == DutyStatus.STARTED,
+                    )
+                    .count()
+                )
+                if duties == 0 and now >= service.ending_at - timedelta(minutes=15):
+                    service.status = ServiceStatus.ENDED
+                    if service.finished_on is None:
+                        service.finished_on = now
         duty.status = fParam.status
 
 

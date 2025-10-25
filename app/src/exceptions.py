@@ -206,8 +206,8 @@ class InvalidStateTransition(APIException):
     status_code = status.HTTP_406_NOT_ACCEPTABLE
     headers = {"X-Error": "InvalidStateTransition"}
 
-    def __init__(self, column: Column):
-        detail = f"The {column.name} cannot be set to the provided value"
+    def __init__(self, column: str):
+        detail = f"The {column} cannot be set to the provided value"
         super().__init__(detail=detail)
 
 
